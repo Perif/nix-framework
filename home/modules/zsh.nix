@@ -1,0 +1,97 @@
+{ pkgs, settings, ... }:
+
+{
+  # Packages required by aliases in this module.
+  home.packages = [ pkgs.yt-dlp ];
+
+  programs.zsh = {
+    enable = true;
+    enableCompletion = true;
+
+    autosuggestion.enable = true;
+    syntaxHighlighting.enable = true;
+
+    history = {
+      path = "$HOME/.histfile";
+      size = 10000;
+      save = 10000;
+      ignoreDups = true;
+      ignoreAllDups = true;
+      saveNoDups = true;
+      expireDuplicatesFirst = true;
+
+      # Prefix a sensitive one-off command with a space to exclude it from the
+      # history file. Do not stream each command to other open shells.
+      ignoreSpace = true;
+      share = false;
+    };
+
+    shellAliases = {
+      ls = "ls --color=auto";
+      ll = "ls -alF";
+      la = "ls -A";
+      lr = "ls -rt";
+
+      reload = "source ~/.zshrc";
+
+      cp = "cp -i";
+      mv = "mv -i";
+
+      gs = "git status";
+      hg = "history | grep ";
+
+      jobs = "jobs -p";
+
+      ph = "ps auwwx | head";
+      pg = "ps auwwx | grep -i -e ^USER -e ";
+
+      publicip = "curl -w '\\n' -s https://ifconfig.me";
+
+      yt-best = ''yt-dlp --format "bestvideo+bestaudio/best" --merge-output-format mp4 --write-subs --write-auto-subs --sub-lang en --embed-subs --convert-subs srt --embed-thumbnail --add-metadata'';
+
+      # Common NixOS workflow. The explicit names make the activation behavior
+      # visible before a command is run: dry-build does not activate, test is
+      # temporary, boot activates after reboot, and switch activates now.
+      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
+      ncheck = "nix flake check --no-build --all-systems /etc/nixos";
+      nix-check = "nix flake check --no-build --all-systems /etc/nixos";
+      nix-show = "nix flake show /etc/nixos";
+      nix-metadata = "nix flake metadata /etc/nixos";
+      nix-update = "sudo nix flake update --flake /etc/nixos";
+      nix-dry = "sudo nixos-rebuild dry-build --flake /etc/nixos#${settings.hostname}";
+      nix-test = "sudo nixos-rebuild test --flake /etc/nixos#${settings.hostname}";
+      nix-boot = "sudo nixos-rebuild boot --flake /etc/nixos#${settings.hostname}";
+      nix-switch = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
+      nix-generations = "sudo nix-env --profile /nix/var/nix/profiles/system --list-generations";
+      nix-search = "nix search nixpkgs";
+      nix-why = "nix why-depends /run/current-system";
+
+      # Ollama's hardened system service is deliberately not started at boot.
+      ollama-on = "sudo systemctl start ollama.service";
+      ollama-off = "sudo systemctl stop ollama.service";
+      ollama-status = "systemctl --no-pager --full status ollama.service";
+    };
+
+    # Keep the user's prompt and shell behavior explicit. Starship is not
+    # enabled because it would replace PROMPT.
+    initContent = ''
+      setopt noclobber
+      setopt nohup
+      setopt print_exit_value
+
+      TMOUT=0
+
+      USE_POWERLINE="true"
+      HAS_WIDECHARS="false"
+
+      # Inherit LANG and category-specific locale settings from the system.
+      # In particular, do not override settings.defaultLocale with LC_ALL.
+
+      NEWLINE=$'\n'
+      PROMPT="[%F{155}%*%f] - %F{117}%n%f@%F{177}%m%f: %F{147}%d%f ''${NEWLINE}%h %F{220}>%f "
+    '';
+  };
+
+  # Deliberately disabled: the custom PROMPT above is authoritative.
+  programs.starship.enable = false;
+}
