@@ -207,8 +207,10 @@ in
     with subtest("install and create login credentials"):
         # nixos-install builds in the target's separate store. Seed that store
         # with the prebuilt closure so this offline fixture needs no downloads.
+        # Locally built fixture outputs have no cache signature; trust this
+        # explicit local-to-local copy only, without changing Nix settings.
         # The production stage still evaluates, installs and activates it.
-        installer.succeed("nix copy --to 'local?root=/mnt' ${target.config.system.build.toplevel}", timeout=300)
+        installer.succeed("nix copy --no-check-sigs --to 'local?root=/mnt' ${target.config.system.build.toplevel}", timeout=300)
         installer.succeed("installer --config /root/config install", timeout=900)
         installer.succeed("${python}/bin/python ${./installer-vm/drive-stage.py} account", timeout=300)
         installer.succeed("sync")
