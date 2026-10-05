@@ -191,7 +191,12 @@ in
         installer.succeed("installer --config /root/config preflight", timeout=300)
         installer.succeed("installer --config /root/config plan", timeout=300)
     with subtest("interactive partitioning and encrypted mount verification"):
-        installer.succeed("${python}/bin/python ${./installer-vm/drive-stage.py} format", timeout=900)
+        try:
+            installer.succeed("${python}/bin/python ${./installer-vm/drive-stage.py} format", timeout=900)
+        except Exception:
+            print(installer.succeed("findmnt --json; lsblk --json --tree --bytes --output PATH,TYPE,MAJ:MIN,SIZE,MODEL,SERIAL,MOUNTPOINTS; swapon --show=NAME,SIZE --bytes"))
+            print(installer.execute("installer --config /root/config mounts", timeout=180))
+            raise
         installer.succeed("installer --config /root/config mounts", timeout=300)
         installer.succeed("echo preserved > /mnt/home/recovery-canary; cp /mnt/etc/nix-framework-installer.json /root/original-record.json")
     with subtest("recover after interruption without reformatting"):

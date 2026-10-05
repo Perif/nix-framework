@@ -1,4 +1,6 @@
 """Drive real interactive installer stages inside a disposable test VM only."""
+import atexit
+import io
 import sys
 
 import pexpect
@@ -8,7 +10,17 @@ stage = sys.argv[1]
 child = pexpect.spawn(
     "installer", ["--config", "/root/config", stage], encoding="utf-8", timeout=180
 )
-child.logfile_read = sys.stdout
+transcript = io.StringIO()
+child.logfile_read = transcript
+
+
+def failure_transcript():
+    if child.exitstatus != 0:
+        # Escape terminal controls so Nix's log renderer cannot erase the error.
+        print("Installer PTY transcript:", repr(transcript.getvalue()[-24000:]), file=sys.stderr)
+
+
+atexit.register(failure_transcript)
 if stage == "format":
     child.expect(r"Type exactly: ERASE [^\r\n]+")
     child.sendline("ERASE /dev/disk/by-id/nvme-QEMU_NVMe_Ctrl_INSTALL_TEST")
