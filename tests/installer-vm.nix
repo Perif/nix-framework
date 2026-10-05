@@ -230,7 +230,11 @@ in
     driver.machines_qemu.append(target)
     with subtest("boot installed system from its EFI partition and unlock LUKS"):
         target.start()
-        target.wait_for_console_text("[Pp]assphrase", timeout=180)
+        # The driver's queued-line helper drains one boot line per second.
+        # Poll its complete captured log so verbose initrd output cannot delay
+        # recognition of an already-visible interactive password request.
+        retry(lambda _: "Please enter passphrase for disk disk-main-cryptroot (cryptroot):"
+              in target.get_console_log(), timeout_seconds=180)
         target.send_console("disposable-vm-luks-passphrase\n")
         target.wait_for_unit("multi-user.target", timeout=180)
         target.succeed("findmnt -n -o FSTYPE / | grep -x btrfs; grep -qx preserved /home/recovery-canary")
