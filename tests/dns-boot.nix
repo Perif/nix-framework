@@ -11,8 +11,8 @@ let
         mkdir -p "$out"
         openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
           -keyout "$out/key.pem" -out "$out/cert.pem" \
-          -subj "/CN=dns-fixture.test" \
-          -addext "subjectAltName=DNS:dns-fixture.test"
+          -subj "/CN=dns-fixture.example.com" \
+          -addext "subjectAltName=DNS:dns-fixture.example.com"
       '';
   fixtureServer = pkgs.writeText "dns-boot-fixture.py" ''
     import base64
@@ -38,7 +38,7 @@ let
             if self.path == "/health":
                 self.reply(b"ready\n", "text/plain")
             elif self.path == "/denylist":
-                self.reply(b"blocked.test\nallowlisted.test\n", "text/plain")
+                self.reply(b"blocked.example.com\nallowlisted.example.com\n", "text/plain")
             elif self.path.startswith("/dns-query?"):
                 query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)["dns"][0]
                 self.reply_dns(base64.urlsafe_b64decode(query + "=" * (-len(query) % 4)))
@@ -63,7 +63,7 @@ let
                 # upstream and denylist download host, independently of NSS.
                 address = (
                     "127.0.0.1"
-                    if str(question.name).lower() == "dns-fixture.test."
+                    if str(question.name).lower() == "dns-fixture.example.com."
                     else "192.0.2.10"
                 )
                 response.answer.append(
@@ -89,19 +89,21 @@ in
 
     # Exercise production DNS routing and TLS without contacting an external
     # resolver or downloading live lists. No desktop or laptop hardware needed.
+    # Use example.com names: Blocky's RFC 6761 handling intentionally returns
+    # NXDOMAIN for .test before it reaches the upstream or our fixture.
     _module.args.settings.dns = {
-      dohUrl = "https://dns-fixture.test:8443/dns-query";
+      dohUrl = "https://dns-fixture.example.com:8443/dns-query";
       bootstrapIps = [ "127.0.0.1" ];
-      servers = [ "127.0.0.1#dns-fixture.test" ];
+      servers = [ "127.0.0.1#dns-fixture.example.com" ];
       filtering = {
         enable = true;
-        blocklistUrls = [ "https://dns-fixture.test:8443/denylist" ];
-        allowlist = [ "allowlisted.test" ];
+        blocklistUrls = [ "https://dns-fixture.example.com:8443/denylist" ];
+        allowlist = [ "allowlisted.example.com" ];
       };
     };
 
     virtualisation.memorySize = 512;
-    networking.hosts."127.0.0.1" = [ "dns-fixture.test" ];
+    networking.hosts."127.0.0.1" = [ "dns-fixture.example.com" ];
     security.pki.certificateFiles = [ "${fixtureCertificate}/cert.pem" ];
     environment.systemPackages = [ pkgs.dnsutils ];
 
@@ -109,7 +111,7 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         ExecStart = "${fixturePython}/bin/python ${fixtureServer}";
-        ExecStartPost = "${pkgs.curl}/bin/curl --fail --silent --retry 30 --retry-connrefused --retry-delay 1 --resolve dns-fixture.test:8443:127.0.0.1 --cacert ${fixtureCertificate}/cert.pem https://dns-fixture.test:8443/health";
+        ExecStartPost = "${pkgs.curl}/bin/curl --fail --silent --retry 30 --retry-connrefused --retry-delay 1 --resolve dns-fixture.example.com:8443:127.0.0.1 --cacert ${fixtureCertificate}/cert.pem https://dns-fixture.example.com:8443/health";
       };
     };
     systemd.services.blocky = {
@@ -140,24 +142,28 @@ in
 
     with subtest("System lookups traverse resolved and Blocky to the offline DoH fixture"):
         machine.wait_until_succeeds(
-            "getent ahostsv4 allowed.test | grep -F 192.0.2.10", timeout=60
+            "dig @127.0.0.1 -p 5335 allowed.example.com A +short "
+            "| grep -Fx 192.0.2.10", timeout=60
+        )
+        machine.wait_until_succeeds(
+            "getent ahostsv4 allowed.example.com | grep -F 192.0.2.10", timeout=60
         )
 
     with subtest("Downloaded denylist blocks through the system resolver"):
         # Production list loading is asynchronous. Wait on Blocky directly
         # before testing resolved so its cache never contains an early answer.
         machine.wait_until_succeeds(
-            "dig @127.0.0.1 -p 5335 blocked.test A +noall +comments "
+            "dig @127.0.0.1 -p 5335 blocked.example.com A +noall +comments "
             "| grep -F 'status: NXDOMAIN'", timeout=60
         )
         machine.succeed(
-            "dig @127.0.0.53 blocked.test A +noall +comments "
+            "dig @127.0.0.53 blocked.example.com A +noall +comments "
             "| grep -F 'status: NXDOMAIN'"
         )
-        machine.fail("getent ahostsv4 blocked.test")
+        machine.fail("getent ahostsv4 blocked.example.com")
 
     with subtest("Explicit allowlist takes priority over the denylist"):
-        machine.succeed("getent ahostsv4 allowlisted.test | grep -F 192.0.2.10")
+        machine.succeed("getent ahostsv4 allowlisted.example.com | grep -F 192.0.2.10")
 
     with subtest("DNS recovers when Blocky restarts independently of resolved"):
         resolved_pid = machine.succeed(
@@ -166,7 +172,7 @@ in
         machine.succeed("systemctl restart blocky.service", "resolvectl flush-caches")
         machine.wait_for_unit("blocky.service", timeout=120)
         machine.wait_until_succeeds(
-            "getent ahostsv4 after-restart.test | grep -F 192.0.2.10", timeout=60
+            "getent ahostsv4 after-restart.example.com | grep -F 192.0.2.10", timeout=60
         )
         assert resolved_pid == machine.succeed(
             "systemctl show systemd-resolved.service --property=MainPID --value"
