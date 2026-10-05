@@ -50,11 +50,15 @@ class SettingsAndEvaluation(unittest.TestCase):
              [{'name': '/dev/dm-2', 'size': 42949668864},
               {'name': '/dev/zram0', 'size': 8589930496}]),
         ):
-            with patch.object(storage, 'run', return_value=output):
+            with patch.object(storage, 'run', return_value=output) as command:
                 self.assertEqual(storage.active_swaps(), expected)
-        with patch.object(storage, 'run', return_value='/dev/dm-2 unknown'):
-            with self.assertRaises(ValueError):
-                storage.active_swaps()
+                command.assert_called_once_with(
+                    'swapon', '--show=NAME,SIZE', '--raw', '--noheadings',
+                    '--bytes', capture=True)
+        for output in ('/dev/dm-2 unknown', '/dev/dm-2 partition 42949668864 0 -2'):
+            with self.subTest(output=output), patch.object(storage, 'run', return_value=output):
+                with self.assertRaises(ValueError):
+                    storage.active_swaps()
 
     def test_valid_settings_and_unsafe_selections(self):
         with patch.object(common, "query", return_value=VALID_SETTINGS):

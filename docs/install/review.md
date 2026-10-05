@@ -27,7 +27,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 | A retry could silently mix configurations. | Refuse an existing target configuration unless its files match the reviewed snapshot. |
 | Correct mount names could conceal a different disk, subvolume, or plaintext PV. | Check mount sources, physical disk identity, Btrfs subvolume roots, exact encrypted LVM ancestry, and active encrypted swap. |
 | An absolute target system-profile symlink could appear missing from the live ISO. | Recognize the symlink and validate the account inside the installed target. |
-| Tool output assumptions were wrong. | Request an explicit `lsblk` tree; parse documented read-only `swapon` output; archive rather than rely on a potentially unrealized metadata path. |
+| Tool output assumptions were wrong. | Request an explicit `lsblk` tree; select swap columns with `--show=NAME,SIZE` (`--output` abbreviates `--output-all`); archive rather than rely on a potentially unrealized metadata path. The real Linux inventory check caught the swap-column error before installation. |
 | Fresh-install, upgrade, and recovery instructions overlapped. | Separate routes and explain which commands are valid after partial installation. Clone and rebuild sequences stop on failures. |
 
 ## Evidence and remaining limits

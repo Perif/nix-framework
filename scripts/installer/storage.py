@@ -45,9 +45,10 @@ def block_tree(device=None, inverse=False):
 
 
 def active_swaps():
-    # swapon has no JSON mode. Raw output escapes whitespace in device names.
-    rows = run('swapon', '--show', '--raw', '--noheadings', '--bytes',
-               '--output', 'NAME,SIZE', capture=True)
+    # swapon selects columns through --show, not --output (which abbreviates
+    # --output-all). Raw output escapes whitespace in device names.
+    rows = run('swapon', '--show=NAME,SIZE', '--raw', '--noheadings', '--bytes',
+               capture=True)
     swaps = []
     for row in rows.splitlines():
         name, size = row.split()
