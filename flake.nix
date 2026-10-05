@@ -50,6 +50,8 @@
     let
       # Hostname, login user, password and git identity live in one file.
       settings = import ./settings.nix;
+      # One Nixpkgs instantiation shared by every x86_64-linux package output.
+      linuxPkgs = import nixpkgs { system = "x86_64-linux"; };
     in
     {
       devShells = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
@@ -65,22 +67,14 @@
 
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
-      packages.x86_64-linux.installer = import ./pkgs/installer.nix {
-        pkgs = import nixpkgs { system = "x86_64-linux"; };
-      };
-      packages.x86_64-linux.webui-bootstrap = import ./pkgs/webui-bootstrap.nix {
-        pkgs = import nixpkgs { system = "x86_64-linux"; };
-      };
-      packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix {
-        pkgs = import nixpkgs { system = "x86_64-linux"; };
-      };
+      packages.x86_64-linux.installer = import ./pkgs/installer.nix { pkgs = linuxPkgs; };
+      packages.x86_64-linux.webui-bootstrap = import ./pkgs/webui-bootstrap.nix { pkgs = linuxPkgs; };
+      packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix { pkgs = linuxPkgs; };
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
       packages.x86_64-linux.qobuz-player =
-        (import nixpkgs { system = "x86_64-linux"; }).callPackage ./pkgs/qobuz-player.nix
-          { };
+        linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
       packages.x86_64-linux.ollaya =
-        (import nixpkgs { system = "x86_64-linux"; }).callPackage ./pkgs/ollaya.nix
-          { };
+        linuxPkgs.callPackage ./pkgs/ollaya.nix { };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
         system:
