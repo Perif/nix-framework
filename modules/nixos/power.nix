@@ -24,6 +24,11 @@ in
 
   services.power-profiles-daemon.enable = true;
 
+  # The module itself comes from nixos-hardware's framework/kmod.nix
+  # (hardware.framework.enableKmod, on by default for kernels >= 6.10), which
+  # the series3 profile imports. Disabling that option makes
+  # systemd-modules-load fail at boot while this unit may still succeed
+  # through the in-tree cros_charge-control driver.
   boot.kernelModules = lib.optional (limit != null) "framework_laptop";
   systemd.services.framework-charge-limit = lib.mkIf (limit != null) {
     description = "Set the Framework battery charge limit";

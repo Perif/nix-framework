@@ -35,9 +35,12 @@ def format_disk(config):
     if fresh_storage(config, layout) != before:
         raise Stop('Disk identity changed during confirmation; nothing was formatted.')
     disko(config)
-    # Pinned Disko mounts filesystems but omits swap from its mount ordering.
-    # Reconcile the validated existing layout (never format again), activate
-    # its encrypted swap, and retain the strict final mount/swap verification.
+    # Disko's mount phase orders entries by the mount points in
+    # config.fileSystems, but the swap _mount entry is keyed by its device
+    # path, so `--mode mount` never runs swapon (lib/default.nix mountOrder vs
+    # lib/types/swap.nix; unfixed upstream as of disko 725ea35). Reconcile the
+    # validated existing layout (never format again), activate its encrypted
+    # swap, and retain the strict final mount/swap verification.
     disk = recover_mounts(config, layout)
     record.create(config, disk, layout)
 
