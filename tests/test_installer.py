@@ -382,7 +382,7 @@ class StageOrdering(unittest.TestCase):
         with patch.object(cli, "evaluate"), patch.object(cli, "fresh_storage", side_effect=disks), \
              patch.object(cli, "show_disk"), patch.object(cli.sys.stdin, "isatty", return_value=tty), \
              patch("builtins.input", return_value=answer), patch.object(cli, "disko", side_effect=disko_error) as format_run, \
-             patch.object(cli, "verify_mounts") as mounts:
+             patch.object(cli, "recover_mounts") as mounts:
             try:
                 cli.format_disk(selected)
             except (common.Stop, subprocess.CalledProcessError):
@@ -399,6 +399,10 @@ class StageOrdering(unittest.TestCase):
     def test_failed_format_command_stops_before_mount_success(self):
         error = subprocess.CalledProcessError(1, ["nix", "run", "disko"])
         self.assertEqual(self.format_with(disko_error=error), (1, 0))
+
+    def test_successful_format_reconciles_existing_storage_before_record(self):
+        self.assertEqual(self.format_with(), (1, 1))
+        cli.record.create.assert_called_once()
 
     def test_install_requires_verified_mounts_before_copy_or_install(self):
         with patch.object(cli, "evaluate"), \
@@ -540,6 +544,43 @@ class StageOrdering(unittest.TestCase):
                 storage.recover_mounts(config(), LAYOUT)
             self.assertEqual(command.call_count, 1)
             self.assertEqual(command.call_args.args[:2], ('cryptsetup', 'isLuks'))
+
+    def test_reconciliation_activates_missing_swap_only_after_storage_validation(self):
+        for failure in (None, 'foreign ancestry', 'wrong filesystem'):
+            with self.subTest(failure=failure), \
+                 patch.object(storage, 'disk_identity', return_value=disk()), \
+                 patch.object(storage, 'check_partitions', return_value=Path('/dev/target-part2')), \
+                 patch.object(storage, 'show_disk'), \
+                 patch.object(storage, 'refuse_unrelated_mounts'), \
+                 patch.object(Path, 'exists', return_value=True), \
+                 patch.object(Path, 'resolve', autospec=True, side_effect=lambda p, **_: p), \
+                 patch.object(storage, 'check_cryptroot'), \
+                 patch.object(storage, 'check_vg_pv'), \
+                 patch.object(storage, 'check_encrypted_ancestry',
+                              side_effect=common.Stop(failure) if failure == 'foreign ancestry' else None), \
+                 patch.object(storage, 'mounted_target_subset', return_value=LAYOUT.targets), \
+                 patch.object(storage, 'active_swaps', return_value=[]), \
+                 patch.object(storage, 'verify_mounts', return_value=disk()) as verify:
+                def fake_run(*command, **kwargs):
+                    if command[0] == 'blkid':
+                        if failure == 'wrong filesystem' and command[-1].endswith('vg-swap'):
+                            return 'ext4'
+                        return {'/dev/mapper/vg-root': 'btrfs',
+                                '/dev/mapper/vg-swap': 'swap'}.get(command[-1], 'vfat')
+                    return ''
+
+                with patch.object(storage, 'run', side_effect=fake_run) as command:
+                    if failure:
+                        with self.assertRaises(common.Stop):
+                            storage.recover_mounts(config(), LAYOUT)
+                        verify.assert_not_called()
+                        self.assertFalse(any(c.args[0] == 'swapon' for c in command.call_args_list))
+                    else:
+                        self.assertEqual(storage.recover_mounts(config(), LAYOUT), disk())
+                        self.assertEqual(command.call_args.args, ('swapon', '/dev/mapper/vg-swap'))
+                        verify.assert_called_once_with(config(), LAYOUT)
+                    self.assertFalse(any(c.args[0] in ('mount', 'mkfs', 'mkswap')
+                                         for c in command.call_args_list))
 
     def test_recovery_refuses_unrelated_mount_before_cryptsetup(self):
         with patch.object(storage, 'disk_identity', return_value=disk()), \

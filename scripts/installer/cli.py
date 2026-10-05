@@ -35,7 +35,10 @@ def format_disk(config):
     if fresh_storage(config, layout) != before:
         raise Stop('Disk identity changed during confirmation; nothing was formatted.')
     disko(config)
-    disk = verify_mounts(config, layout)
+    # Pinned Disko mounts filesystems but omits swap from its mount ordering.
+    # Reconcile the validated existing layout (never format again), activate
+    # its encrypted swap, and retain the strict final mount/swap verification.
+    disk = recover_mounts(config, layout)
     record.create(config, disk, layout)
 
 
