@@ -20,8 +20,7 @@ in
     }
     {
       assertion =
-        cfg.blocklistUrls != [ ]
-        && lib.all (url: lib.hasPrefix "https://" url) cfg.blocklistUrls;
+        cfg.blocklistUrls != [ ] && lib.all (url: lib.hasPrefix "https://" url) cfg.blocklistUrls;
       message = "settings.dns.filtering.blocklistUrls must be non-empty HTTPS URLs.";
     }
   ];

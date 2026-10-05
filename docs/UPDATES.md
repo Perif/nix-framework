@@ -133,3 +133,31 @@ while retaining detection of compact, spaced, hyphenated and sentence-ending
 card candidates. The original preset files and checksums remain unchanged.
 All eleven packaged Git-security integration tests pass on aarch64-darwin,
 including the two new regression tests; the eight power-helper tests also pass.
+
+## Full-repository review — 2026-10-04
+
+Independent reviews used GPT-6 Sol for power, storage, security and CI, and
+GPT-6 Luna for AI, audio, ICC and application settings. The primary review
+covered networking, installation, boot configuration and integration; a
+separate subagent investigated failed Linux CI checks.
+
+Accepted fixes:
+
+- Remove resolved's dependency on Blocky. Upstream resolved starts before
+  `sysinit.target`, while Blocky has ordinary service dependencies and waits
+  for networking; ordering resolved after it creates a boot cycle.
+- Import Sublime's pinned recipe using Nix path addition, preserving lazy
+  source access on fresh runners. Linux CI had failed at the interpolated
+  store-path import; it now passes evaluation and reaches the system build.
+- Use the supplied Bash path in the chained-hook test fixture so it runs in
+  Nix's Linux sandbox, where `/usr/bin/env` is absent.
+- Evaluate the default QBZ-enabled configuration in CI before disabling QBZ
+  for the hosted-runner build. Avoid duplicate push/PR runs for feature branches.
+- Clarify that installation settings examples are excerpts, preserving the
+  additional audio, display, AI, power and optional network settings.
+
+A suspected Sublime Python-host mismatch was rejected after checking the
+actual locked recipe and its evaluated build phase: it already selects 3.14.
+No additional measured tuning is claimed. Reviews found no further concrete
+defect in the assigned AI/audio/ICC or power/maintenance areas; physical laptop
+behavior and a QBZ-enabled Linux build still need separate validation.

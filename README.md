@@ -250,10 +250,11 @@ the installation guide.
 
 ## Validation status
 
-The updated complete NixOS/Home Manager derivations evaluated on 2026-09-28
+The updated complete NixOS/Home Manager derivations evaluated on 2026-10-04
 with QBZ enabled and a validation-only disk value;
-`nix flake check --no-build --all-systems` also passed. All nine production
-Git-security integration tests passed on aarch64-darwin. The evaluated closure
+`nix flake check --no-build --all-systems` also passed. All eleven production
+Git-security integration tests and eight power-helper tests passed on
+aarch64-darwin; Linux CI also passed these tests. The evaluated closure
 includes Linux 7.2.8, Plasma 6.6.6, EasyEffects 8.2.4, Brave 1.95.104,
 ungoogled Chromium 154.0.8037.57, and the retained QBZ 2.0.2.
 
@@ -262,7 +263,9 @@ full Linux system build, activation, display calibration measurement, or
 audio hardware test was performed on this ARM macOS host. The checked-in disk
 sentinel intentionally prevents installation until replaced with the verified
 target's stable by-id path. See [current update notes](docs/UPDATES.md) for the
-QBZ packaging limitation and remaining laptop checks.
+QBZ packaging limitation and remaining laptop checks. CI evaluates the default
+QBZ-enabled configuration, then builds the Linux system with QBZ disabled to
+limit hosted-runner build cost; that build does not validate QBZ itself.
 
 Run the validation section in `docs/INSTALL.md` before the destructive step.
 

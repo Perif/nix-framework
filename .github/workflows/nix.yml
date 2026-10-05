@@ -2,6 +2,7 @@ name: NixOS validation
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -54,12 +55,14 @@ jobs:
       - name: Select non-destructive CI settings
         run: |
           sed -i 's|/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID|/dev/disk/by-id/ci-validation-disk|' settings.nix
-          sed -i 's|    qbz = true;|    qbz = false;|' settings.nix
 
-      - name: Evaluate every flake output
+      - name: Evaluate every flake output with default application selections
         run: nix flake check --no-build --all-systems
 
-      - name: Build the complete NixOS system
+      - name: Exclude QBZ from the hosted-runner build
+        run: sed -i 's|    qbz = true;|    qbz = false;|' settings.nix
+
+      - name: Build the NixOS system with QBZ disabled
         run: |
           host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"
           nix build ".#nixosConfigurations.${host}.config.system.build.toplevel" \
