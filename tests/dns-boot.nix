@@ -59,8 +59,15 @@ let
             response.flags |= dns.flags.RA
             question = query.question[0]
             if question.rdtype == dns.rdatatype.A:
+                # Blocky uses its bootstrap resolver for the normal DoH
+                # upstream and denylist download host, independently of NSS.
+                address = (
+                    "127.0.0.1"
+                    if str(question.name).lower() == "dns-fixture.test."
+                    else "192.0.2.10"
+                )
                 response.answer.append(
-                    dns.rrset.from_text(question.name, 1, "IN", "A", "192.0.2.10")
+                    dns.rrset.from_text(question.name, 1, "IN", "A", address)
                 )
             self.reply(response.to_wire(), "application/dns-message")
 
@@ -113,9 +120,9 @@ in
 
   testScript = ''
     machine.start()
-    machine.wait_for_unit("multi-user.target")
-    machine.wait_for_unit("systemd-resolved.service")
-    machine.wait_for_unit("blocky.service")
+    machine.wait_for_unit("multi-user.target", timeout=120)
+    machine.wait_for_unit("systemd-resolved.service", timeout=120)
+    machine.wait_for_unit("blocky.service", timeout=120)
 
     with subtest("Resolved retains early boot ordering without a cycle"):
         ordering = machine.succeed(
@@ -127,7 +134,7 @@ in
 
     with subtest("System lookups traverse resolved and Blocky to the offline DoH fixture"):
         machine.wait_until_succeeds(
-            "getent ahostsv4 allowed.test | grep -F 192.0.2.10"
+            "getent ahostsv4 allowed.test | grep -F 192.0.2.10", timeout=60
         )
 
     with subtest("Downloaded denylist blocks through the system resolver"):
@@ -135,7 +142,7 @@ in
         # before testing resolved so its cache never contains an early answer.
         machine.wait_until_succeeds(
             "dig @127.0.0.1 -p 5353 blocked.test A +noall +comments "
-            "| grep -F 'status: NXDOMAIN'"
+            "| grep -F 'status: NXDOMAIN'", timeout=60
         )
         machine.succeed(
             "dig @127.0.0.53 blocked.test A +noall +comments "
@@ -151,8 +158,10 @@ in
             "systemctl show systemd-resolved.service --property=MainPID --value"
         ).strip()
         machine.succeed("systemctl restart blocky.service", "resolvectl flush-caches")
-        machine.wait_for_unit("blocky.service")
-        machine.wait_until_succeeds("getent ahostsv4 after-restart.test | grep -F 192.0.2.10")
+        machine.wait_for_unit("blocky.service", timeout=120)
+        machine.wait_until_succeeds(
+            "getent ahostsv4 after-restart.test | grep -F 192.0.2.10", timeout=60
+        )
         assert resolved_pid == machine.succeed(
             "systemctl show systemd-resolved.service --property=MainPID --value"
         ).strip()
