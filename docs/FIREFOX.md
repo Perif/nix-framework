@@ -16,6 +16,13 @@ Nix flake rather than installed ad hoc.
 - Skip Redirect
 - Mozilla Multi-Account Containers
 
+Bypass Paywalls Clean uses the publisher's signed 4.4.5.6 XPI from an exact
+Git commit, with a fixed source hash in `home/modules/firefox.nix`. The locked
+NUR download for 4.4.5.3 was removed from the publisher's rolling upload list.
+When updating this override, verify the XPI against the publisher's
+`release-hashes.txt` and preserve its extension ID and signature. A source pin
+still depends on the publisher retaining that Git object.
+
 No password-manager extension is selected because the repository does not know
 which password manager the owner trusts. Install one only after choosing the
 manager and reviewing its publisher and requested permissions.

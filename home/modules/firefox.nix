@@ -2,6 +2,19 @@
 
 let
   addons = pkgs.nur.repos.rycee.firefox-addons;
+  # The locked NUR recipe points at a release removed from the publisher's
+  # rolling uploads. Fetch the signed replacement from a specific Git commit;
+  # GitFlic's raw-file endpoint does not honor commit query parameters.
+  bypassPaywallsSource = pkgs.fetchgit {
+    url = "https://gitflic.ru/project/magnolia1234/bpc_uploads.git";
+    rev = "79727767649c52fb9f2ff6722a8b77fffcbe9058";
+    sparseCheckout = [ "bypass_paywalls_clean-4.4.5.6.xpi" ];
+    hash = "sha256-d+d6/plH5GTp2iCNSrukwnTnyTaWNgXzDjZX0XWqERs=";
+  };
+  bypassPaywallsClean = addons.bypass-paywalls-clean.overrideAttrs {
+    name = "bypass-paywalls-clean-4.4.5.6";
+    src = "${bypassPaywallsSource}/bypass_paywalls_clean-4.4.5.6.xpi";
+  };
 in
 {
   programs.firefox = {
@@ -249,7 +262,7 @@ in
           privacy-badger
           enhancer-for-youtube
           decentraleyes
-          bypass-paywalls-clean
+          bypassPaywallsClean
           skip-redirect
           multi-account-containers
         ];
