@@ -1,5 +1,21 @@
 # Update review — 2026-09-28
 
+**2026-10-05 installer and software follow-up:** Added capacity checks before
+erasure, exact EFI partition validation, a contract derived from evaluated
+Disko, guarded non-formatting recovery, and a persistent source/disk/layout
+record. Upgrade instructions now pause between temporary testing and permanent
+activation. A disposable VM test covers the installation/recovery/boot/login
+path; check the PR's CI for execution results.
+
+Added selectable development/language/AI/browser/editor/personal-app groups,
+project-local development shell templates, Just, ShellCheck, shfmt, fzf,
+zoxide, delta, LibreOffice Qt, Thunderbird, KDE Connect and Syncthing. KDE
+Connect login autostart and new firewall openings are disabled; Syncthing is
+started manually. Restic is excluded. Open WebUI now uses an interactive,
+signup-disabled administrator bootstrap with startup verification and credential
+cleanup. Its root-snapshot retention is documented. No workload speedup is
+claimed without laptop measurements.
+
 **2026-10-04 workstation additions:** Added stable Wine WoW64/Winetricks,
 KeePassXC with Firefox integration and documented 1Password 1PUX/passkey migration
 limits, direnv/nix-direnv, NH, mpv hardware decoding, and localhost on-demand Open

@@ -1,6 +1,6 @@
 # Installation adversarial review
 
-Reviewed on 2026-10-04. Scope: the fresh-install stages, their shared helpers,
+Reviewed on 2026-10-04 and 2026-10-05. Scope: the fresh-install stages, their shared helpers,
 the existing-system upgrade route, packaging, CI, and installation documentation.
 This is a review record, not certification of a physical installation.
 
@@ -29,10 +29,17 @@ an untracked-file warning was resolved by staging the new files for the flake.
 | An absolute target system-profile symlink could appear missing from the live ISO. | Recognize the symlink and validate the account inside the installed target. |
 | Tool output assumptions were wrong. | Request an explicit `lsblk` tree; select swap columns with `--show=NAME,SIZE` (`--output` abbreviates `--output-all`); archive rather than rely on a potentially unrealized metadata path. The real Linux inventory check caught the swap-column error before installation. |
 | Fresh-install, upgrade, and recovery instructions overlapped. | Separate routes and explain which commands are valid after partial installation. Clone and rebuild sequences stop on failures. |
+| A disk smaller than the fixed swap/layout could be erased before allocation failed. | Check the evaluated EFI/swap sizes plus root/metadata headroom before presenting the erase confirmation. |
+| A different same-disk FAT partition could pass EFI mount checks. | Require the exact evaluated partition number, GPT label and ESP type. |
+| A separately maintained mount table could drift from Disko. | Project a JSON-safe contract from evaluated Disko and derive sizes, subvolumes and mount options from it; reject unsupported topology before formatting. |
+| Recovering interrupted mounts required manual LUKS/LVM commands without source provenance. | Add a guarded `recover` stage and persistent record binding reviewed source, disk and layout. Preserve valid mounts and refuse conflicting state; never format during recovery. |
+| A pasted upgrade block promoted a generation after merely listing failures. | Separate temporary activation and operator verification from permanent promotion; explain that `systemctl --failed` is not a success gate. |
+| Software groups could remain installed indirectly through editors or system services. | Gate both Home Manager and NixOS integration and language-server references; evaluate minimal and Python-only variants. |
+| WebUI's open first-signup window required manual follow-up and could race startup. | Keep signup closed, create the first administrator through a root-private runtime file, wait for HTTP plus database confirmation, and restart without the credential environment. Cover cleanup and retry failures. |
 
 ## Evidence and remaining limits
 
-- The synthetic suite contains 24 tests, including fault paths; it passes
+- The synthetic installer suite contains 32 tests, including fault paths; it passes
   locally and through the packaged Apple Silicon Nix check.
 - The real Git/Nix source regression verifies an existing immutable snapshot,
   staged settings, exclusion of ignored/untracked files and Git history, and
@@ -42,10 +49,17 @@ an untracked-file warning was resolved by staging the new files for the flake.
 - Linux CI runs the synthetic suite, the packaged command's help, actual
   read-only `lsblk`/`findmnt`/`swapon` checks, and the source regression before
   the existing full system build. Consult the PR's checks for the current run.
+- Eleven WebUI bootstrap fixture tests cover private runtime files, existing
+  accounts, empty databases, readiness, restart, timeout and signal cleanup.
+- The `installer-vm` check exercises real partitioning, interruption recovery,
+  installation, UEFI boot, LUKS unlock and login on a disposable virtual disk.
+  It uses the production storage layout with a minimal test OS; see the precise
+  coverage and limits in [validation.md](validation.md). CI status is the
+  execution evidence, distinct from evaluating the test derivation on macOS.
 
-No review or test here formats a real disk, installs or activates this system,
-tests a LUKS password, reboots the laptop, or verifies its hardware. The utility
-checks do not prove the final laptop's LVM ancestry. Confirm the actual disk,
+No review or test here formats a physical disk, activates the laptop configuration,
+reboots the laptop, or verifies its hardware. VM tests and utility checks do not
+prove the final laptop's LVM ancestry or hardware behavior. Confirm the actual disk,
 layout, login, boot, networking, and hardware through the installation and
 first-boot guides. The supported destructive environment is deliberately
 limited to the standard NixOS UEFI ISO; unsupported live layouts stop.

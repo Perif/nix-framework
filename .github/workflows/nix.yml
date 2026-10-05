@@ -111,6 +111,20 @@ jobs:
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
+      - name: Reclaim space from unused hosted-runner toolchains
+        if: runner.environment == 'github-hosted'
+        shell: bash
+        run: |
+          df -h /
+          # The VM closure and disposable image need the same free space as
+          # the system build. Preserve action runtimes and the hosted tool cache.
+          for toolchain in /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift; do
+            if [[ -d "$toolchain" ]]; then
+              sudo du -sh -- "$toolchain"
+              sudo rm -rf -- "$toolchain"
+            fi
+          done
+          df -h /
       - name: Install Nix
         uses: cachix/install-nix-action@51f3067b56fe8ae331890c77d4e454f6d60615ff # v31.10.2
         with:

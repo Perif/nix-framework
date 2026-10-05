@@ -14,7 +14,7 @@ Existing systems must use the upgrade path and never run the format stage.
 5. [Verify the first boot](install/first-boot.md).
 
 Source stages default to the current reviewed checkout; pass `--config PATH`
-to `preflight`, `plan`, `format`, `mounts`, or `install` when it is elsewhere.
+to `preflight`, `plan`, `format`, `recover`, `mounts`, or `install` when it is elsewhere.
 The `account` stage instead reads `/mnt/etc/nixos` directly. Each stage reads
 settings afresh; there are no shell-variable handoffs. Review the source before
 any `nix run` from that checkout. Untracked and ignored files are excluded from

@@ -119,7 +119,6 @@ in
         disko.outPath
         disko.packages.x86_64-linux.default
         target.config.system.build.toplevel
-        target.config.system.build.toplevel.drvPath
         target.config.system.build.diskoScript
       ];
     };

@@ -24,7 +24,7 @@ rebuild to remove groups or individual optional applications:
 
 All switches default to `true` to preserve the existing installation. Project
 versions and project-only tools belong in each repository's Nix `devShell`; see
-the language-specific examples in the repository `flake.nix` when available.
+the [project template and language shells](MODULARITY.md#project-local-development-environments).
 
 KDE Connect and Syncthing are installed as applications only. This configuration
 does not enable a Syncthing service or open firewall ports. KDE Connect uses
@@ -41,7 +41,10 @@ networking.firewall.interfaces."wlp0s20f3" = {
 ```
 
 Do not add the range to the global firewall, and remove the interface rule when
-you no longer need pairing. This profile masks KDE Connect's login autostart
+you no longer need pairing. An interface rule applies to **every network on that
+interface**, not a particular Wi-Fi SSID: remove it before using that adapter on
+an untrusted network, or use a dedicated trusted VPN interface and pair by IP.
+This profile masks KDE Connect's login autostart
 entry; launch it from the application menu only when you want to use it. Manual
 launch may D-Bus-activate its user daemon. This profile does not enable the
 NixOS KDE Connect firewall module.
