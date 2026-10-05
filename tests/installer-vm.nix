@@ -205,6 +205,10 @@ in
         installer.succeed("${python}/bin/python ${./installer-vm/drive-stage.py} recover", timeout=900)
         installer.succeed("grep -qx preserved /mnt/home/recovery-canary; cmp /root/original-record.json /mnt/etc/nix-framework-installer.json")
     with subtest("install and create login credentials"):
+        # nixos-install builds in the target's separate store. Seed that store
+        # with the prebuilt closure so this offline fixture needs no downloads.
+        # The production stage still evaluates, installs and activates it.
+        installer.succeed("nix copy --to 'local?root=/mnt' ${target.config.system.build.toplevel}", timeout=300)
         installer.succeed("installer --config /root/config install", timeout=900)
         installer.succeed("${python}/bin/python ${./installer-vm/drive-stage.py} account", timeout=300)
         installer.succeed("sync")

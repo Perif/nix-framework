@@ -55,7 +55,10 @@ an untracked-file warning was resolved by staging the new files for the flake.
 - The `installer-vm` check exercises real partitioning, interruption recovery,
   installation, UEFI boot, LUKS unlock and login on a disposable virtual disk.
   It uses the production storage layout with a minimal test OS; see the precise
-  coverage and limits in [validation.md](validation.md). CI status is the
+  coverage and limits in [validation.md](validation.md). The offline fixture
+  copies its prebuilt OS closure into the target store before invoking the real
+  install stage, which still evaluates and activates the system and bootloader.
+  CI status is the
   execution evidence, distinct from evaluating the test derivation on macOS.
 
 No review or test here formats a physical disk, activates the laptop configuration,
