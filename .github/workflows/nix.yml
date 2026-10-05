@@ -1,0 +1,67 @@
+name: NixOS validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nixos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  x86_64-linux:
+    name: Evaluate and build x86_64-linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out the configuration
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@51f3067b56fe8ae331890c77d4e454f6d60615ff # v31.10.2
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Test laptop power-management helpers
+        run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
+
+      - name: Test the production Git security hook
+        run: nix build .#checks.x86_64-linux.git-security --no-link --print-build-logs
+
+      - name: Scan fetched Git history for credentials
+        run: nix shell --inputs-from . nixpkgs#gitleaks -c gitleaks git --redact --log-opts=--all
+
+      - name: Scan the current committed tree for PII
+        shell: bash
+        run: |
+          scan_dir="$(mktemp -d)"
+          trap 'rm -rf -- "$scan_dir"' EXIT
+          git archive HEAD | tar -x -C "$scan_dir"
+          git -C "$scan_dir" init -q
+          git -C "$scan_dir" add --all
+          cd "$scan_dir"
+          python3 home/modules/git-hooks/staged-pii-scan.py
+
+      - name: Select non-destructive CI settings
+        run: |
+          sed -i 's|/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID|/dev/disk/by-id/ci-validation-disk|' settings.nix
+          sed -i 's|    qbz = true;|    qbz = false;|' settings.nix
+
+      - name: Evaluate every flake output
+        run: nix flake check --no-build --all-systems
+
+      - name: Build the complete NixOS system
+        run: |
+          host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"
+          nix build ".#nixosConfigurations.${host}.config.system.build.toplevel" \
+            --no-link \
+            --print-build-logs

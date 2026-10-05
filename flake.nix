@@ -21,11 +21,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # QBZ: native Qobuz client. Upstream documents its own flake as the
-    # freshest Nix packaging path. It is built from source on this machine;
-    # see README "Destructive install".
+    # Current upstream removed flake.nix. Retain the known-working flake
+    # revision until a replacement packaging path is validated.
     qbz = {
-      url = "github:vicrodh/qbz";
+      url = "github:vicrodh/qbz/aa5690e4491507976b56a982025eb4b38ec8e064";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -63,6 +62,9 @@
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
+      packages.x86_64-linux.ollaya =
+        (import nixpkgs { system = "x86_64-linux"; }).callPackage ./pkgs/ollaya.nix
+          { };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
         system:
@@ -74,6 +76,22 @@
           };
         in
         {
+          power-management =
+            pkgs.runCommand "power-management-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.bash
+                  pkgs.shellcheck
+                ];
+              }
+              ''
+                shellcheck ${./modules/nixos/scripts/ac-maintenance.sh} ${./modules/nixos/scripts/charge-limit.sh}
+                python3 ${./tests/test_power_management.py} \
+                  --maintenance ${./modules/nixos/scripts/ac-maintenance.sh} \
+                  --charge ${./modules/nixos/scripts/charge-limit.sh}
+                touch "$out"
+              '';
           git-security =
             pkgs.runCommand "git-security-integration-tests"
               {

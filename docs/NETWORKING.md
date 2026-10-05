@@ -284,3 +284,41 @@ replies work without an inbound rule.
 - [UniFi gateway ad blocking](https://help.ui.com/hc/en-us/articles/9794438523799-UniFi-Gateway-Ad-Blocking)
 - [WireGuard quick start](https://www.wireguard.com/quickstart/)
 - [Mullvad encrypted-DNS service notice](https://mullvad.net/en/help/dns-over-https-and-dns-over-tls)
+
+## Optional Wi-Fi power-saving override
+
+`settings.nix` provides a three-way NetworkManager default:
+
+```nix
+network.wifiPowerSave = null;
+```
+
+| Value | Behavior |
+| --- | --- |
+| `null` (default) | Do not set an extra global power-saving policy. |
+| `false` | Disable Wi-Fi power saving; a reliability troubleshooting option. |
+| `true` | Enable Wi-Fi power saving; may affect latency or reliability. |
+
+An [Intel BE211 Series 3 user configuration](https://github.com/jbrake/nixos-config/blob/main/hosts/framework-intel-core-ultra/configuration.nix)
+disables it for recurring `iwlmld` beacon-loss disconnects. That observation is
+not proof your laptop needs the workaround. Start with `null`; inspect
+`journalctl -b -k` for repeated disconnect/beacon-loss symptoms first.
+
+After changing the value and rebuilding, reconnect Wi-Fi to apply the policy.
+NetworkManager maps false to `wifi.powersave=2` and true to `wifi.powersave=3`
+in its global connection defaults. A saved connection's explicit override
+still wins. Inspect it with:
+
+```bash
+nmcli connection show --active
+nmcli -g 802-11-wireless.powersave connection show 'YOUR_CONNECTION_NAME'
+sudo NetworkManager --print-config
+```
+
+A saved value of `0` means use the global default; `1` means leave the current
+setting unchanged. If you previously set a per-connection override and want
+this Nix default to apply, deliberately set that connection back to `0` in
+NetworkManager, then reconnect. Returning the Nix option to `null` removes the
+global override after rebuilding; it does not erase custom saved profiles.
+Disabling power saving may increase battery draw; compare reliability and
+battery use before retaining it.

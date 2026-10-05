@@ -205,6 +205,10 @@ a model or changing its context limit.
 
 ## 8. Complete Sublime's one-time package bootstrap
 
+Sublime is pinned to stable build 4213 independently of the system lock.
+After rebuilding, `subl --version` should report 4213. Python 3.3 is explicitly
+disabled and its host removed; do not re-enable it for outdated plugins.
+
 Launch Sublime Text, select **Tools > Install Package Control**, and restart it.
 The managed settings then install only EditorConfig, LSP, the syntax-only Nix
 package, and Package Control. The Python, Go, Rust, and Nix language servers are

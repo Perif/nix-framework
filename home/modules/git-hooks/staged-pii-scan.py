@@ -17,7 +17,9 @@ HUNK_RE = re.compile(rb"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 SSN_RE = re.compile(
     r"(?<!\d)(?!000|666|9\d{2})(\d{3})[- ](?!00)(\d{2})[- ](?!0000)(\d{4})(?!\d)"
 )
-CARD_RE = re.compile(r"(?<![A-Za-z0-9])(?:\d[ -]?){12,18}\d(?![A-Za-z0-9])")
+# Do not interpret a decimal's integer/fractional digits as a standalone card.
+# A sentence-ending period remains valid punctuation around a card candidate.
+CARD_RE = re.compile(r"(?<![A-Za-z0-9])(?<!\d\.)(?:\d[ -]?){12,18}\d(?![A-Za-z0-9])(?!\.\d)")
 IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b", re.IGNORECASE)
 EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@([A-Z0-9.-]+\.[A-Z]{2,})\b", re.IGNORECASE)
 PHONE_RE = re.compile(

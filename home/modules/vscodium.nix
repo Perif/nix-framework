@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, settings, ... }:
 
 {
   programs.vscodium = {
@@ -185,8 +185,8 @@
           - edit
           - apply
         defaultCompletionOptions:
-          contextLength: 8192
-          maxTokens: 2048
+          contextLength: ${toString settings.ai.contextLength}
+          maxTokens: ${toString settings.ai.maxOutputTokens}
         requestOptions:
           noProxy:
             - 127.0.0.1
@@ -201,8 +201,8 @@
           - edit
           - apply
         defaultCompletionOptions:
-          contextLength: 8192
-          maxTokens: 2048
+          contextLength: ${toString settings.ai.contextLength}
+          maxTokens: ${toString settings.ai.maxOutputTokens}
         requestOptions:
           noProxy:
             - 127.0.0.1

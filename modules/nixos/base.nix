@@ -50,6 +50,7 @@ in
       # hardware address across networks without breaking DHCP leases on every
       # reconnect.
       wifi = {
+        powersave = settings.network.wifiPowerSave;
         scanRandMacAddress = true;
         macAddress = "stable-ssid";
       };
@@ -154,6 +155,7 @@ in
   boot.initrd.systemd.enable = true;
 
   services.fwupd.enable = true;
+  services.hardware.bolt.enable = settings.features.thunderbolt;
 
   services.fstrim = {
     enable = true;

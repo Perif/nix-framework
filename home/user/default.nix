@@ -6,6 +6,7 @@
     ../modules/browsers.nix
     ../modules/privacy.nix
     ../modules/plasma-security.nix
+    ../modules/power.nix
     ../modules/ghostty.nix
     ../modules/vim.nix
     ../modules/sublime.nix
@@ -16,6 +17,8 @@
     ../modules/vscodium.nix
     ../modules/strawberry.nix
     ../modules/dc-elite.nix
+    ../modules/display-color.nix
+    ../modules/easyeffects.nix
   ]
   ++ lib.optional settings.features.qbz ../modules/qbz.nix;
 

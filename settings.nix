@@ -98,6 +98,66 @@
     # and verify local Secure Boot keys by following docs/INSTALL.md, then set
     # this to true before enabling Secure Boot in firmware.
     secureBoot = false;
+
+    # Optional Thunderbolt/USB4 authorization daemon for docks that need it.
+    # This does not automatically authorize unknown devices.
+    thunderbolt = false;
+  };
+
+  # Plasma applies these on login and when the power source changes. PPD owns
+  # Intel EPP/platform policy; do not also run TLP or a governor-switching script.
+  power = {
+    acProfile = "performance";
+    batteryProfile = "balanced";
+    lowBatteryProfile = "power-saver";
+    maintenanceOnAC = true; # Defer GC/scrub on battery, retry pending work on AC.
+    chargeLimit = 80; # 1..100, or null to leave firmware/Plasma in control.
+  };
+
+  network = {
+    # null: NetworkManager default; false: disable power saving as a Wi-Fi
+    # reliability workaround; true: enable power saving. See docs/NETWORKING.md.
+    wifiPowerSave = null;
+  };
+
+  ai = {
+    # A bounded starting point for 32 GiB shared CPU/GPU memory, not a RAM cap.
+    contextLength = 8192;
+    maxOutputTokens = 2048;
+    maxLoadedModels = 1;
+    parallelRequests = 1;
+    keepAlive = "5m";
+    # f16 preserves quality. q8_0 halves KV storage where Flash Attention works;
+    # benchmark model quality/latency before changing it. FA stays auto-detected.
+    kvCacheType = "f16";
+    ollaya = {
+      enable = true;
+    };
+  };
+
+  # Profile selection installs a stable alias; apply it in Plasma afterward.
+  # "native" requires selecting the default/no-ICC mode in Plasma explicitly.
+  display = {
+    profile = "notebookcheck"; # "notebookcheck", "native", or "custom"
+    iccProfile = null; # For "custom", e.g. ./assets/color/my-panel.icc
+    # Additional measured profiles to install for comparison in Plasma.
+    # Example: studio = ./assets/color/my-panel-120nits.icc;
+    extraIccProfiles = { };
+  };
+
+  # Optional declarative EasyEffects autoload binding. Copy both exact fields
+  # from a speaker-only rule made in EasyEffects (docs/AUDIO.md). Until then,
+  # the preset is installed but must be selected/associated in the GUI.
+  # Do not use a headphone route or a generic sound-card profile here.
+  audio = {
+    # Available: "FW13SpeakersV2-Loudness", "FW13Pro-EQ-Limiter",
+    # "FW13Pro-bit0fun", "Flat", or "Custom" (requires customPreset).
+    # All bundled presets remain available in the GUI. This chooses the
+    # declarative speaker autoload rule when device and route are both set.
+    speakerPreset = "FW13SpeakersV2-Loudness";
+    customPreset = null; # EasyEffects output JSON, e.g. ./assets/audio/mine.json
+    speakerDevice = null;
+    speakerRoute = null;
   };
 
   git = {

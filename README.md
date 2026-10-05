@@ -14,6 +14,8 @@ Target:
 - fingerprint authentication for login and session unlock; password-only sudo
 - declarative five-minute Plasma auto-lock and immediate lock after resume
 - PipeWire desktop audio
+- EasyEffects with a pinned Framework 13 Pro speaker preset and Flat fallback
+- Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
 - PCM through 768 kHz where source + ALSA device support it
 - Sublime Text / Sublime Merge
@@ -21,6 +23,8 @@ Target:
 - Vim / Neovim
 - Ghostty
 - llama.cpp / on-demand loopback-only Ollama Vulkan
+- Ollaya decision models on Intel CPU, with an on-demand local user service
+- automatic Plasma power profiles: performance on AC, balanced on battery
 - rootless Podman
 - Home Manager
 - hardened Firefox privacy profile with declarative extensions
@@ -117,6 +121,17 @@ needs editing when these change:
 - `features.qbz`: include or defer the resource-intensive QBZ build
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
+- `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma
+- `display.iccProfile`, `display.extraIccProfiles`: your own calibration and
+  optional additional ICCs for comparison; see [display options](docs/DISPLAY.md#profile-options)
+- `audio.speakerPreset`, `audio.customPreset`: choose among four bundled
+  presets or your own output JSON; see [audio options](docs/AUDIO.md#choosing-another-preset)
+- `audio.speakerDevice`, `audio.speakerRoute`: optional exact speaker autoload
+  association for EasyEffects; configure both together
+- `ai`: local-model context, output and concurrency defaults, plus Ollaya enablement
+- `power`: AC/battery profiles, AC-only maintenance starts, and battery charge cap
+- `network.wifiPowerSave`: optional Wi-Fi power saving (`null`, `false`, or `true`)
+- `features.thunderbolt`: optional Bolt dock authorization (off by default)
 - `git.userName`, `git.userEmail`: git identity
 
 ### Password
@@ -147,6 +162,14 @@ NixOS hardware, NUR, QBZ, Disko, Home Manager, and Lanzaboote all follow the
 same pinned Nixpkgs revision. This removes redundant package-set evaluations and
 prevents those inputs from silently using different library versions.
 
+The 2026-09-28 refresh updates Nixpkgs, Home Manager, nixos-hardware, Disko and
+NUR. QBZ is explicitly retained at its working flake revision because current
+upstream removed `flake.nix`. See [update notes](docs/UPDATES.md).
+
+After activation, follow [display setup](docs/DISPLAY.md) to verify the panel
+and select its ICC, and [speaker setup](docs/AUDIO.md#easyeffects-speaker-preset)
+to associate the preset with the actual speaker device and route.
+
 Do not routinely change `system.stateVersion` or `home.stateVersion`; those
 values represent compatibility state, not the version you are upgrading to.
 
@@ -176,9 +199,12 @@ Do not copy the Disko command out of context. It erases the configured drive.
 
 ### Sublime Text compatibility boundary
 
-Nixpkgs' regular Sublime Text build 4200 still links both plug-in hosts to
-end-of-life OpenSSL 1.1. This configuration instead pins build 4205, substitutes
-OpenSSL 3, and removes the legacy Python 3.3 plug-in host and standard library.
+The locked Nixpkgs defaults are older than the current stable editor. This
+configuration reuses that packaging recipe with a targeted, hash-pinned stable
+build 4213 (21 September 2026), without updating the system lock. It substitutes
+OpenSSL 3, removes the legacy Python 3.3 plug-in host and standard library, and
+explicitly sets `disable_plugin_host_3.3 = true`. Build-time checks reject
+OpenSSL 1.1 dependencies in the surviving editor/plugin-host binaries and Python.
 The editor and Python 3.14 plug-in host remain available without permitting an
 insecure Nix package. A plug-in that explicitly requires the old 3.3 host will
 fail to load and should be upgraded or replaced.
@@ -224,21 +250,19 @@ the installation guide.
 
 ## Validation status
 
-The complete NixOS/Home Manager derivation passed
-`nix flake check --no-build --all-systems` with Nix 2.35.2 on 2026-09-08 using a validation-only disk value
-and QBZ enabled. The exact generated DNS YAML also passed the pinned Blocky
-0.29.0 parser, and all generated Sublime settings passed JSON parsing. No full
-Linux system or QBZ build was run on this ARM macOS validation host. The
-checked-in disk sentinel intentionally makes normal evaluation fail until it is
-replaced with the installation target's stable by-id path.
+The updated complete NixOS/Home Manager derivations evaluated on 2026-09-28
+with QBZ enabled and a validation-only disk value;
+`nix flake check --no-build --all-systems` also passed. All nine production
+Git-security integration tests passed on aarch64-darwin. The evaluated closure
+includes Linux 7.2.8, Plasma 6.6.6, EasyEffects 8.2.4, Brave 1.95.104,
+ungoogled Chromium 154.0.8037.57, and the retained QBZ 2.0.2.
 
-The evaluated closure includes VSCodium 1.116.02821, Brave 1.94.117, ungoogled
-Chromium 152.0.7977.82, twelve immutable VSCodium extensions, both loopback
-model providers, managed Vim/VSCodium/Sublime settings, Blocky, the configured-
-user Plasma lock policy, the password-only sudo/fingerprint-unlock PAM split,
-and an Ollama unit without a boot target. Runtime desktop, service, DNS, editor,
-and browser behavior still needs first-boot verification on the x86_64-linux
-laptop.
+The ICC and speaker-preset files passed structural and checksum checks. No
+full Linux system build, activation, display calibration measurement, or
+audio hardware test was performed on this ARM macOS host. The checked-in disk
+sentinel intentionally prevents installation until replaced with the verified
+target's stable by-id path. See [current update notes](docs/UPDATES.md) for the
+QBZ packaging limitation and remaining laptop checks.
 
 Run the validation section in `docs/INSTALL.md` before the destructive step.
 

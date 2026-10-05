@@ -2,15 +2,15 @@
 
 The configuration favors sustained laptop performance and desktop
 responsiveness rather than benchmark-only kernel tweaks. It keeps all CPU
-security mitigations enabled, respects firmware thermal limits, and leaves the
-power profile under explicit user control.
+security mitigations enabled, respects firmware thermal limits, and applies configurable
+power profiles when AC/battery state changes.
 
 ## Existing optimized baseline
 
 The build already provides:
 
 - the Framework Laptop 13 Pro Intel Core Ultra Series 3 hardware module;
-- the latest pinned kernel, currently 7.2.3, above Framework's recommended
+- the latest pinned kernel, currently 7.2.8, above Framework's recommended
   kernel level for this generation;
 - Intel microcode plus Mesa, Vulkan, VA-API, OneVPL, and Intel compute runtimes
   supplied by `nixos-hardware`;
@@ -22,8 +22,9 @@ The build already provides:
 - weekly Nix-store deduplication outside the package-install critical path.
 
 Those existing defaults are not duplicated in the local modules. In
-particular, no CPU governor, Intel GPU driver, IRQ affinity, or Nix job count is
-forced without measurements from the installed machine.
+particular, no CPU frequency, IRQ affinity, or Nix job count is forced without
+measurements from the installed machine. The Series 3 GPU is explicitly selected
+for early initialization as described below.
 
 ## Added optimizations
 
@@ -142,26 +143,61 @@ at boot. Ollama retains its loopback-only, systemd-sandboxed service definition
 but must be started with `ollama-on` and stopped with `ollama-off`. llama.cpp is
 a user-started process. This prevents an unused local-model daemon from
 occupying memory or exposing an idle HTTP parser, while retaining one-command
-startup when needed.
+startup when needed. Ollaya is also available as an on-demand user service for
+decision models, using the Intel CPU.
 
-The VSCodium Continue profile limits each request to an 8,192-token context and
+The shared `settings.ai` defaults give Continue an 8,192-token context and
 2,048 generated tokens. Automatic tab completion, next-edit prediction, and
 startup codebase indexing are disabled or paused, avoiding constant inference
 while editing. Chat, edit, apply, and agent requests remain available on
 demand. See `docs/LOCAL-AI-DEVELOPMENT.md` for setup and measured adjustment.
 
-On AC power, a sustained local inference or compilation session can use the
-temporary performance-profile command below. Daily editing should remain on
-`balanced`. Running Ollama and a large llama.cpp server simultaneously is not
-an optimization on a 32 GiB laptop unless measured resident memory leaves
-comfortable headroom for Plasma and the browser. Stop Ollama after the session
-instead of leaving it active merely because it has unloaded the model.
+Running several large local model runtimes simultaneously is not an optimization
+on a 32 GiB laptop unless measured resident memory leaves comfortable headroom
+for Plasma and the browser. Ollama now defaults to one resident model and one
+parallel request. See the AI guide for GPU-offload verification, CPU/Vulkan
+benchmarks, Ollaya's Intel limitations and optional KV-cache quantization.
 
-## Select performance only when needed
+## Automatic AC and battery profiles
 
-Keep `balanced` as the daily profile and use Plasma's power control or
-`powerprofilesctl` when a plugged-in workload needs the larger thermal and
-power budget:
+Plasma PowerDevil uses these `settings.nix` defaults at login and when the power
+source or low-battery state changes:
+
+| Power source | Profile |
+| --- | --- |
+| AC | `performance` |
+| Battery | `balanced` |
+| Low battery | `power-saver` |
+
+Home Manager writes `PowerProfile` in the `[AC][Performance]`,
+`[Battery][Performance]` and `[LowBattery][Performance]` groups of
+`~/.config/powerdevilrc`. It also sets `SleepMode=3`, `LidAction=1`,
+`PowerButtonAction=1` and `InhibitLidActionWhenExternalMonitorPresent=true` under
+`[AC][SuspendAndShutdown]` and the corresponding Battery/LowBattery groups.
+Plasma therefore uses suspend-then-hibernate for lid closure and the power
+button, and suppresses lid suspension with an external monitor. Brightness,
+auto-suspend action and idle timeout preferences remain unchanged; when the
+idle action is Sleep, it uses this sleep mode too. These managed settings
+replace previous GUI choices at activation. Log out/in after rebuilding to
+load the policy. Plasma applies
+this policy during your desktop session; it is not a console-only or pre-login
+AC-switching service. PowerDevil's default low-battery threshold is 10%, unless
+you have changed it in Plasma.
+
+Change `power.acProfile` to `balanced` for cooler/quieter daily plugged-in use;
+change `power.batteryProfile` to `power-saver` for a stronger battery preference.
+GUI edits of the managed power-profile and sleep/lid choices are replaced on
+the next Home Manager activation. Temporary manual selection remains available until another profile
+transition or reload. Only select `performance` if `powerprofilesctl list`
+reports it supported; if unavailable, configure `balanced` for AC.
+
+This controls Intel's supported energy-performance and platform policy through
+power-profiles-daemon. It does not need a second daemon writing raw governors.
+With active `intel_pstate`, a `powersave` governor can still boost dynamically;
+its name is not proof that the CPU is running at minimum speed. Avoid adding
+TLP, auto-cpufreq or scripts that compete for the same controls.
+
+Inspect or temporarily select a profile:
 
 ```bash
 powerprofilesctl list
@@ -169,13 +205,15 @@ powerprofilesctl get
 powerprofilesctl set performance
 ```
 
-Return to the balanced profile afterward:
+For a temporary cooler setting:
 
 ```bash
 powerprofilesctl set balanced
 ```
 
-For one command, hold the performance profile only for that process lifetime:
+If AC is configured as `balanced`, a command can hold `performance` for its
+lifetime. Launching an Ollama CLI client alone does not scope the separate
+server lifetime; stop inference when you finish:
 
 ```bash
 powerprofilesctl launch \
@@ -189,9 +227,100 @@ The performance profile may be unavailable or reported as degraded when the
 platform driver, temperature, charger, or safety state does not permit it. Do
 not override that condition with a forced CPU frequency.
 
+## Xe graphics and modern video acceleration
+
+The Series 3/Xe3 configuration now sets:
+
+```nix
+hardware.intelgpu = {
+  driver = "xe";
+  vaapiDriver = "intel-media-driver";
+};
+```
+
+The pinned hardware module uses `driver` to load Xe in the initrd. It does not
+add `force_probe` or blacklist i915. The modern VA-API selection removes legacy
+i965 packages while retaining the modern media, Intel compute and VPL runtimes,
+including the configured 32-bit media support. This is hardware-specific
+cleanup and early graphics initialization, not a measured AI throughput gain.
+Use `lspci -nnk` and `vainfo` after reboot to confirm the actual driver and codecs.
+
+## Deferred maintenance on AC
+
+`power.maintenanceOnAC = true` gates Nix garbage collection and Btrfs scrubbing
+at service start. Their weekly/monthly schedules and upstream scrub
+cancellation remain intact. A job triggered on battery records a pending marker
+in `/var/lib/ac-maintenance`, then skips without a failure. Every 15 minutes
+(with up to one minute of timer coalescing), an AC-only retry service starts
+pending jobs. Markers survive reboot and clear only after successful completion;
+failures and interrupted jobs remain pending for retry. No pending job means no
+extra GC or scrub. Retried scrubs start a fresh scrub using the upstream command.
+
+Unplugging does not kill a job already running. This avoids interrupting GC and
+preserves normal scrub lifecycle management. The retry timer does not wake a
+sleeping laptop. Repeated job failures remain visible in the journal and may
+retry each interval on AC; resolve the reported cause. Nix-store optimization
+already has an upstream AC condition and is not modified here.
+
+```bash
+systemctl list-timers ac-maintenance-retry.timer nix-gc.timer 'btrfs-scrub--.timer'
+sudo ls -l /var/lib/ac-maintenance
+journalctl -u nix-gc -u btrfs-scrub-- -u ac-maintenance-retry
+```
+
+Set `power.maintenanceOnAC = false` to restore upstream scheduling. Existing
+pending markers are retained but not retried while disabled; re-enabling may
+run that pending work on AC.
+
+## Battery charge limit
+
+`power.chargeLimit = 80` applies an 80% end-of-charge threshold at boot and when
+the changed service is activated. It loads the already-packaged Framework
+module, writes the supported `BAT*` sysfs interface, and checks its readback.
+This favors battery longevity during plugged-in use; it reduces the charge
+available for travel and does not force a battery above 80% to discharge.
+
+```bash
+systemctl status framework-charge-limit.service
+cat /sys/class/power_supply/BAT*/charge_control_end_threshold
+```
+
+For travel, set `power.chargeLimit = 100` and rebuild. Set it to `null` to remove
+the managed service and let firmware/Plasma control the limit. **Null does not
+reset a limit already stored by firmware**: apply 100 first, or reset it in
+Plasma/firmware. GUI changes can last until the service next runs. If the sysfs
+interface is missing or the firmware rejects the value, the service fails with
+a diagnostic; inspect its journal and Framework driver before trying again.
+
+## Optional dock and Wi-Fi settings
+
+`features.thunderbolt = true` enables Bolt's normal device-authorization
+integration for Thunderbolt/USB4 docks that need it. It defaults to false and
+adds no automatic authorization rules; it is not needed for every USB-C dock.
+With it enabled, use `boltctl list` and Plasma's device authorization controls.
+
+`network.wifiPowerSave` defaults to `null`. Set it to `false` only to disable
+Wi-Fi power saving as a reliability workaround, or `true` to request power
+saving. See [NETWORKING.md](NETWORKING.md#optional-wi-fi-power-saving-override)
+for application, verification and rollback.
+
 ## Verify on the installed laptop
 
-After rebuilding and rebooting, verify the effective components:
+After rebuilding and logging back into Plasma, check `powerprofilesctl get`
+with the charger connected, then disconnected: expect `performance`, then
+`balanced`. Inspect the underlying policy without modifying it:
+
+```bash
+cat /sys/devices/system/cpu/intel_pstate/status
+cat /sys/devices/system/cpu/cpufreq/policy0/scaling_driver
+cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+cat /sys/devices/system/cpu/cpufreq/policy0/energy_performance_preference
+```
+
+These sysfs files depend on the active driver; do not force `intel_pstate` if
+firmware or kernel reports a different configuration. Profile names need not
+produce different `scaling_governor` strings: inspect EPP and actual behavior.
+Also verify the effective components:
 
 ```bash
 uname -r
@@ -232,7 +361,8 @@ The build does not:
 
 - disable CPU vulnerability mitigations;
 - force a CPU frequency or keep the performance profile active on battery;
-- force the `i915` or `xe` driver beyond the current hardware-module default;
+- force GPU binding with `force_probe` or blacklist drivers; selecting Xe for
+  the initrd does not force hardware binding;
 - enable an experimental `sched_ext`, Ananicy, or vendor-specific scheduler;
 - force IRQ affinity without device-specific measurements;
 - enable Btrfs autodefrag on the mixed development, Nix-store, and model-file
@@ -252,3 +382,10 @@ justify them.
 - [Linux VM sysctl documentation](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/vm.html)
 - [Power Profiles daemon](https://upower.pages.freedesktop.org/power-profiles-daemon/)
 - [Linux Intel P-state documentation](https://www.kernel.org/doc/html/latest/admin-guide/pm/intel_pstate.html)
+
+- [Plasma 6.6.6 power-profile schema](https://github.com/KDE/powerdevil/blob/v6.6.6/PowerDevilProfileSettings.kcfg)
+
+- [Series 3 Xe and media-driver example](https://github.com/maxabbot/nix/blob/main/hosts/framework/default.nix)
+- [Series 3 Xe and dock example](https://github.com/lanice/nixhome/blob/main/hosts/longjing/default.nix)
+- [Framework kernel charge-limit interface](https://github.com/DHowett/framework-laptop-kmod#battery-charge-limit)
+- [systemd ExecCondition and completion semantics](https://github.com/systemd/systemd/blob/v260/man/systemd.service.xml)

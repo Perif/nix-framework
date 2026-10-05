@@ -13,6 +13,13 @@
     wayland.enable = true;
   };
 
+  # Panther Lake/Xe3: load Xe early without force_probe or module blacklists.
+  # Retain modern media/compute/VPL support, excluding the legacy i965 driver.
+  hardware.intelgpu = {
+    driver = "xe";
+    vaapiDriver = "intel-media-driver";
+  };
+
   hardware.graphics = {
     enable = true;
     enable32Bit = true;

@@ -661,6 +661,13 @@ systemctl suspend-then-hibernate
 Do not enable TPM2 auto-unlock until cold boot, hibernation, resume, and password
 recovery have all been tested. Continue with `docs/FINGERPRINT-TPM.md` afterward.
 
+Select the matching panel ICC using [display setup](DISPLAY.md), then follow
+[EasyEffects speaker setup](AUDIO.md#easyeffects-speaker-preset) to associate
+the bundled preset with the built-in speaker device and route. Verify that
+switching to headphones selects the Flat fallback. These profiles are
+installed declaratively; the panel and audio-route identities need checking
+on this laptop before use.
+
 For the DC-Elite audio path:
 
 ```bash
@@ -909,6 +916,22 @@ should stay in `.editorconfig`; the four-space global fallback is for files
 without project policy.
 
 ### Sublime Text packages and language servers
+
+The editor is pinned to stable build 4213 (21 September 2026) in
+`home/modules/sublime.nix`, using verified download hashes for x86-64 and ARM64
+Linux. This is a targeted package update; `flake.lock` is unchanged. Rebuild
+normally, fully quit Sublime, reopen it, and check:
+
+```bash
+subl --version
+```
+
+Expect build 4213. The managed setting `"disable_plugin_host_3.3": true`
+keeps plugins on Python 3.14. Legacy Python 3.3 and bundled OpenSSL 1.1 are
+removed, with build-time dependency checks on the surviving binaries. Do not
+enable the legacy host to work around an incompatible plugin. Retest Package
+Control, EditorConfig and each LSP server below; Nix evaluation is not a GUI
+or plugin-runtime test. Release details: [official changelog](https://www.sublimetext.com/download).
 
 On the first launch only, select **Tools > Install Package Control**, then
 restart Sublime Text. The Nix-owned Package Control settings install only:
