@@ -68,7 +68,8 @@ One module is used for an application when it has meaningful configuration:
 - AI CLI/runtime packages
 
 Small unconfigured development binaries are intentionally grouped in
-`dev-tools.nix`. A one-file-per-package scheme would add structure without
+`dev-tools.nix`; qobuz-player and MusicBrainz Picard are grouped in
+`music-tools.nix`. A one-file-per-package scheme would add structure without
 improving ownership or reuse.
 
 ## Package ownership

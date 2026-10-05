@@ -17,6 +17,7 @@ Target:
 - EasyEffects with a pinned Framework 13 Pro speaker preset and Flat fallback
 - Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
+- qobuz-player terminal streaming client and MusicBrainz Picard tag editor
 - PCM through 768 kHz where source + ALSA device support it
 - Sublime Text / Sublime Merge
 - VSCodium with pinned local-agent, Nix, Python, Go, and Rust extensions
@@ -83,6 +84,7 @@ Target:
 │       ├── ai.nix
 │       ├── vscodium.nix
 │       ├── strawberry.nix
+│       ├── music-tools.nix
 │       ├── qbz.nix
 │       └── dc-elite.nix
 └── docs/

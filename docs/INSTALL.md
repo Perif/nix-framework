@@ -673,6 +673,11 @@ dc-elite-alsa-config
 
 Follow `docs/AUDIO.md` before writing the generated ALSA configuration.
 
+Strawberry, qobuz-player and MusicBrainz Picard are installed for the login user.
+Use Strawberry for local playback, follow the [qobuz-player setup](AUDIO.md#qobuz-player--qobine)
+for streaming and explicit DC-Elite device selection, and use Picard for tagging.
+Only one direct-ALSA player can use the DAC at a time.
+
 Keep QBZ disabled unless you have supplied an independently maintained Nix
 package through `qbz.packageFile`. The upstream project and distribution
 channels have closed; the optional integration is documented in the README.

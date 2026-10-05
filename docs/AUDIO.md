@@ -111,6 +111,10 @@ With the speaker association configured, EasyEffects processes desktop output
 before the internal speakers. The DC-Elite remains excluded from WirePlumber,
 so Strawberry/QBZ direct ALSA never enters the EasyEffects pipeline.
 
+Strawberry, qobuz-player and MusicBrainz Picard are installed by default.
+Strawberry handles local playback, qobuz-player provides Qobuz streaming, and
+Picard edits local music tags and cover art. Picard is not the direct-DAC player.
+
 PipeWire is allowed to switch among:
 
 - 44.1 / 48 kHz
@@ -182,6 +186,59 @@ The configuration makes a strict claim only for PCM. Native DSD vs DoP depends
 on Strawberry/GStreamer and the formats exposed by ALSA USB Audio. Verify DSD
 separately instead of assuming native DSD512.
 
+
+## qobuz-player / Qobine
+
+The installed command is `qobuz-player` (0.9.0 in the current lock).
+[Upstream moved to Qobine](https://github.com/SofusA/qobuz-player); its lineage
+started with [hifi.rs](https://github.com/iamdb/hifi.rs). The local package
+override changes the download location to `SofusA/qobine` while preserving
+Nixpkgs' release, source hash and Cargo dependency hash. It does not install
+Qobine's latest development version or its newer split application commands.
+
+Start with browser login and inspect the available output descriptions:
+
+```bash
+qobuz-player login
+qobuz-player list-devices
+```
+
+A paid Qobuz subscription is required. Keep account credentials out of Nix
+configuration. Then copy the exact DC-Elite hardware device description from
+the list into this command (replace the placeholder):
+
+```bash
+qobuz-player open --output-device-id 'EXACT DC-ELITE HARDWARE DEVICE DESCRIPTION'
+```
+
+Despite the flag's name, version 0.9.0 compares the full device description
+printed by `list-devices`; do not assume it accepts a bare ALSA card number or
+the `dc_elite` alias. Select the hardware endpoint, not `default`, PipeWire,
+PulseAudio or a `plughw` conversion endpoint. Stop Strawberry or any other
+direct player before opening the DAC. No player service, web interface or
+Qobuz Connect listener is enabled automatically.
+
+Keep the player's volume at 100% and adjust listening level on the DC-Elite.
+The existing WirePlumber exclusion leaves the DAC available to ALSA. However,
+this release uses Rodio/CPAL, requests the source sample rate and calls
+`open_sink_or_fallback()`: device selection alone is **not a guarantee of
+bit-perfect output**. Check the active hardware rate using the command above
+with 44.1, 48 and 96 kHz tracks. Matching rates are necessary but do not prove
+that sample format conversion or digital processing is absent. Login,
+playback and DAC behavior still require testing on the laptop.
+
+For strict local PCM playback, use the Strawberry setup above. For another
+Qobuz candidate, [Ricercar](https://github.com/ricercar-player/ricercar) documents
+raw `hw:` ALSA output and refusal of unsupported formats; its separate
+[community Qobuz plugin](https://github.com/ricercar-player/ricercar-plugins)
+is unofficial. Neither is installed or hardware-tested by this configuration.
+
+## MusicBrainz Picard
+
+Launch **MusicBrainz Picard** from Plasma or run `picard`. Review album matches,
+metadata and destination filenames before saving changes to your music files,
+then rescan the affected library in Strawberry. No automatic tagging, renaming
+or library changes are configured.
 
 ## QBZ / Qobuz
 

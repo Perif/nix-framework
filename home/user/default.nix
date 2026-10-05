@@ -16,6 +16,7 @@
     ../modules/ai.nix
     ../modules/vscodium.nix
     ../modules/strawberry.nix
+    ../modules/music-tools.nix
     ../modules/dc-elite.nix
     ../modules/display-color.nix
     ../modules/easyeffects.nix

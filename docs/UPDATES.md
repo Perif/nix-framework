@@ -1,5 +1,16 @@
 # Update review — 2026-09-28
 
+**2026-10-04 music applications:** Added qobuz-player 0.9.0 and MusicBrainz
+Picard 2.13.3 alongside the existing Strawberry 1.2.18 installation. The
+qobuz-player source moved to `SofusA/qobine`; a package override fetches the
+same release with the unchanged source and Cargo hashes. A direct download
+from the new repository matched the locked hash, and the Linux player package
+was successfully retrieved from the Nix binary cache (not rebuilt or run on
+this macOS host). Full flake evaluation and the selected Home Manager package
+list passed. [Audio setup](AUDIO.md#qobuz-player--qobine) documents explicit
+DC-Elite selection and the player's format-fallback limitation; Qobuz login
+and physical DAC playback remain untested.
+
 **2026-10-04 availability correction:** QBZ's author
 [closed the project and distribution channels](https://github.com/vicrodh/qbz).
 The former pinned revision returns 404; the September local evaluations below

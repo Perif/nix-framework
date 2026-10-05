@@ -54,6 +54,9 @@
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
+      packages.x86_64-linux.qobuz-player =
+        (import nixpkgs { system = "x86_64-linux"; }).callPackage ./pkgs/qobuz-player.nix
+          { };
       packages.x86_64-linux.ollaya =
         (import nixpkgs { system = "x86_64-linux"; }).callPackage ./pkgs/ollaya.nix
           { };
