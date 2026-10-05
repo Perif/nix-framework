@@ -1,6 +1,6 @@
 {
+  config,
   lib,
-  pkgs,
   settings,
   ...
 }:
@@ -21,7 +21,7 @@
       message = "builds.cores must be null or a nonnegative integer (0 means all cores).";
     }
   ];
-  environment.systemPackages = [ pkgs.linuxPackages.turbostat ];
+  environment.systemPackages = [ config.boot.kernelPackages.turbostat ];
   # Use the firmware-provided Intel DPTF tables to manage sustained power and
   # thermal limits. This complements power-profiles-daemon: PPD selects the
   # requested platform profile, while thermald keeps the CPU inside the

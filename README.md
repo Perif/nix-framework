@@ -130,7 +130,6 @@ needs editing when these change:
 - `builds.maxJobs` / `builds.cores`: optional measured build limits (`null` keeps defaults)
 - `storage.homeSnapshots`: opt-in short-retention home snapshots
 - `ai.webui`: on-demand Open WebUI enablement, port and initial signup policy
-
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
 - `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma

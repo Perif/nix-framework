@@ -164,8 +164,8 @@ nano settings.nix
 ```
 
 The following excerpt shows installation-specific fields to edit in place.
-Do not replace the whole file: retain the existing `power`, `network`, `ai`,
-`display`, `audio`, `qbz` and `features.thunderbolt` settings. Replace every value
+Do not replace the whole file: retain the existing `power`, `builds`, `storage`,
+`network`, `ai`, `display`, `audio`, `qbz` and additional `features` settings. Replace every value
 marked for replacement and use the exact `INSTALL_DISK` value verified above:
 
 ```nix
