@@ -109,6 +109,7 @@ in
       useEFIBoot = true;
       # Nix evaluation reads many Nixpkgs files; avoid slow host-store 9p I/O.
       useNixStoreImage = true;
+      writableStore = true;
       emptyDiskImages = [ (80 * 1024) ];
       # The sparse disposable image is exposed once, as a serial-numbered NVMe.
       qemu.drives = lib.mkForce [
