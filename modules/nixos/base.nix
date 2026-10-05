@@ -13,6 +13,10 @@ in
 {
   assertions = [
     {
+      assertion = builtins.match "[a-z_][a-z0-9_-]{0,31}" user.name != null && user.name != "root";
+      message = "settings.user.name must be a non-root Linux username (lowercase letters, digits, underscore or hyphen).";
+    }
+    {
       assertion = settings.timeZone != null;
       message = "settings.nix: run nix run .#detect-timezone during installation, or set timeZone to an explicit IANA zone.";
     }

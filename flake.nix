@@ -53,6 +53,9 @@
     {
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
+      packages.x86_64-linux.installer = import ./pkgs/installer.nix {
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      };
       packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix {
         pkgs = import nixpkgs { system = "x86_64-linux"; };
       };
@@ -79,6 +82,15 @@
             pkgs.runCommand "qbz-configuration-tests" { } ''
               touch "$out"
             '';
+          installer =
+            pkgs.runCommand "installer-safety-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python3 ${./tests/test_installer.py} --helpers ${./scripts/installer}
+                touch "$out"
+              '';
           install-timezone =
             pkgs.runCommand "install-timezone-tests"
               {

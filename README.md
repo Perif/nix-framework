@@ -190,27 +190,12 @@ values represent compatibility state, not the version you are upgrading to.
 
 ## Installation
 
-Start with [INSTALL.md](INSTALL.md), then follow the canonical detailed
-[docs/INSTALL.md](docs/INSTALL.md) from start to finish. It includes:
-
-- UEFI, network, and installer preparation
-- exact `settings.nix` fields to replace
-- repeated NVMe model/serial/by-id verification
-- pre-destructive Nix and Disko evaluation
-- LUKS, LVM, Btrfs, swap, and mount verification
-- installation with a password that never enters the flake
-- first-boot firmware, fingerprint, session-lock, hibernation, graphics, and
-  audio checks
-- network-randomization, snapshot, scrub, firewall, and timer verification
-- Blocky, encrypted DNS, Tor Browser, and WireGuard client verification
-- Brave, ungoogled Chromium, uBlock Origin Lite, the editor/language toolchain,
-  VSCodium, and local-AI verification
-- Git credential/PII hook verification
-- thermal, power-profile, compressed-memory, and hardware-acceleration checks
-- post-install Framework Secure Boot key creation, signing, and enrollment
-- an optional package hook for an independently maintained QBZ installation
-
-Do not copy the Disko command out of context. It erases the configured drive.
+Choose the correct route in [INSTALL.md](INSTALL.md). The
+[installation index](docs/INSTALL.md) separates fresh installation into source
+review, settings and drive selection, storage, system installation, and
+first-boot checks. Existing systems use the
+[upgrade guide](docs/install/upgrade.md); they must not run the fresh-install
+format stage. Secure Boot and routine customization have separate guides.
 
 ### Sublime Text compatibility boundary
 
@@ -238,12 +223,13 @@ Linux; a successful Nix evaluation does not establish runtime compatibility.
 Both boot modes retain three EFI generations; check `/boot` space around
 kernel updates. Ollama state now uses a separate Btrfs subvolume, outside root
 snapshots. Existing installs must follow the
-[migration procedure](docs/INSTALL.md#one-time-model-storage-migration-for-an-existing-installation)
-before activation; fresh Disko installs create it automatically. SMART warnings
+[migration procedure](docs/install/upgrade.md#one-time-ollama-storage-migration)
+before activation; fresh installs create it automatically. SMART warnings
 persist across logout and notify the configured Plasma user until acknowledged.
-The [installation guide](docs/INSTALL.md) includes the notification test and
-the production Git-hook test commands. CI adds credential-history and PII-tree
-scans. DNS now uses HaGeZi Normal + full TIF with a documented size fallback.
+The [first-boot guide](docs/install/first-boot.md) includes the notification
+test, and [validation](docs/install/validation.md) describes the production
+Git-hook tests and CI scans. DNS now uses HaGeZi Normal + full TIF with a
+documented size fallback.
 
 ## Rebuild
 
@@ -283,7 +269,9 @@ QBZ availability and remaining laptop checks. CI evaluates and builds the same
 default application configuration; a separately supplied QBZ package needs its
 own Linux build/runtime validation.
 
-Run the validation section in `docs/INSTALL.md` before the destructive step.
+Review the [source and settings](docs/install/prepare.md) before the
+[storage plan and format stage](docs/install/storage.md). Repository checks are
+in [the validation guide](docs/install/validation.md).
 
 ## Performance
 

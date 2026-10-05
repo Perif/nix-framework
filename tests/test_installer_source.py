@@ -1,0 +1,44 @@
+"""Exercise the actual Git/Nix snapshot boundary without accessing any disk target."""
+
+import argparse
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--helpers', type=Path, required=True)
+parser.add_argument('--config', type=Path, required=True)
+args = parser.parse_args()
+sys.path.insert(0, str(args.helpers.resolve()))
+import common  # noqa: E402
+
+
+with tempfile.TemporaryDirectory(prefix='installer-source-test-') as temporary:
+    checkout = Path(temporary) / 'config'
+    subprocess.run(['git', 'clone', '--quiet', '--local', '--no-hardlinks',
+                    str(args.config.resolve()), str(checkout)], check=True)
+    settings = checkout / 'settings.nix'
+    settings.write_text(settings.read_text().replace(
+        '/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID', '/dev/disk/by-id/ci-validation-disk'
+    ).replace('timeZone = null;', 'timeZone = "UTC";'))
+    subprocess.run(['git', '-C', str(checkout), 'add', 'settings.nix'], check=True)
+    (checkout / 'untracked-canary').write_text('must not enter source snapshot')
+    (checkout / 'ignored-canary').write_text('must not enter source snapshot')
+    with (checkout / '.git/info/exclude').open('a') as excludes:
+        excludes.write('\nignored-canary\n')
+    config = common.snapshot(checkout)
+    assert config.disk == '/dev/disk/by-id/ci-validation-disk'
+    assert config.source.is_dir()
+    assert (config.source / 'settings.nix').read_bytes() == settings.read_bytes()
+    for excluded in ('.git', 'untracked-canary', 'ignored-canary'):
+        assert not (config.source / excluded).exists(), excluded
+    settings.write_text(settings.read_text() + '\n# Unreviewed edit\n')
+    try:
+        common.snapshot(checkout)
+    except common.Stop as error:
+        assert 'Unstaged' in str(error), str(error)
+    else:
+        raise AssertionError('Unstaged tracked changes must be rejected')
+    print('Real Git/Nix snapshot, staged edits, excluded files, and dirty-tree refusal passed.')

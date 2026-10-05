@@ -49,6 +49,15 @@ jobs:
             min-free = 2147483648
             max-free = 5368709120
 
+      - name: Test staged installer safety and command packaging
+        run: |
+          nix build .#checks.x86_64-linux.installer --no-link --print-build-logs
+          nix run .#installer -- --help
+          nix shell --inputs-from . nixpkgs#python3 nixpkgs#util-linux -c \
+            python3 tests/test_installer_linux.py --helpers scripts/installer
+          nix shell --inputs-from . nixpkgs#python3 nixpkgs#git nixpkgs#nix -c \
+            python3 tests/test_installer_source.py --helpers scripts/installer --config .
+
       - name: Test installation timezone detection
         run: nix build .#checks.x86_64-linux.install-timezone --no-link --print-build-logs
 

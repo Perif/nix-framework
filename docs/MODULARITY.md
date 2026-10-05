@@ -86,3 +86,25 @@ Packages are installed at the narrowest appropriate scope:
   tools and managed pre-commit hook are installed together
 
 This avoids a large duplicated `environment.systemPackages` list.
+
+## Installation documentation
+
+`INSTALL.md` at the repository root is only a route chooser. The detailed
+`docs/INSTALL.md` index points to separate procedures with one owner each:
+
+- `docs/install/prepare.md`: supported live environment and reviewed Git source
+- `docs/install/configure.md`: installation settings, timezone, and target disk
+- `docs/install/storage.md`: plan, destructive fresh-install formatting,
+  mount verification, and manual recovery after interruption
+- `docs/install/system.md`: install the reviewed snapshot, set the account, and
+  reboot
+- `docs/install/first-boot.md`: hardware and service checks after installation
+- `docs/install/customization.md`: managed preferences and rebuild promotion
+- `docs/install/secure-boot.md`: the later signed-boot transition
+- `docs/install/upgrade.md`: existing-system migration and routine upgrades
+- `docs/install/validation.md`: repository and CI checks
+
+Fresh-install commands use `nix run .#installer -- <stage>` from a reviewed
+Git checkout. Every stage reads its settings independently. The installed tree
+is a writable snapshot without Git history; it is not the trusted update
+checkout. The destructive `format` stage is not a recovery or upgrade command.
