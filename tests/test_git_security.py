@@ -2,6 +2,7 @@
 import argparse
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -122,7 +123,10 @@ class SecurityTests(unittest.TestCase):
     def test_local_hook_failure_is_preserved(self):
         self.install_hook()
         local = self.root / ".git/hooks/pre-commit"
-        local.write_text("#!/usr/bin/env bash\necho chained-hook >&2\nexit 1\n")
+        # Nix's Linux build sandbox has no /usr/bin/env. Use its supplied Bash.
+        bash = shutil.which("bash", path=self.env.get("PATH"))
+        self.assertIsNotNone(bash)
+        local.write_text(f"#!{bash}\necho chained-hook >&2\nexit 1\n")
         local.chmod(0o755)
         self.stage("safe.txt", "safe\n")
         result = self.run_cmd("git", "commit", "-qm", "must fail")
