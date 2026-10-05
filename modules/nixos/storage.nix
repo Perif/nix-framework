@@ -1,4 +1,9 @@
-{ pkgs, settings, ... }:
+{
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
 
 let
   diskAlert = pkgs.writeShellApplication {
@@ -28,7 +33,10 @@ in
     defaults.autodetected = monitorOptions;
   };
 
-  systemd.tmpfiles.rules = [ "d /var/lib/disk-health 0755 root root -" ];
+  systemd.tmpfiles.rules = [
+    "d /var/lib/disk-health 0755 root root -"
+  ]
+  ++ lib.optional settings.storage.homeSnapshots "v /home/.snapshots 0700 root root -";
   systemd.user.services.disk-health-alert = {
     description = "Display a pending SMART disk-health warning";
     after = [ "graphical-session.target" ];
@@ -92,6 +100,23 @@ in
       NUMBER_CLEANUP = true;
       NUMBER_MIN_AGE = 1800;
       NUMBER_LIMIT = 10;
+      NUMBER_LIMIT_IMPORTANT = 5;
+      EMPTY_PRE_POST_CLEANUP = true;
+    };
+
+    configs.home = lib.mkIf settings.storage.homeSnapshots {
+      SUBVOLUME = "/home";
+      FSTYPE = "btrfs";
+      TIMELINE_CREATE = true;
+      TIMELINE_CLEANUP = true;
+      TIMELINE_LIMIT_HOURLY = 6;
+      TIMELINE_LIMIT_DAILY = 3;
+      TIMELINE_LIMIT_WEEKLY = 0;
+      TIMELINE_LIMIT_MONTHLY = 0;
+      TIMELINE_LIMIT_QUARTERLY = 0;
+      TIMELINE_LIMIT_YEARLY = 0;
+      NUMBER_CLEANUP = true;
+      NUMBER_LIMIT = 5;
       NUMBER_LIMIT_IMPORTANT = 5;
       EMPTY_PRE_POST_CLEANUP = true;
     };

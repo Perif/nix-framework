@@ -5,6 +5,10 @@ the editor, its extensions, and the Continue model configuration declarative.
 It is intended for light, on-demand assistance through the loopback-only
 Ollama service or a manually started llama.cpp server.
 
+For standalone local chat, Open WebUI is installed on demand at
+`http://127.0.0.1:3000`. See [startup and account setup](WORKSTATION-APPS.md#open-webui).
+It shares Ollama with Continue; it does not start another model runtime.
+
 ## Installed components
 
 - VSCodium with update, experiment, crash-report, and telemetry checks disabled;

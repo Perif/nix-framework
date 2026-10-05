@@ -90,6 +90,8 @@
   };
 
   features = {
+    wine = true;
+    keepassxc = true;
     # Upstream QBZ source and distribution were withdrawn in September 2026.
     # Enable only after supplying your own package recipe below.
     qbz = false;
@@ -121,6 +123,16 @@
     chargeLimit = 80; # 1..100, or null to leave firmware/Plasma in control.
   };
 
+  # null retains NixOS defaults until measurements on the actual laptop.
+  # maxJobs: positive integer or "auto"; cores: nonnegative integer (0 = all).
+  # See docs/PERFORMANCE.md before choosing limits for builds alongside AI.
+  builds = {
+    maxJobs = null;
+    cores = null;
+  };
+
+  storage.homeSnapshots = false; # Optional short-retention /home snapshots.
+
   network = {
     # null: NetworkManager default; false: disable power saving as a Wi-Fi
     # reliability workaround; true: enable power saving. See docs/NETWORKING.md.
@@ -128,6 +140,11 @@
   };
 
   ai = {
+    webui = {
+      enable = true; # Installed, localhost-only, started on demand.
+      port = 3000; # Keep 8080 free for llama.cpp.
+      allowSignup = true; # Set false after creating the first admin account.
+    };
     # A bounded starting point for 32 GiB shared CPU/GPU memory, not a RAM cap.
     contextLength = 8192;
     maxOutputTokens = 2048;

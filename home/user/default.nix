@@ -13,6 +13,7 @@
     ../modules/git.nix
     ../modules/zsh.nix
     ../modules/dev-tools.nix
+    ../modules/workstation-apps.nix
     ../modules/ai.nix
     ../modules/vscodium.nix
     ../modules/strawberry.nix

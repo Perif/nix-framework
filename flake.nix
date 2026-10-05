@@ -108,6 +108,9 @@
                 touch "$out"
               '';
         }
+        // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          dns-boot = pkgs.testers.runNixOSTest (import ./tests/dns-boot.nix);
+        }
       );
 
       nixosConfigurations.${settings.hostname} = nixpkgs.lib.nixosSystem {

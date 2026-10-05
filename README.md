@@ -18,6 +18,9 @@ Target:
 - Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
 - qobuz-player terminal streaming client and MusicBrainz Picard tag editor
+- Wine WoW64 / Winetricks, KeePassXC with Firefox integration, and mpv
+- direnv / nix-direnv project shells and NH rebuild previews
+- on-demand localhost Open WebUI using the existing Ollama service
 - PCM through 768 kHz where source + ALSA device support it
 - Sublime Text / Sublime Merge
 - VSCodium with pinned local-agent, Nix, Python, Go, and Rust extensions
@@ -81,6 +84,7 @@ Target:
 │       ├── git.nix
 │       ├── zsh.nix
 │       ├── dev-tools.nix
+│       ├── workstation-apps.nix
 │       ├── ai.nix
 │       ├── vscodium.nix
 │       ├── strawberry.nix
@@ -122,6 +126,11 @@ needs editing when these change:
 - `user.sshAuthorizedKeys`: sshd is enabled only when this list is non-empty
 - `features.qbz`: opt into a separately supplied QBZ package; disabled by default
 - `qbz.packageFile`: Nix package expression for that optional integration
+- `features.wine` / `features.keepassxc`: installed by default; can be disabled
+- `builds.maxJobs` / `builds.cores`: optional measured build limits (`null` keeps defaults)
+- `storage.homeSnapshots`: opt-in short-retention home snapshots
+- `ai.webui`: on-demand Open WebUI enablement, port and initial signup policy
+
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
 - `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma
@@ -136,6 +145,9 @@ needs editing when these change:
 - `network.wifiPowerSave`: optional Wi-Fi power saving (`null`, `false`, or `true`)
 - `features.thunderbolt`: optional Bolt dock authorization (off by default)
 - `git.userName`, `git.userEmail`: git identity
+
+See [workstation applications](docs/WORKSTATION-APPS.md) for Windows applications,
+1Password migration, project shells, rebuilds, video playback and local AI chat.
 
 ### Password
 

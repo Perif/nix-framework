@@ -9,7 +9,6 @@ let
   user = settings.user;
   hasHashedPassword = user.hashedPassword != null;
   hasInitialPassword = user.initialPassword != null;
-  dnsFilteringEnabled = settings.dns.filtering.enable;
 in
 {
   assertions = [
@@ -75,36 +74,6 @@ in
     # This is normally enabled by NixOS, but declaring it makes the laptop's
     # closed-by-default inbound policy explicit and reviewable.
     firewall.enable = true;
-  };
-
-  # Route ordinary system queries through loopback Blocky when filtering is
-  # enabled. Otherwise use the configured upstream directly with strict DoT.
-  # The root routing domain keeps queries away from DHCP-provided resolvers; a
-  # WireGuard profile can still claim a more-specific private suffix for split
-  # DNS. The Blocky-to-provider hop remains encrypted with DoH.
-  services.resolved = {
-    enable = true;
-    settings.Resolve = {
-      DNS =
-        if dnsFilteringEnabled then
-          [
-            "127.0.0.1:5353"
-            "[::1]:5353"
-          ]
-        else
-          settings.dns.servers;
-      FallbackDNS = [ ];
-      Domains = [ "~." ];
-      DNSOverTLS = if dnsFilteringEnabled then false else true;
-
-      # Cloudflare validates DNSSEC upstream. Local validation is disabled for
-      # compatibility with incorrectly signed domains, which otherwise fail to
-      # resolve even though they are not on the selected local blocklist.
-      DNSSEC = false;
-
-      # Avoid broadcasting single-label name queries to the local network.
-      LLMNR = false;
-    };
   };
 
   # Permit only the proprietary packages deliberately retained by this build.

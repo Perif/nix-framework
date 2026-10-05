@@ -687,6 +687,11 @@ Open Firefox and verify `about:policies`, `about:addons`, and
 but its per-site dynamic rules remain user-owned; follow `docs/FIREFOX.md` to
 activate medium mode if that stricter uMatrix-like behavior is wanted.
 
+Follow [workstation application setup](WORKSTATION-APPS.md) for Wine, KeePassXC
+and 1Password import, direnv, NH, mpv, and Open WebUI's first admin account.
+Check [build tuning](PERFORMANCE.md#measuring-build-and-inference-contention)
+before selecting `builds.maxJobs` and `builds.cores` for this laptop.
+
 Confirm that VSCodium, both local model runtimes, and the Nix/Python/Go/Rust
 toolchain are installed. Ollama should initially report `inactive` because it
 is an on-demand service rather than a boot service:

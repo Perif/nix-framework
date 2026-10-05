@@ -89,6 +89,71 @@ It may make the build itself slightly slower while the laptop is busy with
 interactive work; that is an intentional responsiveness tradeoff, not a claim
 of higher peak compilation throughput.
 
+### Measuring build and inference contention
+
+`settings.builds.maxJobs` and `settings.builds.cores` expose the daemon's
+parallelism controls. Both default to `null`, preserving NixOS defaults until
+the installed laptop has been measured. `maxJobs` accepts a positive integer
+or `"auto"`; `cores` accepts a nonnegative integer, with `0` meaning all cores.
+The product can increase runnable work substantially: each concurrent build
+can use the requested number of cores. These are scheduling hints, not hard
+memory or CPU quotas for every build system.
+
+Hyperfine and Intel turbostat are installed alongside the existing
+`intel_gpu_top`, `btop`, `vmstat`, and `llama-bench`. Choose limits using this
+repeatable procedure:
+
+1. Record kernel, firmware, power profile, model/quantization, context length,
+   browser workload and ambient conditions. Keep these fixed between runs.
+2. Measure a representative uncached build alone, then with the same local
+   inference workload. Cached builds measure fetching/activation, not compiler
+   contention. Rebuilding just one derivation does not test job concurrency.
+3. Compare defaults with candidate limits such as 2 jobs / 4 cores and 1 job /
+   4 cores. These are experiments, not selected or measured recommendations.
+   Set candidates in `settings.nix`, rebuild and confirm the daemon settings.
+4. Repeat each case at least three times. Record build time, inference prompt
+   and generation throughput, available RAM, swap activity, memory pressure,
+   CPU temperature/power, fan noise and any audio underruns or desktop stalls.
+5. Keep the fastest combination that preserves the responsiveness and memory
+   headroom you need. Compare sustained AC `balanced` and `performance` runs,
+   then separately measure a battery workload. Do not infer battery life from
+   an AC-only benchmark.
+
+Useful read-only observations during a run:
+
+```bash
+nix config show max-jobs
+nix config show cores
+powerprofilesctl get
+vmstat 1
+cat /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io
+sudo turbostat --quiet --interval 1 --num_iterations 60
+```
+
+Use `hyperfine --runs 5 'YOUR_REPRESENTATIVE_COMMAND'` for command timing;
+substitute a real repeatable workload. Measure inference itself with
+`llama-bench` and Ollama's response timing fields, not HTTP startup alone.
+Follow the CPU/Vulkan comparison in [the AI guide](LOCAL-AI-DEVELOPMENT.md).
+No measurements on the target laptop are available yet, so no global compiler
+flags, kernel scheduler replacements, or all-packages native-CPU rebuilds are
+enabled. Keeping cached packages and runtime CPU/GPU dispatch avoids a large
+source rebuild without evidence of a workload benefit.
+
+### Optional home snapshots
+
+Set `storage.homeSnapshots = true` to add a root-owned Btrfs snapshot subvolume
+at `/home/.snapshots` and a Snapper home policy retaining 6 hourly and 3 daily
+timeline snapshots, with no weekly/monthly/yearly retention. It is disabled
+by default because Wine prefixes, development trees and local model downloads
+can retain significant changed data. The counts are not disk-space quotas.
+
+After activation, verify `sudo snapper -c home list` and create a test snapshot
+with `sudo snapper -c home create --cleanup-algorithm number --description verification`.
+Restore only selected files after reviewing them; do not roll back an active
+home directory blindly. Disabling the option stops management, but does not
+delete existing snapshots. This is local recovery, not an off-device backup.
+Keep plaintext password exports out of snapshot coverage.
+
 ### Bounded Ghostty surface memory
 
 Each Ghostty tab, split, or window has its own in-memory scrollback and image

@@ -76,6 +76,9 @@ jobs:
       - name: Evaluate every flake output with default application selections
         run: nix flake check --no-build --all-systems
 
+      - name: Boot the production DNS stack with offline fixtures
+        run: nix build .#checks.x86_64-linux.dns-boot --no-link --print-build-logs
+
       - name: Build the NixOS system with default application selections
         run: |
           host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"

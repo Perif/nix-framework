@@ -55,9 +55,15 @@ in
     };
   };
 
-  programs.zsh.shellAliases = lib.mkIf settings.ai.ollaya.enable {
-    ollaya-on = "systemctl --user start ollaya.service";
-    ollaya-off = "systemctl --user stop ollaya.service";
-    ollaya-status = "systemctl --user status ollaya.service";
-  };
+  programs.zsh.shellAliases =
+    lib.optionalAttrs settings.ai.ollaya.enable {
+      ollaya-on = "systemctl --user start ollaya.service";
+      ollaya-off = "systemctl --user stop ollaya.service";
+      ollaya-status = "systemctl --user status ollaya.service";
+    }
+    // lib.optionalAttrs settings.ai.webui.enable {
+      webui-on = "sudo systemctl start open-webui.service";
+      webui-off = "sudo systemctl stop open-webui.service";
+      webui-status = "systemctl status open-webui.service";
+    };
 }

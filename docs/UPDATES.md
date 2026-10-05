@@ -1,5 +1,20 @@
 # Update review — 2026-09-28
 
+**2026-10-04 workstation additions:** Added stable Wine WoW64/Winetricks,
+KeePassXC with Firefox integration and documented 1Password 1PUX/passkey migration
+limits, direnv/nix-direnv, NH, mpv hardware decoding, and localhost on-demand Open
+WebUI sharing Ollama. Build concurrency is configurable with validated optional
+`builds.maxJobs`/`cores`; defaults remain unchanged until laptop measurements.
+Hyperfine/turbostat and a repeatable contention measurement procedure are
+included. Home snapshots are opt-in with short retention. A small offline VM
+test now boots the production resolved/Blocky stack and checks resolution,
+filtering, allowlists and restart recovery.
+
+The preceding revision `da5d66b` passed the complete default Linux system build.
+The additions pass full flake evaluation locally; their complete Linux build
+and DNS VM execution are tracked by the updated PR's CI. No physical hardware
+performance result or real password-vault migration is claimed.
+
 **2026-10-04 Firefox build repair:** Linux CI reached the full system build but
 failed fetching the removed Bypass Paywalls Clean 4.4.5.3 XPI. The override now
 uses the publisher's signed 4.4.5.6 artifact from an exact Git commit and fixed

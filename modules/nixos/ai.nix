@@ -55,4 +55,38 @@
   systemd.services.ollama.unitConfig.RequiresMountsFor = [ "/var/lib/private/ollama" ];
   # Preserve DynamicUser's private ancestor even before the first service run.
   systemd.tmpfiles.rules = [ "d /var/lib/private 0700 root root -" ];
+
+  nixpkgs.config.allowUnfreePackages = lib.optional settings.ai.webui.enable "open-webui";
+  services.open-webui = lib.mkIf settings.ai.webui.enable {
+    enable = true;
+    host = "127.0.0.1";
+    port = settings.ai.webui.port;
+    openFirewall = false;
+    environment = {
+      OLLAMA_BASE_URL = "http://127.0.0.1:11434";
+      ENABLE_OLLAMA_API = "True";
+      ENABLE_OPENAI_API = "False";
+      ENABLE_PERSISTENT_CONFIG = "False";
+      WEBUI_AUTH = "True";
+      ENABLE_SIGNUP = if settings.ai.webui.allowSignup then "True" else "False";
+      OFFLINE_MODE = "True";
+      HF_HUB_OFFLINE = "1";
+      ENABLE_VERSION_UPDATE_CHECK = "False";
+      SCARF_NO_ANALYTICS = "True";
+      DO_NOT_TRACK = "True";
+      ANONYMIZED_TELEMETRY = "False";
+    };
+  };
+  systemd.services.open-webui = lib.mkIf settings.ai.webui.enable {
+    wantedBy = lib.mkForce [ ];
+    requires = [ "ollama.service" ];
+    after = [ "ollama.service" ];
+    # Persist a cryptographic session key in the private service state, not Nix.
+    preStart = lib.mkAfter ''
+      if [ ! -s .webui_secret_key ]; then
+        umask 077
+        ${pkgs.openssl}/bin/openssl rand -base64 32 > .webui_secret_key
+      fi
+    '';
+  };
 }
