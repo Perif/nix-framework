@@ -35,7 +35,8 @@ dns = {
 };
 ```
 
-- Blocky listens only on `127.0.0.1:5353` and `[::1]:5353`; no LAN or web/API
+- Blocky listens only on `127.0.0.1:5335` and `[::1]:5335`; port 5335 avoids
+  the multicast-DNS reservation on 5353. No LAN or web/API
   listener is opened;
 - systemd-resolved routes ordinary queries to those loopback listeners;
 - resolved retains its early-boot ordering; Blocky starts independently after
@@ -121,14 +122,14 @@ systemctl is-active blocky.service
 systemctl show blocky.service -p ActiveState -p SubState
 resolvectl status
 resolvectl query example.com
-ss -lntup | grep ':5353'
+ss -lntup | grep ':5335'
 readlink -f /etc/resolv.conf
 ```
 
 Expected results:
 
-- Blocky is active and has only loopback listeners on port 5353.
-- Global DNS Servers lists `127.0.0.1:5353` and `[::1]:5353`.
+- Blocky is active and has only loopback listeners on port 5335.
+- Global DNS Servers lists `127.0.0.1:5335` and `[::1]:5335`.
 - `DNS over TLS` is not used on the local resolved-to-Blocky hop; Blocky's
   upstream transport is DoH on HTTPS port 443.
 - `/etc/resolv.conf` points into `/run/systemd/resolve/`.

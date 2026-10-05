@@ -163,13 +163,13 @@ swapon --show
 systemctl is-active blocky.service
 systemctl is-active smartd.service
 resolvectl status
-ss -lntup | grep ':5353'
+ss -lntup | grep ':5335'
 powerprofilesctl get
 nix config show allowed-users
 nix config show trusted-users
 ```
 
-Blocky must listen only on `127.0.0.1:5353` and `[::1]:5353`. Nix daemon access
+Blocky must listen only on `127.0.0.1:5335` and `[::1]:5335`. Nix daemon access
 must contain only `root` and `settings.user.name`; only `root` is trusted.
 
 ## 7. Verify the development profile

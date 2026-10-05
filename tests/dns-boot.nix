@@ -123,6 +123,12 @@ in
     machine.wait_for_unit("multi-user.target", timeout=120)
     machine.wait_for_unit("systemd-resolved.service", timeout=120)
     machine.wait_for_unit("blocky.service", timeout=120)
+    machine.wait_for_open_port(5335, addr="127.0.0.1", timeout=60)
+
+    with subtest("Blocky binds only the dedicated loopback DNS endpoints"):
+        listeners = machine.succeed("ss -H -lnut 'sport = :5335'")
+        endpoints = {line.split()[4] for line in listeners.splitlines()}
+        assert endpoints == {"127.0.0.1:5335", "[::1]:5335"}, listeners
 
     with subtest("Resolved retains early boot ordering without a cycle"):
         ordering = machine.succeed(
@@ -141,7 +147,7 @@ in
         # Production list loading is asynchronous. Wait on Blocky directly
         # before testing resolved so its cache never contains an early answer.
         machine.wait_until_succeeds(
-            "dig @127.0.0.1 -p 5353 blocked.test A +noall +comments "
+            "dig @127.0.0.1 -p 5335 blocked.test A +noall +comments "
             "| grep -F 'status: NXDOMAIN'", timeout=60
         )
         machine.succeed(

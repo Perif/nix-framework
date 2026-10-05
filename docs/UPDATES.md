@@ -8,7 +8,8 @@ WebUI sharing Ollama. Build concurrency is configurable with validated optional
 Hyperfine/turbostat and a repeatable contention measurement procedure are
 included. Home snapshots are opt-in with short retention. A small offline VM
 test now boots the production resolved/Blocky stack and checks resolution,
-filtering, allowlists and restart recovery.
+filtering, allowlists and restart recovery. It exposed a port collision with
+multicast DNS, so Blocky and resolved now use loopback port 5335 instead of 5353.
 
 The preceding revision `da5d66b` passed the complete default Linux system build.
 The additions pass full flake evaluation locally; their complete Linux build

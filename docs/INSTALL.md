@@ -526,11 +526,11 @@ systemctl is-active blocky.service
 systemctl show blocky.service -p ActiveState -p SubState
 resolvectl status
 resolvectl query example.com
-ss -lntup | grep ':5353'
+ss -lntup | grep ':5335'
 readlink -f /etc/resolv.conf
 ```
 
-Blocky should be active with only `127.0.0.1:5353` and `[::1]:5353` listeners.
+Blocky should be active with only `127.0.0.1:5335` and `[::1]:5335` listeners.
 `resolvectl status` should show those local addresses as the global DNS servers,
 and `/etc/resolv.conf` should resolve to the systemd-resolved stub. The local hop
 is plain DNS on loopback; Blocky sends allowed queries to the configured

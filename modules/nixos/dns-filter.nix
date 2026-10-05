@@ -36,8 +36,8 @@ in
       DNS =
         if cfg.enable then
           [
-            "127.0.0.1:5353"
-            "[::1]:5353"
+            "127.0.0.1:5335"
+            "[::1]:5335"
           ]
         else
           settings.dns.servers;
@@ -60,12 +60,13 @@ in
     enableConfigCheck = true;
 
     settings = {
+      # Use 5335 because 5353 is reserved for multicast DNS (including resolved).
       # Listen only on loopback and do not configure an HTTP/API listener. The
       # latter is especially important because Blocky's control API has no
       # built-in authentication.
       ports.dns = [
-        "127.0.0.1:5353"
-        "[::1]:5353"
+        "127.0.0.1:5335"
+        "[::1]:5335"
       ];
 
       # Use one unfiltered provider and send each allowed query only once. DoH
