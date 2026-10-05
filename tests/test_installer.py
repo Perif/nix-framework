@@ -129,6 +129,17 @@ class SettingsAndEvaluation(unittest.TestCase):
         with self.assertRaisesRegex(common.Stop, 'persistent state'):
             layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
 
+    def test_layout_rejects_zero_sized_esp_or_swap_before_format(self):
+        for component in ('ESP', 'swap'):
+            with self.subTest(component=component):
+                changed = devices()
+                if component == 'ESP':
+                    changed['disk']['main']['content']['partitions']['ESP']['size'] = '0G'
+                else:
+                    changed['lvm_vg']['vg']['lvs']['swap']['size'] = '0G'
+                with self.assertRaisesRegex(common.Stop, 'positive fixed whole-GiB'):
+                    layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
+
     def test_live_environment_rejects_installed_system_or_non_uefi_boot(self):
         with patch.object(common.sys, "platform", "linux"), patch.object(common.os, "geteuid", return_value=0), \
              patch.object(common.Path, "is_dir", return_value=True):

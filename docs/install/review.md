@@ -39,7 +39,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 
 ## Evidence and remaining limits
 
-- The synthetic installer suite contains 32 tests, including fault paths; it passes
+- The synthetic installer suite contains 33 tests, including fault paths; it passes
   locally and through the packaged Apple Silicon Nix check.
 - The real Git/Nix source regression verifies an existing immutable snapshot,
   staged settings, exclusion of ignored/untracked files and Git history, and

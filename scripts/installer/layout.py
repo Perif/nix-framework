@@ -53,8 +53,9 @@ PROJECTION = r'''d: {
 
 
 def gib_size(value):
-    if not isinstance(value, str) or not value.endswith('G') or not value[:-1].isdigit():
-        raise Stop(f'Unsupported Disko size {value!r}; use a fixed whole-GiB size.')
+    if (not isinstance(value, str) or not value.endswith('G')
+            or not value[:-1].isdigit() or int(value[:-1]) <= 0):
+        raise Stop(f'Unsupported Disko size {value!r}; use a positive fixed whole-GiB size.')
     return int(value[:-1]) * GIB
 
 

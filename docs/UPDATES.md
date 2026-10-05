@@ -34,10 +34,11 @@ performance result or real password-vault migration is claimed.
 
 **2026-10-04 Firefox build repair:** Linux CI reached the full system build but
 failed fetching the removed Bypass Paywalls Clean 4.4.5.3 XPI. The override now
-uses the publisher's signed 4.4.5.6 artifact from an exact Git commit and fixed
-source hash. Its package build passed and the installed XPI matched the
-publisher's release hash. Combined full flake evaluation passed; a new complete
-Linux system build and browser runtime validation are still required.
+uses the publisher's versioned signed 4.4.5.6 XPI with a fixed content hash,
+avoiding the publisher Git host's incomplete-pack failure. Its SHA-256 matches
+the publisher's release-hashes.txt, and the XPI manifest and Mozilla signing
+metadata were checked. Full package and browser runtime validation are still
+required.
 
 **2026-10-04 music applications:** Added qobuz-player 0.9.0 and MusicBrainz
 Picard 2.13.3 alongside the existing Strawberry 1.2.18 installation. The

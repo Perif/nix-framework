@@ -12,7 +12,9 @@ let
       initialPassword = null;
     };
   };
-  target = nixpkgs.lib.nixosSystem {
+  # Use the same plain evaluator for the preloaded and guest-evaluated target.
+  # Git flake metadata would otherwise differ from the guest's path inputs.
+  target = import (nixpkgs + "/nixos/lib/eval-config.nix") {
     system = "x86_64-linux";
     specialArgs.settings = fixtureSettings;
     modules = [
@@ -28,7 +30,7 @@ let
       inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
       outputs = { nixpkgs, disko, ... }: {
         packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
-        nixosConfigurations.installer-target = nixpkgs.lib.nixosSystem {
+        nixosConfigurations.installer-target = import (nixpkgs + "/nixos/lib/eval-config.nix") {
           system = "x86_64-linux";
           specialArgs.settings = import ./settings.nix;
           modules = [ disko.nixosModules.disko ./disk.nix ./target.nix ];
@@ -111,7 +113,6 @@ in
       qemu.options = [
         "-drive file=$(pwd)/empty0.qcow2,if=none,id=installtarget"
         "-device nvme,drive=installtarget,serial=INSTALL_TEST"
-        "-drive file=${opticalFixture},media=cdrom,readonly=on"
       ];
       additionalPaths = [
         source
@@ -119,14 +120,15 @@ in
         disko.outPath
         disko.packages.x86_64-linux.default
         target.config.system.build.toplevel
-        target.config.system.build.diskoScript
+        target.config.system.build.destroyFormatMount
       ];
     };
     virtualisation.fileSystems."/iso" = {
-      device = "/dev/disk/by-label/NIXOS_TEST";
+      device = toString opticalFixture;
       fsType = "iso9660";
-      options = [ "ro" ];
+      options = [ "loop" "ro" "x-systemd.requires-mounts-for=/nix/store" ];
     };
+    boot.kernelModules = [ "loop" ];
     boot.supportedFilesystems = [
       "btrfs"
       "vfat"
@@ -156,7 +158,7 @@ in
     from pathlib import Path
 
     installer.start()
-    installer.wait_for_unit("multi-user.target")
+    installer.wait_for_unit("multi-user.target", timeout=180)
     installer.wait_for_unit("iso.mount", timeout=120)
     installer.succeed("udevadm settle; test -b ${fixtureSettings.diskDevice}")
     installer.succeed("cp -r ${source} /root/config; chmod -R u+w /root/config")
@@ -195,11 +197,11 @@ in
         target.start()
         target.wait_for_console_text("[Pp]assphrase", timeout=180)
         target.send_console("disposable-vm-luks-passphrase\n")
-        target.wait_for_unit("multi-user.target")
+        target.wait_for_unit("multi-user.target", timeout=180)
         target.succeed("findmnt -n -o FSTYPE / | grep -x btrfs; grep -qx preserved /home/recovery-canary")
         target.succeed("test -f /etc/nix-framework-installer.json")
     with subtest("authenticate with the password set by the account stage"):
-        target.copy_from_host("${./installer-vm/login.py}", "/tmp/test-login.py")
+        target.copy_from_host_via_shell("${./installer-vm/login.py}", "/tmp/test-login.py")
         target.succeed("python /tmp/test-login.py")
   '';
 }

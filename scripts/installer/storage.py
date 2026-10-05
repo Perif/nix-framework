@@ -170,7 +170,7 @@ def verify_mounts(config, layout):
     swaps = active_swaps()
     expected_swap = str(Path('/dev/mapper/vg-swap').resolve())
     if not any(str(Path(s['name']).resolve()) == expected_swap and int(s['size']) >= layout.swap_bytes - 1024**3 for s in swaps):
-        raise Stop('The encrypted 40 GiB installation swap is not active.')
+        raise Stop(f'The encrypted {layout.swap_bytes // 1024**3} GiB installation swap is not active.')
     show_disk(config, disk)
     print('All target mounts and encrypted swap match the selected disk.', flush=True)
     return disk

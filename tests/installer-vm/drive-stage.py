@@ -6,7 +6,7 @@ import pexpect
 
 stage = sys.argv[1]
 child = pexpect.spawn(
-    "installer", ["--config", "/root/config", stage], encoding="utf-8", timeout=900
+    "installer", ["--config", "/root/config", stage], encoding="utf-8", timeout=180
 )
 child.logfile_read = sys.stdout
 if stage == "format":
@@ -30,6 +30,6 @@ elif stage == "account":
     child.sendline("Disposable-vm-login-42")
 else:
     raise ValueError(stage)
-child.expect(pexpect.EOF)
+child.expect(pexpect.EOF, timeout=900)
 child.close()
 assert child.exitstatus == 0, (child.exitstatus, child.signalstatus)
