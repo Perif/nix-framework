@@ -157,6 +157,25 @@ class SettingsAndEvaluation(unittest.TestCase):
             with self.assertRaisesRegex(common.Stop, "UEFI"):
                 common.live_environment()
 
+    def test_live_environment_explains_missing_iso_mount(self):
+        def query(*command):
+            if "/iso" in command:
+                raise subprocess.CalledProcessError(1, command)
+            return {"filesystems": [{"fstype": "tmpfs"}]}
+
+        with patch.object(common.sys, "platform", "linux"), patch.object(common.os, "geteuid", return_value=0), \
+             patch.object(common.Path, "is_dir", return_value=True), \
+             patch.object(common.Path, "read_text", return_value='ID=nixos\n'), \
+             patch.object(common, "query", side_effect=query):
+            try:
+                common.live_environment()
+            except common.Stop as error:
+                self.assertIn("standard NixOS ISO", str(error))
+            except subprocess.CalledProcessError:
+                self.fail("a raw CalledProcessError escaped live_environment() for a missing /iso mount")
+            else:
+                self.fail("live_environment() accepted a system without an /iso mount")
+
     def test_snapshot_rejects_unstaged_edits_before_nix_metadata(self):
         with tempfile.TemporaryDirectory() as path:
             directory = Path(path)

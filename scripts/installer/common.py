@@ -117,6 +117,11 @@ def live_environment():
     if not Path('/sys/firmware/efi/efivars').is_dir():
         raise Stop('The installer must be booted in UEFI mode.')
     for target, expected in (('/', 'tmpfs'), ('/iso', 'iso9660')):
-        fs = query('findmnt', '--json', '--mountpoint', target, '--output', 'FSTYPE')['filesystems']
+        try:
+            fs = query('findmnt', '--json', '--mountpoint', target, '--output', 'FSTYPE')['filesystems']
+        except subprocess.CalledProcessError:
+            # findmnt exits non-zero when nothing is mounted there; explain
+            # the unsupported layout instead of leaking the command failure.
+            fs = []
         if len(fs) != 1 or fs[0]['fstype'] != expected:
             raise Stop(f'Unsupported live layout at {target}: observed {fs}, expected {expected}. Use the standard NixOS ISO; never bypass this guard on an installed system.')
