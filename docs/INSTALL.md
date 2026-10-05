@@ -1002,13 +1002,11 @@ sudo ls -la /var/lib/sbctl
 The private keys under `/var/lib/sbctl` must never be copied into this
 repository or the Nix store. Back them up only to encrypted offline storage.
 
-Edit `/etc/nixos/settings.nix`:
+In `/etc/nixos/settings.nix`, change only `secureBoot` inside the existing
+`features` block; preserve the QBZ and Thunderbolt choices:
 
 ```nix
-features = {
-  qbz = true;
-  secureBoot = true;
-};
+secureBoot = true;
 ```
 
 Evaluate, install the signed Lanzaboote generation, and verify the EFI images

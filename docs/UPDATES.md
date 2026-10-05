@@ -156,6 +156,12 @@ Accepted fixes:
 - Clarify that installation settings examples are excerpts, preserving the
   additional audio, display, AI, power and optional network settings.
 
+Linux CI passed the nineteen helper/security tests, both scans and evaluation,
+then exhausted the hosted runner's disk during the full system build. The
+workflow now reclaims unused preinstalled toolchains before installing Nix;
+the full build remains a required step and its success is not inferred from
+the preceding checks.
+
 A suspected Sublime Python-host mismatch was rejected after checking the
 actual locked recipe and its evaluated build phase: it already selects 3.14.
 No additional measured tuning is claimed. Reviews found no further concrete

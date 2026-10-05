@@ -26,11 +26,28 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Reclaim space from unused hosted-runner toolchains
+        if: runner.environment == 'github-hosted'
+        shell: bash
+        run: |
+          df -h /
+          # This job obtains its build tools from Nix. Keep the runner's
+          # action runtimes, hosted tool cache, Git, and system Python intact.
+          for toolchain in /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift; do
+            if [[ -d "$toolchain" ]]; then
+              sudo du -sh -- "$toolchain"
+              sudo rm -rf -- "$toolchain"
+            fi
+          done
+          df -h /
+
       - name: Install Nix
         uses: cachix/install-nix-action@51f3067b56fe8ae331890c77d4e454f6d60615ff # v31.10.2
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+            min-free = 2147483648
+            max-free = 5368709120
 
       - name: Test laptop power-management helpers
         run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
