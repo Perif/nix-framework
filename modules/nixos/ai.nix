@@ -82,7 +82,7 @@
     requires = [ "ollama.service" ];
     after = [ "ollama.service" ];
     # Persist a cryptographic session key in the private service state, not Nix.
-    preStart = lib.mkAfter ''
+    preStart = lib.mkBefore ''
       if [ ! -s .webui_secret_key ]; then
         umask 077
         ${pkgs.openssl}/bin/openssl rand -base64 32 > .webui_secret_key
