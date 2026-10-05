@@ -1,9 +1,21 @@
-{ pkgs, qbz, ... }:
-
 {
-  # Retain the last validated upstream flake; current upstream removed it.
-  # See docs/UPDATES.md before changing this input.
-  home.packages = [
-    qbz.packages.${pkgs.stdenv.hostPlatform.system}.default
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
+
+let
+  packageFile = settings.qbz.packageFile;
+  validPackageFile = builtins.isPath packageFile && builtins.pathExists packageFile;
+in
+{
+  assertions = [
+    {
+      assertion = validPackageFile;
+      message = "features.qbz requires qbz.packageFile to name an existing user-supplied Nix package recipe; upstream QBZ distribution is no longer available.";
+    }
   ];
+
+  home.packages = lib.optional validPackageFile (pkgs.callPackage packageFile { });
 }

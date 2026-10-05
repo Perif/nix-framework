@@ -39,7 +39,7 @@ Target:
 - global staged credential/PII commit checks with local-hook chaining
 - adaptive Intel thermal and zram-aware responsiveness tuning
 - NVMe SMART monitoring, Btrfs scrub, and retained Snapper root snapshots
-- QBZ / Qobuz native client with direct-ALSA support
+- optional user-supplied QBZ package (upstream distribution has closed)
 
 ## Repository
 
@@ -118,7 +118,8 @@ needs editing when these change:
 - `user.name`, `user.description`: the login user
 - `user.hashedPassword` or `user.initialPassword`: optional declarative password
 - `user.sshAuthorizedKeys`: sshd is enabled only when this list is non-empty
-- `features.qbz`: include or defer the resource-intensive QBZ build
+- `features.qbz`: opt into a separately supplied QBZ package; disabled by default
+- `qbz.packageFile`: Nix package expression for that optional integration
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
 - `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma
@@ -158,13 +159,14 @@ from a recent kernel.
 Keep the existing `flake.lock` in source control. It makes input revisions
 reproducible; update it deliberately after reviewing upstream changes.
 
-NixOS hardware, NUR, QBZ, Disko, Home Manager, and Lanzaboote all follow the
+NixOS hardware, NUR, Disko, Home Manager, and Lanzaboote all follow the
 same pinned Nixpkgs revision. This removes redundant package-set evaluations and
 prevents those inputs from silently using different library versions.
 
 The 2026-09-28 refresh updates Nixpkgs, Home Manager, nixos-hardware, Disko and
-NUR. QBZ is explicitly retained at its working flake revision because current
-upstream removed `flake.nix`. See [update notes](docs/UPDATES.md).
+NUR. The 2026-10-04 review removes the unavailable QBZ flake input after its
+upstream shutdown; a warm local cache had hidden the missing download. See
+[update notes](docs/UPDATES.md).
 
 After activation, follow [display setup](docs/DISPLAY.md) to verify the panel
 and select its ICC, and [speaker setup](docs/AUDIO.md#easyeffects-speaker-preset)
@@ -193,7 +195,7 @@ Start with [INSTALL.md](INSTALL.md), then follow the canonical detailed
 - Git credential/PII hook verification
 - thermal, power-profile, compressed-memory, and hardware-acceleration checks
 - post-install Framework Secure Boot key creation, signing, and enrollment
-- a lighter first-install path that defers QBZ compilation
+- an optional package hook for an independently maintained QBZ installation
 
 Do not copy the Disko command out of context. It erases the configured drive.
 
@@ -251,21 +253,22 @@ the installation guide.
 ## Validation status
 
 The updated complete NixOS/Home Manager derivations evaluated on 2026-10-04
-with QBZ enabled and a validation-only disk value;
+with a validation-only disk value;
 `nix flake check --no-build --all-systems` also passed. All eleven production
 Git-security integration tests and eight power-helper tests passed on
 aarch64-darwin; Linux CI also passed these tests. The evaluated closure
 includes Linux 7.2.8, Plasma 6.6.6, EasyEffects 8.2.4, Brave 1.95.104,
-ungoogled Chromium 154.0.8037.57, and the retained QBZ 2.0.2.
+ungoogled Chromium 154.0.8037.57. QBZ is disabled by default because its pinned
+upstream source is no longer available.
 
 The ICC and speaker-preset files passed structural and checksum checks. No
 full Linux system build, activation, display calibration measurement, or
 audio hardware test was performed on this ARM macOS host. The checked-in disk
 sentinel intentionally prevents installation until replaced with the verified
 target's stable by-id path. See [current update notes](docs/UPDATES.md) for the
-QBZ packaging limitation and remaining laptop checks. CI evaluates the default
-QBZ-enabled configuration, then builds the Linux system with QBZ disabled to
-limit hosted-runner build cost; that build does not validate QBZ itself.
+QBZ availability and remaining laptop checks. CI evaluates and builds the same
+default application configuration; a separately supplied QBZ package needs its
+own Linux build/runtime validation.
 
 Run the validation section in `docs/INSTALL.md` before the destructive step.
 
@@ -317,8 +320,8 @@ client-side enforcement boundary are in
 ## Linux build verification
 
 The pinned GitHub Actions workflow in `.github/workflows/nix.yml` evaluates all
-flake outputs and builds the complete QBZ-deferred x86_64-linux system on every
-push and pull request. This complements local evaluation on non-Linux hosts.
+flake outputs and builds the default x86_64-linux system for pull requests and
+pushes to `main`. This complements local evaluation on non-Linux hosts.
 
 ## Zsh
 
@@ -338,16 +341,21 @@ a Home Manager package cannot provide. `podman-compose` stays in Home Manager.
 
 ## QBZ
 
-QBZ is installed from:
+QBZ's author [closed the project and distribution channels](https://github.com/vicrodh/qbz).
+The old pinned source returns 404 on fresh machines, so it is no longer a flake
+input and `features.qbz` defaults to `false`. Existing store copies are not
+redistributed by this repository.
 
-```text
-github:vicrodh/qbz
+If you independently maintain a working package, supply its Nix expression:
+
+```nix
+features.qbz = true;
+qbz.packageFile = ./pkgs/qbz-local.nix;
 ```
 
-rather than from the release-branch nixpkgs package. The project documents its
-flake as the freshest Nix packaging path. `flake.lock` pins the exact revision
-used by this system. `settings.features.qbz` allows its expensive source build
-to be deferred until after the first boot.
+That example path must exist and return a derivation through `pkgs.callPackage`.
+Pin and verify the package's sources yourself; setting the flag alone is
+rejected. Strawberry remains installed for local direct-ALSA playback.
 
 For the DC-Elite, use QBZ's `ALSA Direct` backend and select the DC-Elite
 hardware device. See `docs/AUDIO.md`.

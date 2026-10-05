@@ -1,5 +1,19 @@
 # Update review — 2026-09-28
 
+**2026-10-04 availability correction:** QBZ's author
+[closed the project and distribution channels](https://github.com/vicrodh/qbz).
+The former pinned revision returns 404; the September local evaluations below
+used a cached source and did not establish fresh-download availability. The
+unavailable flake input is now removed, QBZ defaults to disabled, and an optional
+`qbz.packageFile` hook accepts an independently maintained package. Cached
+upstream source is not redistributed. CI now evaluates and builds the same
+default application configuration.
+
+The corrected default passes full flake evaluation using a fresh download cache
+and an isolated Nix store. The `qbz-configuration` check covers missing,
+nonexistent and incorrectly typed package paths, plus a supplied package recipe;
+it validates the option contract, not QBZ's discontinued application.
+
 Updated the existing release branches; `system.stateVersion` and
 `home.stateVersion` remain 26.05.
 
@@ -11,11 +25,11 @@ Updated the existing release branches; `system.stateVersion` and
 | Disko | ff8702b4de27 | 725ea35e410a |
 | NUR | 2ce3ccecbaa8 | d7ecc51616e6 |
 
-QBZ remains **2.0.2**, revision `aa5690e4491507976b56a982025eb4b38ec8e064`.
+The September review initially retained QBZ **2.0.2**, revision
+`aa5690e4491507976b56a982025eb4b38ec8e064`.
 Updating to upstream `fcf6503fd8804c13ebf7d3551b648c8a9cdabbb7` failed because
-that source has no `flake.nix`. The working revision is now explicit in
-`flake.nix`, so routine updates do not select the incompatible tree. Updating
-QBZ further requires a replacement Nix package and Linux build/runtime checks.
+that source has no `flake.nix`. Fresh-runner CI later proved that the retained
+revision is also unavailable; the correction above supersedes that pin.
 Lanzaboote remains at the deliberately selected v1.1.0 tag.
 
 ## Display and audio
@@ -151,8 +165,10 @@ Accepted fixes:
   store-path import; it now passes evaluation and reaches the system build.
 - Use the supplied Bash path in the chained-hook test fixture so it runs in
   Nix's Linux sandbox, where `/usr/bin/env` is absent.
-- Evaluate the default QBZ-enabled configuration in CI before disabling QBZ
-  for the hosted-runner build. Avoid duplicate push/PR runs for feature branches.
+- Evaluate the actual default application selection in CI. This exposed the
+  deleted QBZ source, which the prior QBZ-disabled CI evaluation missed. Remove
+  that input and retain only an explicit user-supplied package option. Avoid
+  duplicate push/PR runs for feature branches.
 - Clarify that installation settings examples are excerpts, preserving the
   additional audio, display, AI, power and optional network settings.
 
@@ -166,4 +182,5 @@ A suspected Sublime Python-host mismatch was rejected after checking the
 actual locked recipe and its evaluated build phase: it already selects 3.14.
 No additional measured tuning is claimed. Reviews found no further concrete
 defect in the assigned AI/audio/ICC or power/maintenance areas; physical laptop
-behavior and a QBZ-enabled Linux build still need separate validation.
+behavior and any independently supplied QBZ package still need separate
+validation.

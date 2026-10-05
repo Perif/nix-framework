@@ -21,13 +21,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Current upstream removed flake.nix. Retain the known-working flake
-    # revision until a replacement packaging path is validated.
-    qbz = {
-      url = "github:vicrodh/qbz/aa5690e4491507976b56a982025eb4b38ec8e064";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # NUR provides the maintained Firefox add-on package set used by
     # Home Manager below. Exact revisions are pinned by flake.lock.
     nur = {
@@ -49,7 +42,6 @@
       home-manager,
       nixos-hardware,
       disko,
-      qbz,
       nur,
       lanzaboote,
       ...
@@ -76,6 +68,11 @@
           };
         in
         {
+          qbz-configuration =
+            assert import ./tests/qbz-module.nix { inherit pkgs; };
+            pkgs.runCommand "qbz-configuration-tests" { } ''
+              touch "$out"
+            '';
           power-management =
             pkgs.runCommand "power-management-tests"
               {
@@ -137,10 +134,9 @@
               useUserPackages = true;
               backupFileExtension = "hm-backup";
 
-              # Expose settings and non-nixpkgs application flakes to Home
-              # Manager modules.
+              # Expose installation settings to Home Manager modules.
               extraSpecialArgs = {
-                inherit qbz settings;
+                inherit settings;
               };
 
               users.${settings.user.name} = import ./home/user;

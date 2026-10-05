@@ -76,10 +76,7 @@ jobs:
       - name: Evaluate every flake output with default application selections
         run: nix flake check --no-build --all-systems
 
-      - name: Exclude QBZ from the hosted-runner build
-        run: sed -i 's|    qbz = true;|    qbz = false;|' settings.nix
-
-      - name: Build the NixOS system with QBZ disabled
+      - name: Build the NixOS system with default application selections
         run: |
           host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"
           nix build ".#nixosConfigurations.${host}.config.system.build.toplevel" \

@@ -185,8 +185,11 @@ separately instead of assuming native DSD512.
 
 ## QBZ / Qobuz
 
-QBZ is installed from a pinned working upstream Nix flake revision. Current
-upstream no longer includes the flake; see [update notes](UPDATES.md).
+QBZ is disabled by default: [upstream distribution has closed](https://github.com/vicrodh/qbz)
+and the former pinned download returns 404. The README describes the optional
+`qbz.packageFile` hook for an independently maintained package. The following
+notes apply only if such a package is installed; they are not a guarantee of
+continued Qobuz service compatibility.
 
 For the iBasso DC-Elite, configure QBZ to use:
 
@@ -204,7 +207,7 @@ The WirePlumber rule in `modules/nixos/audio.nix` keeps the DC-Elite out of
 PipeWire ownership. That allows either Strawberry or QBZ to acquire the DAC
 directly, but only one direct-ALSA player can own the hardware device at a time.
 
-Recommended use:
+Direct-ALSA paths (QBZ only when separately supplied):
 
 ```text
 Qobuz        -> QBZ        -> ALSA Direct -> DC-Elite

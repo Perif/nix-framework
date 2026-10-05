@@ -90,9 +90,9 @@
   };
 
   features = {
-    # QBZ builds from source and can be expensive during installation. Set
-    # false for the initial install if needed, then true after the first boot.
-    qbz = true;
+    # Upstream QBZ source and distribution were withdrawn in September 2026.
+    # Enable only after supplying your own package recipe below.
+    qbz = false;
 
     # Leave false for the initial installation. After the first boot, create
     # and verify local Secure Boot keys by following docs/INSTALL.md, then set
@@ -102,6 +102,13 @@
     # Optional Thunderbolt/USB4 authorization daemon for docks that need it.
     # This does not automatically authorize unknown devices.
     thunderbolt = false;
+  };
+
+  qbz = {
+    # Optional path to a user-supplied Nix package recipe, evaluated using
+    # pkgs.callPackage. Enabling features.qbz requires an existing Nix path,
+    # for example ./local/qbz.nix. Add it to Git before flake evaluation.
+    packageFile = null;
   };
 
   # Plasma applies these on login and when the power source changes. PPD owns

@@ -63,7 +63,7 @@ One module is used for an application when it has meaningful configuration:
 - Git defaults, Gitleaks, and the staged PII hook
 - Zsh
 - Strawberry
-- QBZ
+- optional user-supplied QBZ package (disabled by default)
 - DC-Elite helper
 - AI CLI/runtime packages
 

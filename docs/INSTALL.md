@@ -28,7 +28,7 @@ All installation-specific configuration is in `settings.nix`:
 | `user.description` | Set the displayed full name. |
 | Both password fields | Prefer leaving both `null`; set the password after `nixos-install` in step 9. |
 | `user.sshAuthorizedKeys` | Optional. Add only complete public keys you control. An empty list keeps sshd disabled. |
-| `features.qbz` | Keep `true`, or use `false` for a lighter initial build. |
+| `features.qbz` | Keep `false`: upstream distribution is closed. Enabling requires a separately maintained `qbz.packageFile`; see README. |
 | `features.secureBoot` | Keep `false` for installation. Enable only after creating and verifying local keys in step 13. |
 | Git name and email | Replace the example identity. |
 
@@ -165,7 +165,7 @@ nano settings.nix
 
 The following excerpt shows installation-specific fields to edit in place.
 Do not replace the whole file: retain the existing `power`, `network`, `ai`,
-`display`, `audio` and `features.thunderbolt` settings. Replace every value
+`display`, `audio`, `qbz` and `features.thunderbolt` settings. Replace every value
 marked for replacement and use the exact `INSTALL_DISK` value verified above:
 
 ```nix
@@ -213,7 +213,7 @@ marked for replacement and use the exact `INSTALL_DISK` value verified above:
   };
 
   features = {
-    qbz = true;
+    qbz = false;
 
     # Enable only after completing the post-install Secure Boot procedure.
     secureBoot = false;
@@ -282,8 +282,7 @@ nix flake check --no-build --all-systems
 nix eval --raw ".#nixosConfigurations.${INSTALL_HOST}.config.system.build.toplevel.drvPath"
 ```
 
-The QBZ input may emit upstream package-name deprecation warnings. Warnings are
-not failures; any final `error:` must be resolved before proceeding.
+Warnings are not failures; any final `error:` must be resolved before proceeding.
 
 Ask Disko to resolve the operation without executing it. Its `--dry-run` prints
 the generated script path; it is an evaluation check, not a visual partition
@@ -364,13 +363,8 @@ nixos-install \
   --no-root-passwd
 ```
 
-QBZ is built locally and may be the longest, most memory-intensive part. The
-40 GiB swap must remain active. If the QBZ build prevents the first installation,
-set this in `/mnt/etc/nixos/settings.nix` and rerun only `nixos-install`:
-
-```nix
-features.qbz = false;
-```
+Keep the 40 GiB swap active during installation. QBZ is disabled by default
+because its upstream source is unavailable; first boot does not require it.
 
 Do **not** rerun the destructive Disko step merely because `nixos-install`
 failed. Correct the configuration or network problem and rerun the installation.
@@ -679,17 +673,9 @@ dc-elite-alsa-config
 
 Follow `docs/AUDIO.md` before writing the generated ALSA configuration.
 
-If QBZ was disabled for installation, enable it now:
-
-```nix
-features.qbz = true;
-```
-
-Then build and activate it with the physical swap available:
-
-```bash
-sudo nixos-rebuild switch --flake ".#${INSTALL_HOST}"
-```
+Keep QBZ disabled unless you have supplied an independently maintained Nix
+package through `qbz.packageFile`. The upstream project and distribution
+channels have closed; the optional integration is documented in the README.
 
 Open Firefox and verify `about:policies`, `about:addons`, and
 `about:preferences#privacy`. The uBlock Origin advanced controls are enabled,
@@ -1174,9 +1160,9 @@ all forms of PII are not covered. CI runs after upload, so local hooks remain
 the pre-upload protection. No workflow success is implied until it runs on
 your repository host.
 
-`.github/workflows/nix.yml` evaluates every flake output and builds the complete
-QBZ-deferred x86_64-linux system on an Ubuntu runner for every push and pull
-request. The workflow substitutes only a non-device CI disk identifier, never
+`.github/workflows/nix.yml` evaluates every flake output and builds the default
+x86_64-linux system on an Ubuntu runner for pull requests and pushes to `main`.
+The workflow substitutes only a non-device CI disk identifier, never
 runs Disko, and pins its GitHub Actions by commit. A green workflow is the full
 Linux build check that an ARM macOS development host cannot perform locally.
 
