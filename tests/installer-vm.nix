@@ -122,7 +122,7 @@ in
         target.config.system.build.diskoScript
       ];
     };
-    fileSystems."/iso" = {
+    virtualisation.fileSystems."/iso" = {
       device = "/dev/disk/by-label/NIXOS_TEST";
       fsType = "iso9660";
       options = [ "ro" ];
@@ -157,6 +157,7 @@ in
 
     installer.start()
     installer.wait_for_unit("multi-user.target")
+    installer.wait_for_unit("iso.mount", timeout=120)
     installer.succeed("udevadm settle; test -b ${fixtureSettings.diskDevice}")
     installer.succeed("cp -r ${source} /root/config; chmod -R u+w /root/config")
     installer.succeed("git -C /root/config init -q; git -C /root/config add .; git -C /root/config -c user.name=Fixture -c user.email=fixture@example.com commit -qm fixture")
