@@ -1,9 +1,11 @@
 """Resolve the install-time timezone once; never locate from Nix evaluation."""
 
 import argparse
+import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 from zoneinfo import available_timezones
@@ -45,9 +47,30 @@ def configure(path, manual=None):
     # Validation precedes any write. Only the timezone value is replaced;
     # account settings, comments, file permissions and all other text survive.
     start, end = assignment.span(2)
-    path.write_text(text[:start] + f'"{zone}"' + text[end:])
+    replace_file(path, text[:start] + f'"{zone}"' + text[end:])
     print(f"Saved timezone: {zone} in {path}. Review this value before installation.")
     return zone
+
+
+def replace_file(path, text):
+    """Write a sibling temporary file and rename it over the original.
+
+    An interruption, a full disk or a failed write leaves the reviewed
+    settings file untouched instead of truncated.
+    """
+    mode = path.stat().st_mode & 0o7777
+    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
+    try:
+        with os.fdopen(fd, "w") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    except BaseException:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+        raise
 
 
 def main():

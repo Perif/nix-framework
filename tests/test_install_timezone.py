@@ -75,6 +75,36 @@ class InstallTimezone(unittest.TestCase):
             lookup.assert_not_called()
         self.assertEqual(self.path.read_text(), self.original)
 
+    def test_interrupted_write_leaves_settings_intact(self):
+        real_open = io.open
+
+        class FailingWriter:
+            def __init__(self, inner):
+                self.inner = inner
+
+            def write(self, data):
+                raise OSError('simulated interruption while writing')
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return self.inner.__exit__(*exc)
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+        def failing_open(file, mode='r', *args, **kwargs):
+            handle = real_open(file, mode, *args, **kwargs)
+            return FailingWriter(handle) if 'w' in mode else handle
+
+        with patch('io.open', failing_open):
+            with self.assertRaises(OSError):
+                helper.configure(self.path, 'UTC')
+        self.assertEqual(self.path.read_text(), self.original)
+        self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual([entry.name for entry in self.path.parent.iterdir()], ['settings.nix'])
+
     def test_ambiguous_or_missing_assignment_is_untouched(self):
         for text in ('{}\n', self.original + 'timeZone = null;\n'):
             self.path.write_text(text)
