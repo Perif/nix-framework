@@ -93,6 +93,67 @@ class WebuiBootstrapTests(unittest.TestCase):
             with self.assertRaisesRegex(self.module.Stop, "Refusing to overwrite"):
                 self.module.write_permit_file(permit_file)
 
+    def test_failed_early_writes_remove_owned_files_and_restore_handler(self) -> None:
+        for failed_write in ("environment", "permit"):
+            with self.subTest(failed_write=failed_write), tempfile.TemporaryDirectory() as temporary:
+                config = make_config(self.module, Path(temporary))
+                previous_sigterm = signal.getsignal(signal.SIGTERM)
+                real_fsync = os.fsync
+                calls = 0
+
+                def fail_selected_write(fd: int) -> None:
+                    nonlocal calls
+                    calls += 1
+                    if (failed_write == "environment" and calls == 1) or (
+                        failed_write == "permit" and calls == 2
+                    ):
+                        raise OSError("synthetic write failure")
+                    real_fsync(fd)
+
+                with patch.object(self.module.os, "fsync", fail_selected_write), \
+                    patch.object(self.module, "stop_service") as stop, \
+                    patch.object(self.module, "start_service") as start:
+                    with self.assertRaisesRegex(OSError, "synthetic write failure"):
+                        self.module.bootstrap(config, TEST_EMAIL, TEST_PASSWORD, "Admin")
+                self.assertFalse(config.env_file.exists())
+                self.assertFalse(config.permit_file.exists())
+                self.assertEqual(signal.getsignal(signal.SIGTERM), previous_sigterm)
+                start.assert_not_called()
+                stop.assert_not_called()
+
+    def test_sigterm_during_secret_write_removes_partial_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            config = make_config(self.module, Path(temporary))
+            previous_sigterm = signal.getsignal(signal.SIGTERM)
+            with patch.object(self.module.os, "fsync", side_effect=lambda _: os.kill(os.getpid(), signal.SIGTERM)), \
+                patch.object(self.module, "stop_service") as stop:
+                with self.assertRaisesRegex(self.module.Stop, "Interrupted by SIGTERM"):
+                    self.module.bootstrap(config, TEST_EMAIL, TEST_PASSWORD, "Admin")
+            self.assertFalse(config.env_file.exists())
+            self.assertFalse(config.permit_file.exists())
+            self.assertEqual(signal.getsignal(signal.SIGTERM), previous_sigterm)
+            stop.assert_not_called()
+
+    def test_cleanup_keeps_concurrent_replacement_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = make_config(self.module, root)
+            previous_sigterm = signal.getsignal(signal.SIGTERM)
+
+            def replace_env_then_fail(service: str) -> None:
+                config.env_file.rename(root / "original.env")
+                self.module.write_private_env_file(config.env_file, 'CONCURRENT="1"\n')
+                raise self.module.Stop("synthetic startup failure")
+
+            with patch.object(self.module, "start_service", replace_env_then_fail), \
+                patch.object(self.module, "stop_service") as stop:
+                with self.assertRaisesRegex(self.module.Stop, "synthetic startup failure"):
+                    self.module.bootstrap(config, TEST_EMAIL, TEST_PASSWORD, "Admin")
+            self.assertEqual(config.env_file.read_text(), 'CONCURRENT="1"\n')
+            self.assertFalse(config.permit_file.exists())
+            self.assertEqual(signal.getsignal(signal.SIGTERM), previous_sigterm)
+            stop.assert_called_once_with(config.service)
+
     def test_allows_retry_when_database_is_empty(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

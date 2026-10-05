@@ -174,45 +174,65 @@ def assert_bootstrap_allowed(state_dir: Path, admin_email: str | None = None) ->
     raise Stop("Open WebUI already has user rows but no admin; inspect the database before bootstrapping")
 
 
-def write_private_env_file(path: Path, content: str) -> None:
-    if path.exists():
-        raise Stop(f"Refusing to overwrite existing bootstrap environment file: {path}")
+FileIdentity = tuple[int, int]
+
+
+def remove_owned_file(path: Path, identity: FileIdentity | None) -> None:
+    if identity is None:
+        return
+    try:
+        current = path.lstat()
+    except FileNotFoundError:
+        return
+    if (current.st_dev, current.st_ino) == identity:
+        path.unlink()
+
+
+def write_new_file(
+    path: Path, content: str, mode: int, label: str,
+    owned: dict[Path, FileIdentity] | None = None,
+) -> FileIdentity:
+    if path.exists() or path.is_symlink():
+        raise Stop(f"Refusing to overwrite existing {label}: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    except FileExistsError as error:
+        raise Stop(f"Refusing to overwrite existing {label}: {path}") from error
+    created = os.fstat(fd)
+    identity = (created.st_dev, created.st_ino)
+    if owned is not None:
+        owned[path] = identity
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             fd = -1
             handle.write(content)
+            os.fchmod(handle.fileno(), mode)
             handle.flush()
             os.fsync(handle.fileno())
-        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR)
-    finally:
+    except BaseException:
         if fd >= 0:
             os.close(fd)
+        try:
+            remove_owned_file(path, identity)
+        finally:
+            if owned is not None:
+                owned.pop(path, None)
+        raise
+    return identity
 
 
-def write_permit_file(path: Path) -> None:
-    if path.exists():
-        raise Stop(f"Refusing to overwrite existing bootstrap start permit: {path}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            fd = -1
-            handle.write("open-webui bootstrap start permitted\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
-    finally:
-        if fd >= 0:
-            os.close(fd)
+def write_private_env_file(
+    path: Path, content: str, owned: dict[Path, FileIdentity] | None = None,
+) -> FileIdentity:
+    return write_new_file(path, content, stat.S_IRUSR | stat.S_IWUSR,
+                          "bootstrap environment file", owned)
 
 
-def remove_file(path: Path) -> None:
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        pass
+def write_permit_file(path: Path, owned: dict[Path, FileIdentity] | None = None) -> FileIdentity:
+    return write_new_file(path, "open-webui bootstrap start permitted\n",
+                          stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH,
+                          "bootstrap start permit", owned)
 
 
 def permit_is_fresh(path: Path, max_age: float) -> bool:
@@ -303,6 +323,8 @@ def bootstrap(config: BootstrapConfig, email: str, password: str, name: str) -> 
     assert_bootstrap_allowed(config.state_dir, email)
     content = render_environment(email, password, name)
     interrupted = False
+    owned: dict[Path, FileIdentity] = {}
+    service_attempted = False
     previous_sigterm = signal.getsignal(signal.SIGTERM)
 
     def handle_sigterm(signum: int, frame: object) -> None:
@@ -311,26 +333,31 @@ def bootstrap(config: BootstrapConfig, email: str, password: str, name: str) -> 
         raise Stop("Interrupted by SIGTERM; bootstrap files were cleaned up")
 
     signal.signal(signal.SIGTERM, handle_sigterm)
-    write_private_env_file(config.env_file, content)
-    wrote_permit = False
     try:
-        write_permit_file(config.permit_file)
-        wrote_permit = True
+        write_private_env_file(config.env_file, content, owned)
+        write_permit_file(config.permit_file, owned)
+        service_attempted = True
         start_service(config.service)
         wait_for_bootstrap(config, email, require_http=True)
-        remove_file(config.env_file)
+        remove_owned_file(config.env_file, owned.get(config.env_file))
+        owned.pop(config.env_file, None)
         restart_service(config.service)
         wait_for_bootstrap(config, email, require_http=True)
     except BaseException:
-        try:
-            stop_service(config.service)
-        finally:
-            raise
+        if service_attempted:
+            try:
+                stop_service(config.service)
+            finally:
+                raise
+        raise
     finally:
-        remove_file(config.env_file)
-        if wrote_permit:
-            remove_file(config.permit_file)
-        signal.signal(signal.SIGTERM, previous_sigterm)
+        try:
+            try:
+                remove_owned_file(config.env_file, owned.get(config.env_file))
+            finally:
+                remove_owned_file(config.permit_file, owned.get(config.permit_file))
+        finally:
+            signal.signal(signal.SIGTERM, previous_sigterm)
         if interrupted:
             password = ""
 

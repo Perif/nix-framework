@@ -49,7 +49,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 - Linux CI runs the synthetic suite, the packaged command's help, actual
   read-only `lsblk`/`findmnt`/`swapon` checks, and the source regression before
   the existing full system build. Consult the PR's checks for the current run.
-- Eleven WebUI bootstrap fixture tests cover private runtime files, existing
+- Fourteen WebUI bootstrap fixture tests cover private runtime files, existing
   accounts, empty databases, readiness, restart, timeout and signal cleanup.
 - The `installer-vm` check exercises real partitioning, interruption recovery,
   installation, UEFI boot, LUKS unlock and login on a disposable virtual disk.

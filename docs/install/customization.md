@@ -1,10 +1,10 @@
 # Customize DNS, shells, and editors
 
-Edit declarative source in `/etc/nixos`, then evaluate and test before making a change the boot default. Do not edit generated files under `$HOME/.config`.
-
-All managed preferences are read-only Nix store links after activation. Edit
-the source under `/etc/nixos`, test a generation, then switch it permanently;
-do not edit the generated files under `$HOME/.config`.
+Edit declarative source in `/etc/nixos`, then evaluate and test before making a
+change the boot default. Nix-managed configuration files are read-only store
+links after activation; change their source rather than editing the generated
+files under `$HOME/.config`. Application-owned preferences, such as KeePassXC's
+browser pairing and database history, remain writable.
 
 ### Blocky exceptions and emergency bypass
 
@@ -179,12 +179,25 @@ Troubleshoot Server** if one does not start. Settings and server commands live
 in `home/modules/sublime.nix`; the Python 3.3 plug-in host remains removed and
 must not be restored to accommodate an obsolete package.
 
-After any customization, use the same promotion sequence:
+After any customization, evaluate and activate temporarily. Stop if either
+command fails:
 
 ```bash
-cd /etc/nixos
-nix-check
-nix-test
+cd /etc/nixos && nix-check && nix-test
+```
+
+Inspect failed services and verify the behavior you changed:
+
+```bash
 systemctl --failed
+```
+
+This command lists failures but is not an automatic health gate. Only after
+checking the result, networking, a new terminal and the affected applications,
+promote the configuration in a separate step:
+
+```bash
 nix-switch
 ```
+
+Use the [upgrade guide](upgrade.md) for the full verification and rollback route.

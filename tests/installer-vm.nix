@@ -107,9 +107,17 @@ in
       memorySize = 4096;
       cores = 2;
       useEFIBoot = true;
+      # Nix evaluation reads many Nixpkgs files; avoid slow host-store 9p I/O.
+      useNixStoreImage = true;
       emptyDiskImages = [ (80 * 1024) ];
       # The sparse disposable image is exposed once, as a serial-numbered NVMe.
-      qemu.drives = lib.mkForce [ ];
+      qemu.drives = lib.mkForce [
+        {
+          name = "nix-store";
+          file = ''"$TMPDIR"/store.img'';
+          driveExtraOpts.format = "raw";
+        }
+      ];
       qemu.options = [
         "-drive file=$(pwd)/empty0.qcow2,if=none,id=installtarget"
         "-device nvme,drive=installtarget,serial=INSTALL_TEST"
@@ -163,6 +171,21 @@ in
     installer.succeed("udevadm settle; test -b ${fixtureSettings.diskDevice}")
     installer.succeed("cp -r ${source} /root/config; chmod -R u+w /root/config")
     installer.succeed("git -C /root/config init -q; git -C /root/config add .; git -C /root/config -c user.name=Fixture -c user.email=fixture@example.com commit -qm fixture")
+    with subtest("offline guest evaluation matches preloaded outputs"):
+        try:
+            for attribute, expected in [
+                ("toplevel", "${target.config.system.build.toplevel}"),
+                ("destroyFormatMount", "${target.config.system.build.destroyFormatMount}"),
+            ]:
+                actual = installer.succeed(
+                    "nix eval --offline --raw /root/config#nixosConfigurations.installer-target.config.system.build."
+                    + attribute + ".outPath --no-update-lock-file --no-write-lock-file",
+                    timeout=300,
+                ).strip()
+                assert actual == expected, (attribute, actual, expected)
+        except Exception:
+            print(installer.succeed("free -m; ps -eo pid,etime,pcpu,pmem,args; dmesg | tail -60"))
+            raise
     with subtest("production preflight and plan on a clean target"):
         installer.succeed("installer --config /root/config preflight", timeout=300)
         installer.succeed("installer --config /root/config plan", timeout=300)
