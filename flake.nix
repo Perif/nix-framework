@@ -38,6 +38,7 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       home-manager,
       nixos-hardware,
@@ -51,9 +52,23 @@
       settings = import ./settings.nix;
     in
     {
+      devShells = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+        system:
+        import ./templates/project/shells.nix {
+          pkgs = import nixpkgs { inherit system; };
+        }
+      );
+      templates.project = {
+        path = ./templates/project;
+        description = "Project-local dev shells for C, Python, Go, Rust, Node.js and Nix";
+      };
+
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
       packages.x86_64-linux.installer = import ./pkgs/installer.nix {
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      };
+      packages.x86_64-linux.webui-bootstrap = import ./pkgs/webui-bootstrap.nix {
         pkgs = import nixpkgs { system = "x86_64-linux"; };
       };
       packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix {
@@ -77,6 +92,15 @@
           };
         in
         {
+          webui-bootstrap =
+            pkgs.runCommand "webui-bootstrap-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python3 ${./tests/test_webui_bootstrap.py} --script ${./scripts/webui-bootstrap.py}
+                touch "$out"
+              '';
           qbz-configuration =
             assert import ./tests/qbz-module.nix { inherit pkgs; };
             pkgs.runCommand "qbz-configuration-tests" { } ''
@@ -134,6 +158,18 @@
               '';
         }
         // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          software-profiles =
+            assert import ./tests/software-profiles.nix {
+              configuration = self.nixosConfigurations.${settings.hostname};
+              inherit settings;
+              inherit (nixpkgs) lib;
+            };
+            pkgs.runCommand "software-profile-selection-tests" { } ''
+              touch "$out"
+            '';
+          installer-vm = pkgs.testers.runNixOSTest (
+            import ./tests/installer-vm.nix { inherit nixpkgs disko; }
+          );
           dns-boot = pkgs.testers.runNixOSTest (import ./tests/dns-boot.nix);
         }
       );

@@ -13,6 +13,7 @@ parser.add_argument('--config', type=Path, required=True)
 args = parser.parse_args()
 sys.path.insert(0, str(args.helpers.resolve()))
 import common  # noqa: E402
+import layout  # noqa: E402
 
 
 with tempfile.TemporaryDirectory(prefix='installer-source-test-') as temporary:
@@ -31,6 +32,11 @@ with tempfile.TemporaryDirectory(prefix='installer-source-test-') as temporary:
     config = common.snapshot(checkout)
     assert config.disk == '/dev/disk/by-id/ci-validation-disk'
     assert config.source.is_dir()
+    evaluated = layout.evaluate_layout(config)
+    assert evaluated.targets['/mnt/boot'] == ('vfat', '/')
+    assert evaluated.targets['/mnt/var/lib/private/ollama'] == ('btrfs', '/ollama')
+    assert evaluated.esp_partition == 1 and evaluated.crypt_partition == 2
+    assert evaluated.minimum_disk_bytes > 41 * 1024**3
     assert (config.source / 'settings.nix').read_bytes() == settings.read_bytes()
     for excluded in ('.git', 'untracked-canary', 'ignored-canary'):
         assert not (config.source / excluded).exists(), excluded

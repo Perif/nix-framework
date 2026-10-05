@@ -129,7 +129,14 @@ needs editing when these change:
 - `features.wine` / `features.keepassxc`: installed by default; can be disabled
 - `builds.maxJobs` / `builds.cores`: optional measured build limits (`null` keeps defaults)
 - `storage.homeSnapshots`: opt-in short-retention home snapshots
-- `ai.webui`: on-demand Open WebUI enablement, port and initial signup policy
+- `ai.webui`: on-demand Open WebUI enablement and port; signup is disabled and
+  `sudo webui-bootstrap` creates the first administrator privately
+- `features.devCore` and `features.languageTools`: common development tools and
+  individually selectable C, Python, Go, Rust, Node.js and Nix toolchains
+- `features.localAI`, `features.extraBrowsers`, `features.extraEditors`: optional
+  application groups; see [software selections](docs/WORKSTATION-APPS.md)
+- `features.office`: individual LibreOffice, Thunderbird, KDE Connect and
+  Syncthing switches; network applications start manually
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
 - `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma

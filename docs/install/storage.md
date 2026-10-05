@@ -25,7 +25,13 @@ machine and drive you intend to erase. Record the `Reviewed base commit` and
 visual partition preview. Resolve every evaluation error before continuing. If
 you change any staged file, re-review and rerun `plan`.
 
-The expected layout is a 1 GiB EFI partition, LUKS2, LVM, encrypted 40 GiB
+The storage contract is read from the evaluated Disko module in
+`hosts/framework-pro/disk.nix`; the installer derives the mount set and sizes
+from it. Unsupported topology changes are rejected before erasure. With the
+default 1 GiB EFI and 40 GiB swap, the capacity guard requires at least 57 GiB
+(including 16 GiB of space for root and layout overhead). This is a feasibility
+floor; the complete desktop, builds, models and snapshots need substantially
+more space. The expected layout is a 1 GiB EFI partition, LUKS2, LVM, encrypted 40 GiB
 swap, and Btrfs subvolumes for root, home, Nix, logs, snapshots, and Ollama
 state. TRIM passthrough and swap discard are enabled. This can reveal which
 encrypted SSD blocks are unused; for a maximum-confidentiality posture, review
@@ -55,7 +61,7 @@ and securely retain a strong, unique LUKS passphrase when prompted.
 Formatting is a one-time fresh-install stage, not a resume command. If it
 reports an error or the shell is interrupted, do not run `format` again until
 you have inspected the resulting device and resolved the failure. Use the
-[manual recovery guidance](#manual-recovery-after-an-interrupted-format-or-mount)
+[recovery guidance](#recover-an-existing-formatted-target)
 below; it never calls Disko or erases data.
 
 Run the separate mount verification stage:
@@ -74,7 +80,41 @@ Expected mount points include `/mnt`, `/mnt/boot`,
 and inside the encrypted LVM layout. Do not install unless the target and all
 expected mounts are correct.
 
-## Manual recovery after an interrupted format or mount
+## Recover an existing formatted target
+
+When the existing GPT/LUKS/LVM/Btrfs layout is complete but closed or partially
+mounted, use the same reviewed Git checkout and personalized settings:
+
+```bash
+sudo -i
+cd /tmp/nixos-config
+export NIX_CONFIG="experimental-features = nix-command flakes"
+nix run .#installer -- recover
+```
+
+Review the displayed disk identity and type `RECOVER` followed by the exact
+by-id path when prompted. The command validates GPT partition numbers, labels
+and the EFI type, opens only the expected LUKS2 partition, activates only the
+expected LVs, retains correct existing mounts, mounts missing subvolumes and
+the exact EFI partition, and enables the expected encrypted swap. It never
+calls Disko, creates filesystems, or formats a partition. Incorrect filesystems,
+unrelated mappings, conflicting mounts, and changed source/layout records stop
+recovery. If it stops partway, preserve the state and inspect it before retrying.
+
+Successful format/recovery records the source tree/base commit, immutable source
+path, disk identity and layout fingerprint in
+`/mnt/etc/nix-framework-installer.json` (root-readable; no credentials).
+Installation requires a matching record. Recovery validates an existing record
+and never replaces it; when an interruption happened before record creation,
+it creates one only after the entire layout passes verification. Preserve the
+record with your reviewed source for troubleshooting. It is provenance metadata,
+not authentication against someone who can alter the disk as root.
+
+After recovery, run `mounts`, `install`, and `account` as applicable. A partially
+formatted target missing required filesystems or subvolumes needs manual
+inspection; recovery cannot finish formatting it.
+
+## Inspect an interrupted format or mount
 
 The staged command intentionally does not auto-close mappings, deactivate
 volume groups, unmount targets, or delete partial state. This prevents it from
@@ -98,9 +138,9 @@ partitioned, encrypted, or formatted some of the target; never assume rollback.
    - If formatting completed and the expected filesystems and encrypted swap are
      mounted correctly, run `mounts` and then `install`. These stages verify the
      existing target and do not reformat it.
-   - If the expected layout is present but some mounts are missing, mount only
-     the verified filesystems from this target using the documented Disko
-     layout, then run `mounts` and `install`. Do not run `preflight` or `plan`
+   - If the expected layout is present but some mounts are missing, use the
+     guarded `recover` command above, then run `mounts` and `install`.
+     Do not run `preflight` or `plan`
      against active mappings/mounts; their fresh-disk guards intentionally
      refuse that state.
    - Run `preflight` and `plan` only if you have inspected and manually returned
@@ -110,7 +150,7 @@ partitioned, encrypted, or formatted some of the target; never assume rollback.
      and backup review.
    - If the state is unclear, preserve it and seek help with the command output.
 
-The repository installer refuses active `cryptroot` mappings, a conflicting
+The fresh-format stage refuses active `cryptroot` mappings, a conflicting
 `vg` volume-group name, and any mounted or active target descendant. It does
 not automatically clean those up. This is intentional; do not bypass the
 refusal.

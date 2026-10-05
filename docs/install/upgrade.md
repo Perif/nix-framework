@@ -134,8 +134,8 @@ copy reviewed changes to `/etc/nixos` deliberately. The migration above is a
 one-time prerequisite only for the old Ollama layout. Never rerun Disko for a
 routine rebuild or upgrade.
 
-Evaluate, test temporarily, inspect basic service state, then make the
-configuration the boot default:
+Evaluate and activate temporarily first. This changes the running system but
+leaves the previous boot default available:
 
 ```bash
 (
@@ -145,6 +145,24 @@ INSTALL_HOST="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname
 nix flake check --no-build --all-systems
 sudo nixos-rebuild test --flake ".#${INSTALL_HOST}"
 systemctl --failed
+)
+```
+
+**Stop here and inspect the result before promotion.** `systemctl --failed`
+lists failures but still exits successfully; it is not an automatic health gate.
+Check networking/DNS, a new terminal and login, audio, display, and any services
+you enabled. Start on-demand AI services explicitly if they are part of your
+checks. Resolve unexpected failed units and inspect their logs. A successful
+temporary activation alone does not test the new kernel or initrd.
+
+Only after those checks succeed, promote the same reviewed configuration in a
+separate command. Do not edit or update its lock between testing and promotion:
+
+```bash
+(
+set -eu
+cd /etc/nixos
+INSTALL_HOST="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"
 sudo nixos-rebuild switch --flake ".#${INSTALL_HOST}"
 )
 ```

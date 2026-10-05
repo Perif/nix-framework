@@ -10,7 +10,9 @@ import sys
 import tempfile
 
 from common import Stop, evaluate, live_environment, read_config, run, snapshot, validate_source
-from storage import fresh_storage, show_disk, verify_mounts
+import record
+from storage import (check_partitions, disk_identity, fresh_storage, recover_mounts,
+                     show_disk, verify_mounts)
 
 
 def disko(config, dry=False):
@@ -21,8 +23,8 @@ def disko(config, dry=False):
 
 
 def format_disk(config):
-    evaluate(config)
-    before = fresh_storage(config)
+    layout = evaluate(config)
+    before = fresh_storage(config, layout)
     show_disk(config, before)
     if not sys.stdin.isatty():
         raise Stop('Formatting requires an interactive terminal; no unattended confirmation option exists.')
@@ -30,10 +32,36 @@ def format_disk(config):
     print(f'ALL DATA ON THIS DISK WILL BE LOST. Type exactly: {expected}', flush=True)
     if input().strip() != expected:
         raise Stop('Disk erase confirmation did not match; nothing was formatted.')
-    if fresh_storage(config) != before:
+    if fresh_storage(config, layout) != before:
         raise Stop('Disk identity changed during confirmation; nothing was formatted.')
     disko(config)
-    verify_mounts(config)
+    disk = verify_mounts(config, layout)
+    record.create(config, disk, layout)
+
+
+def recover(config):
+    layout = evaluate(config)
+    disk = disk_identity(config)
+    check_partitions(config, layout, disk)
+    show_disk(config, disk)
+    if not sys.stdin.isatty():
+        raise Stop('Recovery requires an interactive terminal.')
+    expected = f'RECOVER {config.disk}'
+    print(f'Open and mount this existing target only. Type exactly: {expected}', flush=True)
+    if input().strip() != expected:
+        raise Stop('Recovery confirmation did not match; no mapping or mount was opened.')
+    if disk_identity(config) != disk:
+        raise Stop('Disk identity changed during recovery confirmation.')
+
+    def existing_record(mounted_disk):
+        if record.RECORD.exists() or record.RECORD.is_symlink():
+            record.verify(config, mounted_disk, layout)
+        elif Path('/mnt/etc/NIXOS').exists() or Path('/mnt/etc/nixos').exists():
+            raise Stop('An existing installation has no matching installer record; inspect it before recovery.')
+
+    recovered_disk = recover_mounts(config, layout, after_root=existing_record)
+    record.create(config, recovered_disk, layout)
+    print('Existing target mounted and verified. Continue with install; never rerun format.', flush=True)
 
 
 def copy_source(config):
@@ -71,12 +99,15 @@ def copy_source(config):
 
 
 def install_system(config):
-    evaluate(config)
-    before = verify_mounts(config)
+    layout = evaluate(config)
+    before = verify_mounts(config, layout)
+    record.verify(config, before, layout)
     target = copy_source(config)
-    if read_config(target) != type(config)(target, config.hostname, config.username, config.disk, config.declarative_password):
+    installed = read_config(target)
+    if (installed.hostname, installed.username, installed.disk, installed.declarative_password) != (
+            config.hostname, config.username, config.disk, config.declarative_password):
         raise Stop('Copied configuration does not match the reviewed selection.')
-    if verify_mounts(config) != before:
+    if verify_mounts(config, layout) != before:
         raise Stop('Disk identity changed before installation.')
     run('nixos-install', '--root', '/mnt', '--flake', f'{target}#{config.hostname}', '--no-root-passwd')
     print('Installation finished. Run the account stage before rebooting.', flush=True)
@@ -88,7 +119,9 @@ def account():
     if installed.resolve() != installed:
         raise Stop('Installed configuration path must not contain a symlink.')
     config = read_config(installed)
-    verify_mounts(config)
+    layout = evaluate(config)
+    disk = verify_mounts(config, layout)
+    record.verify(config, disk, layout, source=False)
     profile = Path('/mnt/nix/var/nix/profiles/system')
     # Absolute store links resolve inside the target after chroot, not the live ISO.
     if not (profile.is_symlink() or profile.exists()):
@@ -111,7 +144,7 @@ def account():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, default=Path.cwd(), help='Reviewed Git checkout root (default: current directory)')
-    parser.add_argument('stage', choices=['preflight', 'plan', 'format', 'mounts', 'install', 'account'])
+    parser.add_argument('stage', choices=['preflight', 'plan', 'format', 'recover', 'mounts', 'install', 'account'])
     args = parser.parse_args()
     try:
         live_environment()
@@ -123,14 +156,16 @@ def main():
                 return 0
             config = snapshot(args.config)
             if args.stage in ('preflight', 'plan'):
-                evaluate(config)
-                show_disk(config, fresh_storage(config))
+                layout = evaluate(config)
+                show_disk(config, fresh_storage(config, layout))
                 if args.stage == 'plan':
                     disko(config, dry=True)
             elif args.stage == 'format':
                 format_disk(config)
+            elif args.stage == 'recover':
+                recover(config)
             elif args.stage == 'mounts':
-                verify_mounts(config)
+                verify_mounts(config, evaluate(config))
             elif args.stage == 'install':
                 install_system(config)
     except (Stop, OSError, ValueError, KeyError, subprocess.CalledProcessError, EOFError) as error:

@@ -42,8 +42,32 @@ uses a non-device disk identifier; no installer stage is invoked.
 The timezone check covers detected and explicit zones, preserved settings, and
 lookup failures without making a live geolocation request. Before flake
 validation, CI replaces the disk sentinel with a non-device identifier and
-sets UTC explicitly. The validation job never invokes an installer stage or
-runs Disko. It then evaluates every flake output and builds the default
+sets UTC explicitly. Host-runner checks never invoke an installer stage or
+run Disko against the runner's disks. CI evaluates every flake output and builds the default
 x86_64-linux system on an Ubuntu runner for pull requests and pushes to `main`.
 The workflow pins its GitHub Actions by commit. A green workflow is the full
 Linux build check that an ARM macOS development host cannot perform locally.
+
+The `installer-vm` check runs real production installer commands and Disko only
+inside a disposable x86_64 QEMU guest with a sparse 80 GiB NVMe image. It tests
+preflight/plan, interactive partitioning and LUKS setup, mount verification,
+closing and recovering the target after an interrupted installation, preserving
+a canary and installation record, `nixos-install`, account password setup,
+UEFI boot from the installed disk, interactive unlock and password login.
+The guest has a tmpfs live root, a real ISO9660 fixture mount and EFI firmware;
+no production live-environment guard is disabled.
+
+```bash
+# Linux host with KVM; all writes stay in the disposable VM disk image.
+nix build .#checks.x86_64-linux.installer-vm --no-link --print-build-logs
+```
+
+The target imports the production Disko layout with a minimal test OS and
+test-driver instrumentation. It does not boot the full Plasma/Framework system,
+test a downloaded release ISO, or validate hardware, suspend, graphics, audio,
+Secure Boot, or physical disk power-loss behavior. The separate full-system
+build and the laptop's first-boot checklist remain required.
+
+The `webui-bootstrap` check covers secret-file permissions, input validation,
+service startup guards and failure recovery with synthetic fixtures. It never
+creates real credentials or modifies a running service on the check host.

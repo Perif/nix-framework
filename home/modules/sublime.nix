@@ -1,6 +1,12 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
 
 let
+  languages = settings.features.languageTools;
   # Build 4213 ships two plug-in hosts. Only the legacy Python 3.3 host links
   # to OpenSSL 1.1; the Python 3.14 host uses OpenSSL 3. Replace the broad
   # Nixpkgs rpath input and remove the legacy host so old plug-ins fail closed
@@ -78,6 +84,70 @@ let
       '';
     };
   };
+
+  languageServers =
+    lib.optionalAttrs languages.python {
+      basedpyright = {
+        enabled = true;
+        command = [
+          "${pkgs.basedpyright}/bin/basedpyright-langserver"
+          "--stdio"
+        ];
+        selector = "source.python";
+        diagnostics_mode = "workspace";
+        settings.basedpyright = {
+          disableOrganizeImports = true;
+          analysis = {
+            diagnosticMode = "openFilesOnly";
+            typeCheckingMode = "basic";
+          };
+        };
+      };
+      ruff = {
+        enabled = true;
+        command = [
+          "${pkgs.ruff}/bin/ruff"
+          "server"
+        ];
+        selector = "source.python";
+        diagnostics_mode = "workspace";
+      };
+    }
+    // lib.optionalAttrs languages.go {
+      gopls = {
+        enabled = true;
+        command = [ "${pkgs.gopls}/bin/gopls" ];
+        selector = "source.go";
+        diagnostics_mode = "workspace";
+        settings.gopls = {
+          gofumpt = true;
+          staticcheck = true;
+          usePlaceholders = true;
+        };
+      };
+    }
+    // lib.optionalAttrs languages.rust {
+      "rust-analyzer" = {
+        enabled = true;
+        command = [ "${pkgs.rust-analyzer}/bin/rust-analyzer" ];
+        selector = "source.rust";
+        diagnostics_mode = "workspace";
+        settings."rust-analyzer" = {
+          check.command = "clippy";
+          cargo.buildScripts.enable = true;
+          procMacro.enable = true;
+        };
+      };
+    }
+    // lib.optionalAttrs languages.nix {
+      nixd = {
+        enabled = true;
+        command = [ "${pkgs.nixd}/bin/nixd" ];
+        selector = "source.nix";
+        diagnostics_mode = "workspace";
+        settings.nixd.formatting.command = [ "${pkgs.nixfmt}/bin/nixfmt" ];
+      };
+    };
 in
 {
   assertions = [
@@ -161,70 +231,8 @@ in
       }
     '';
 
-    "sublime-text/Packages/User/LanguageServers.sublime-settings".text = ''
-      {
-        "basedpyright": {
-          "enabled": true,
-          "command": ["${pkgs.basedpyright}/bin/basedpyright-langserver", "--stdio"],
-          "selector": "source.python",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "basedpyright": {
-              "disableOrganizeImports": true,
-              "analysis": {
-                "diagnosticMode": "openFilesOnly",
-                "typeCheckingMode": "basic"
-              }
-            }
-          }
-        },
-        "ruff": {
-          "enabled": true,
-          "command": ["${pkgs.ruff}/bin/ruff", "server"],
-          "selector": "source.python",
-          "diagnostics_mode": "workspace"
-        },
-        "gopls": {
-          "enabled": true,
-          "command": ["${pkgs.gopls}/bin/gopls"],
-          "selector": "source.go",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "gopls": {
-              "gofumpt": true,
-              "staticcheck": true,
-              "usePlaceholders": true
-            }
-          }
-        },
-        "rust-analyzer": {
-          "enabled": true,
-          "command": ["${pkgs.rust-analyzer}/bin/rust-analyzer"],
-          "selector": "source.rust",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "rust-analyzer": {
-              "check": { "command": "clippy" },
-              "cargo": { "buildScripts": { "enable": true } },
-              "procMacro": { "enable": true }
-            }
-          }
-        },
-        "nixd": {
-          "enabled": true,
-          "command": ["${pkgs.nixd}/bin/nixd"],
-          "selector": "source.nix",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "nixd": {
-              "formatting": {
-                "command": ["${pkgs.nixfmt}/bin/nixfmt"]
-              }
-            }
-          }
-        }
-      }
-    '';
+    "sublime-text/Packages/User/LanguageServers.sublime-settings".text =
+      builtins.toJSON languageServers;
 
     "sublime-merge/Packages/User/Preferences.sublime-settings".text = ''
       {

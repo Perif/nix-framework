@@ -20,6 +20,9 @@ an excerpt: preserve the existing `power`, `builds`, `storage`, `network`, `ai`,
 | `user.name`, `user.description` | Set the local login name and displayed name. |
 | `user.sshAuthorizedKeys` | Optional. Add only complete public keys you control; an empty list keeps sshd disabled. |
 | `features.qbz` | Keep `false` unless you supply a separately maintained package. |
+| `features.devCore`, `features.languageTools.*` | Select common developer tools and individual language toolchains; use project shells for project-specific versions. |
+| `features.localAI`, `features.extraBrowsers`, `features.extraEditors` | Keep or disable the optional software groups. |
+| `features.office.*` | Select LibreOffice, Thunderbird, KDE Connect and Syncthing independently; see [software selections](../WORKSTATION-APPS.md). |
 | `features.secureBoot` | Keep `false` for initial installation. Enable only after the [post-install procedure](secure-boot.md). |
 | Git name and email | Replace the example identity. |
 | Password fields | Prefer both `null`; set the password in the installed target after installation. |

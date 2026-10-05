@@ -1,6 +1,6 @@
 """Shared installer process and configuration boundaries."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
@@ -30,6 +30,8 @@ class Config:
     username: str
     disk: str
     declarative_password: bool = False
+    source_tree: str = ''
+    base_commit: str = ''
 
     @property
     def flake(self):
@@ -91,10 +93,12 @@ def snapshot(directory):
         raise Stop('Nix did not return an immutable source snapshot.')
     validate_source(source)
     print(f"Using immutable configuration: {source}", flush=True)
-    return read_config(source)
+    return replace(read_config(source), source_tree=tree, base_commit=revision)
 
 
 def evaluate(config):
+    from layout import evaluate_layout
+
     derivation = run('nix', 'eval', '--raw', f'{config.source}#nixosConfigurations.{config.hostname}.config.system.build.toplevel.drvPath',
                      '--no-update-lock-file', '--no-write-lock-file', capture=True)
     print(f'Evaluated system: {derivation}', flush=True)
@@ -102,6 +106,7 @@ def evaluate(config):
                  '--no-update-lock-file', '--no-write-lock-file', capture=True)
     if actual != config.disk:
         raise Stop('The evaluated Disko target differs from settings.diskDevice.')
+    return evaluate_layout(config)
 
 
 def live_environment():

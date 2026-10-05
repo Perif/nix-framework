@@ -61,6 +61,9 @@ jobs:
       - name: Test installation timezone detection
         run: nix build .#checks.x86_64-linux.install-timezone --no-link --print-build-logs
 
+      - name: Test secure first-admin setup
+        run: nix build .#checks.x86_64-linux.webui-bootstrap --no-link --print-build-logs
+
       - name: Test laptop power-management helpers
         run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
 
@@ -98,3 +101,22 @@ jobs:
           nix build ".#nixosConfigurations.${host}.config.system.build.toplevel" \
             --no-link \
             --print-build-logs
+
+  installer-vm:
+    name: Install and recover in a disposable VM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out the configuration
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Install Nix
+        uses: cachix/install-nix-action@51f3067b56fe8ae331890c77d4e454f6d60615ff # v31.10.2
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            min-free = 2147483648
+            max-free = 5368709120
+      - name: Install, recover, reboot and authenticate in a disposable VM
+        run: nix build .#checks.x86_64-linux.installer-vm --no-link --print-build-logs

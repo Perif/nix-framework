@@ -1,5 +1,13 @@
-{ pkgs, settings, ... }:
+{
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
 
+let
+  languages = settings.features.languageTools;
+in
 {
   programs.vscodium = {
     enable = true;
@@ -16,28 +24,26 @@
       enableUpdateCheck = false;
       enableExtensionUpdateCheck = false;
 
-      extensions = with pkgs.vscode-extensions; [
-        # One reviewed agent extension is enough: Continue supports both local
-        # providers below without adding a second extension with overlapping
-        # repository and command-execution privileges.
-        continue.continue
-
-        jnoortheen.nix-ide
-
-        ms-python.python
-        ms-python.debugpy
-        detachhead.basedpyright
-        charliermarsh.ruff
-
-        golang.go
-
-        rust-lang.rust-analyzer
-        vadimcn.vscode-lldb
-
-        redhat.vscode-yaml
-        tamasfe.even-better-toml
-        editorconfig.editorconfig
-      ];
+      extensions =
+        with pkgs.vscode-extensions;
+        [ editorconfig.editorconfig ]
+        ++ lib.optional settings.features.localAI continue.continue
+        ++ lib.optional languages.nix jnoortheen.nix-ide
+        ++ lib.optionals languages.python [
+          ms-python.python
+          ms-python.debugpy
+          detachhead.basedpyright
+          charliermarsh.ruff
+        ]
+        ++ lib.optional languages.go golang.go
+        ++ lib.optionals languages.rust [
+          rust-lang.rust-analyzer
+          vadimcn.vscode-lldb
+        ]
+        ++ [
+          redhat.vscode-yaml
+          tamasfe.even-better-toml
+        ];
 
       userSettings = {
         # VSCodium already removes Microsoft's product telemetry endpoints;
@@ -164,48 +170,50 @@
 
   # Continue's editor switch is deprecated but still honored by the pinned
   # extension. Its shared config is the authoritative second opt-out.
-  home.file.".continue/.continuerc.json".text = builtins.toJSON {
-    allowAnonymousTelemetry = false;
+  home.file = lib.optionalAttrs settings.features.localAI {
+    ".continue/.continuerc.json".text = builtins.toJSON {
+      allowAnonymousTelemetry = false;
+    };
+
+    # Both endpoints are loopback-only. AUTODETECT exposes models deliberately
+    # pulled into Ollama without hard-coding a large download into the rebuild.
+    ".continue/config.yaml".text = ''
+      name: Local-only development
+      version: 1.0.0
+      schema: v1
+
+      models:
+        - name: Ollama local models
+          provider: ollama
+          model: AUTODETECT
+          apiBase: http://127.0.0.1:11434
+          roles:
+            - chat
+            - edit
+            - apply
+          defaultCompletionOptions:
+            contextLength: ${toString settings.ai.contextLength}
+            maxTokens: ${toString settings.ai.maxOutputTokens}
+          requestOptions:
+            noProxy:
+              - 127.0.0.1
+              - localhost
+
+        - name: llama.cpp local server
+          provider: llama.cpp
+          model: local
+          apiBase: http://127.0.0.1:8080
+          roles:
+            - chat
+            - edit
+            - apply
+          defaultCompletionOptions:
+            contextLength: ${toString settings.ai.contextLength}
+            maxTokens: ${toString settings.ai.maxOutputTokens}
+          requestOptions:
+            noProxy:
+              - 127.0.0.1
+              - localhost
+    '';
   };
-
-  # Both endpoints are loopback-only. AUTODETECT exposes models deliberately
-  # pulled into Ollama without hard-coding a large download into the rebuild.
-  home.file.".continue/config.yaml".text = ''
-    name: Local-only development
-    version: 1.0.0
-    schema: v1
-
-    models:
-      - name: Ollama local models
-        provider: ollama
-        model: AUTODETECT
-        apiBase: http://127.0.0.1:11434
-        roles:
-          - chat
-          - edit
-          - apply
-        defaultCompletionOptions:
-          contextLength: ${toString settings.ai.contextLength}
-          maxTokens: ${toString settings.ai.maxOutputTokens}
-        requestOptions:
-          noProxy:
-            - 127.0.0.1
-            - localhost
-
-      - name: llama.cpp local server
-        provider: llama.cpp
-        model: local
-        apiBase: http://127.0.0.1:8080
-        roles:
-          - chat
-          - edit
-          - apply
-        defaultCompletionOptions:
-          contextLength: ${toString settings.ai.contextLength}
-          maxTokens: ${toString settings.ai.maxOutputTokens}
-        requestOptions:
-          noProxy:
-            - 127.0.0.1
-            - localhost
-  '';
 }

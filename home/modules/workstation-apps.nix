@@ -5,11 +5,14 @@
   ...
 }:
 
+let
+  features = settings.features;
+in
 {
   programs.direnv = {
-    enable = true;
+    enable = features.devCore;
     enableZshIntegration = true;
-    nix-direnv.enable = true;
+    nix-direnv.enable = features.devCore;
   };
 
   programs.nh = {
@@ -35,11 +38,10 @@
     };
   };
 
-  home.packages = [
-    pkgs.hyperfine
-  ]
-  ++ lib.optionals settings.features.wine [
-    pkgs.wineWow64Packages.stable
-    pkgs.winetricks
-  ];
+  home.packages =
+    lib.optionals features.devCore [ pkgs.hyperfine ]
+    ++ lib.optionals settings.features.wine [
+      pkgs.wineWow64Packages.stable
+      pkgs.winetricks
+    ];
 }

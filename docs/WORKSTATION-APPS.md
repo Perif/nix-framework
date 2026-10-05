@@ -1,5 +1,61 @@
 # Workstation applications
 
+## Selectable software groups
+
+The current workstation remains the default. Edit `settings.nix` before a
+rebuild to remove groups or individual optional applications:
+
+| Setting | What it controls |
+| --- | --- |
+| `features.devCore` | Common developer commands, Zsh fuzzy finder and directory-jump integrations, Git diff pager, and rootless Podman. |
+| `features.languageTools.c` | GCC, Make, CMake, Ninja, and pkg-config. |
+| `features.languageTools.python` | Python, uv, BasedPyright, and Ruff. |
+| `features.languageTools.go` | Go, gopls, Delve, and golangci-lint. |
+| `features.languageTools.rust` | Rust, Cargo, rust-analyzer, rustfmt, and Clippy. |
+| `features.languageTools.nodejs` | Node.js. |
+| `features.languageTools.nix` | nixd and nixfmt. |
+| `features.localAI` | Home Manager local-model CLI/runtime integration and Continue's loopback-only provider config. The system AI services use the same switch. |
+| `features.extraBrowsers` | Brave and ungoogled Chromium. Firefox and Tor Browser remain installed. |
+| `features.extraEditors` | VSCodium and Sublime Text/Merge. Vim and Neovim remain available. |
+| `features.office.libreOffice` | LibreOffice Qt build. |
+| `features.office.thunderbird` | Thunderbird. |
+| `features.office.kdeConnect` | KDE Connect package. |
+| `features.office.syncthing` | Syncthing package. |
+
+All switches default to `true` to preserve the existing installation. Project
+versions and project-only tools belong in each repository's Nix `devShell`; see
+the language-specific examples in the repository `flake.nix` when available.
+
+KDE Connect and Syncthing are installed as applications only. This configuration
+does not enable a Syncthing service or open firewall ports. KDE Connect uses
+TCP and UDP ports 1714–1764 when pairing. If pairing is wanted, allow those ports
+only on the verified interface for the trusted network. For example, replace
+`wlp0s20f3` with the interface shown by `ip -brief link`:
+
+```nix
+# Add to the NixOS configuration only when KDE Connect pairing is wanted.
+networking.firewall.interfaces."wlp0s20f3" = {
+  allowedTCPPortRanges = [ { from = 1714; to = 1764; } ];
+  allowedUDPPortRanges = [ { from = 1714; to = 1764; } ];
+};
+```
+
+Do not add the range to the global firewall, and remove the interface rule when
+you no longer need pairing. This profile masks KDE Connect's login autostart
+entry; launch it from the application menu only when you want to use it. Manual
+launch may D-Bus-activate its user daemon. This profile does not enable the
+NixOS KDE Connect firewall module.
+
+No Syncthing service or login autostart is enabled, and this Nix configuration
+supplies no device or folder entries. Start it manually in a terminal with
+`syncthing serve --no-browser` only when you are ready to configure it, then open
+<http://127.0.0.1:8384>. Syncthing's fresh first run creates an unshared
+`Default Folder`; remove it in the GUI before adding any devices if you do not
+want it. The GUI defaults to loopback. The sync protocol can still make outbound
+connections while Syncthing is running; the system firewall stays closed to
+unsolicited inbound traffic. Do not open the sync/discovery ports unless you
+deliberately choose a network and sharing arrangement.
+
 ## Wine
 
 `features.wine = true` installs stable Wine's modern WoW64 build and Winetricks.
@@ -87,7 +143,18 @@ The DC-Elite stays reserved for explicit direct-ALSA players.
 
 ## Open WebUI
 
-Open WebUI is installed through the NixOS module and starts only on demand:
+Open WebUI is installed through the NixOS module and starts only on demand.
+For a new installation, create the first administrator from a local terminal:
+
+```bash
+sudo webui-bootstrap
+```
+
+The helper asks for the administrator email, name and password without echoing
+the password or storing it in the Nix configuration. It refuses to replace an
+existing account. Signup is always disabled. See the [security guide](SECURITY-PRIVACY.md)
+for bootstrap failure recovery and the temporary credential file's lifecycle.
+After first setup, use:
 
 ```bash
 webui-on
@@ -95,8 +162,7 @@ webui-status
 ```
 
 Open <http://127.0.0.1:3000>. Starting it also starts the existing Ollama service.
-Create the first administrator account, then set `ai.webui.allowSignup = false`,
-rebuild and restart the service. Authentication remains enabled. Nix owns the
+Authentication remains enabled. Nix owns the
 managed environment settings, so corresponding Admin UI changes do not persist.
 
 The service binds only to localhost, opens no firewall port, and uses the local
@@ -104,6 +170,8 @@ Ollama endpoint. Port 8080 remains available for llama.cpp. Its session key is
 generated locally and retained in its private state directory; no password or
 session secret is committed. Chats/accounts live under `/var/lib/open-webui`
 (backed by systemd's private state directory); include that data in future backups.
+Deleting chats or uploads does not remove their older copies in root snapshots;
+see [snapshot retention](SECURITY-PRIVACY.md#open-webui-state-and-first-admin-setup).
 
 Automatic model downloads and update checks are disabled, and the OpenAI
 provider is disabled. This is a local-chat starting configuration: document

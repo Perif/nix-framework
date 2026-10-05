@@ -122,6 +122,9 @@ The build additionally:
   explicit `settings.timeZone` used by Plasma;
 - keeps the loopback-only, sandboxed Ollama service inactive until it is
   explicitly started for local-model work;
+- keeps Open WebUI loopback-only and signup-disabled; the first administrator is
+  created through a one-shot root-only bootstrap file rather than an open signup
+  window;
 - permits Nix-daemon requests only from `root` and the login account selected
   by `settings.user.name`, while keeping only `root` in `trusted-users`;
 - hides kernel pointers and kernel messages from unprivileged users;
@@ -204,6 +207,36 @@ systemctl list-timers --all \
 sudo snapper -c root list
 sudo btrfs scrub status /
 ```
+
+## Open WebUI state and first-admin setup
+
+Open WebUI state lives under `/var/lib/open-webui`, including local accounts,
+chats, uploads, and its SQLite database. That path is part of the root subvolume,
+so deleted chats, deleted uploads, previous account rows, and older database
+states can remain recoverable from existing root snapshots until Snapper expires
+them. The data stays local and benefits from full-disk encryption while the disk
+is locked, but app-level deletion is not immediate snapshot erasure after login.
+This configuration does not perform automatic destructive snapshot cleanup for
+Open WebUI; review and delete root snapshots manually only when you have decided
+that losing those rollback points is acceptable.
+
+Open WebUI is installed disabled-at-boot, listens only on `127.0.0.1`, and keeps
+account signup off. On a fresh database, `open-webui.service` refuses to start
+until you run `sudo webui-bootstrap` from an interactive terminal. The helper
+prompts for the admin email, display name, and password; writes them once to a
+root-only environment file in `/run`; writes a non-secret start permit for the
+service guard; starts Open WebUI with the upstream `WEBUI_ADMIN_EMAIL` and
+`WEBUI_ADMIN_PASSWORD` bootstrap variables; waits until the local SQLite database
+contains the matching admin row and the HTTP listener is ready; removes the
+bootstrap files; and restarts the service so the long-running process no longer
+has the bootstrap password in its environment. It refuses to overwrite existing
+users or admins, but an empty database left by a failed startup is retryable.
+If the helper is terminated normally, it removes the runtime files before
+exiting. If the process is killed hard or the machine loses power, stop
+`open-webui.service`, remove stale `/run/open-webui-bootstrap.env` and
+`/run/open-webui-bootstrap.start` without printing their contents, then rerun
+`sudo webui-bootstrap`; the helper will refuse any non-empty existing user state.
+Store the new password in your password manager before relying on the service.
 
 A local snapshot does not protect against drive failure, theft, or destructive
 filesystem damage. Keep versioned, encrypted backups on another device or

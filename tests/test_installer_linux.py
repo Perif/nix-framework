@@ -25,7 +25,8 @@ class LinuxCommands(unittest.TestCase):
         self.assertTrue(nodes, 'Runner must expose a block-device inventory')
         for node in storage.walk(nodes):
             self.assertTrue({'path', 'type', 'maj:min', 'size', 'model',
-                             'serial', 'mountpoints'} <= node.keys())
+                             'serial', 'mountpoints', 'parttype', 'partlabel',
+                             'partn'} <= node.keys())
             self.assertIsInstance(node['mountpoints'], list)
             self.assertGreaterEqual(int(node['size']), 0)
         # Exercise inverse-tree parsing on a device exposed by this host.

@@ -104,6 +104,31 @@
     # Optional Thunderbolt/USB4 authorization daemon for docks that need it.
     # This does not automatically authorize unknown devices.
     thunderbolt = false;
+
+    # Software groups are installed by default to preserve the current
+    # workstation. Disable an application group here to reduce the closure.
+    # Development core includes common CLI tools and rootless Podman; language
+    # toolchains can be selected independently below.
+    devCore = true;
+    languageTools = {
+      c = true;
+      python = true;
+      go = true;
+      rust = true;
+      nodejs = true;
+      nix = true;
+    };
+
+    localAI = true;
+    extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
+    extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
+
+    office = {
+      libreOffice = true;
+      thunderbird = true;
+      kdeConnect = true;
+      syncthing = true;
+    };
   };
 
   qbz = {
@@ -143,7 +168,8 @@
     webui = {
       enable = true; # Installed, localhost-only, started on demand.
       port = 3000; # Keep 8080 free for llama.cpp.
-      allowSignup = true; # Set false after creating the first admin account.
+      # Signup stays disabled. Run `sudo webui-bootstrap` once to create the
+      # administrator interactively without placing credentials in this file.
     };
     # A bounded starting point for 32 GiB shared CPU/GPU memory, not a RAM cap.
     contextLength = 8192;

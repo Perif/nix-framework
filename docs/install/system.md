@@ -14,6 +14,11 @@ formatting; if the source changed, stop and review it before installing. The
 stage does not rely on shell variables from another stage and does not reboot
 automatically.
 
+The persistent `/mnt/etc/nix-framework-installer.json` record must match the
+selected source, disk and evaluated storage layout. Preserve it; do not remove
+it to bypass a mismatch. After interruption, use the guarded `recover` stage
+described in the storage guide before retrying installation.
+
 ```bash
 sudo -i
 cd /tmp/nixos-config

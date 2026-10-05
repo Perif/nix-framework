@@ -7,6 +7,7 @@ pkgs.writeShellApplication {
     git
     util-linux
     lvm2
+    cryptsetup
     coreutils
     diffutils
     nixos-install-tools

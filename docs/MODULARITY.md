@@ -72,6 +72,49 @@ Small unconfigured development binaries are intentionally grouped in
 `music-tools.nix`. A one-file-per-package scheme would add structure without
 improving ownership or reuse.
 
+### Selectable workstation groups
+
+The default settings preserve the full existing workstation, but each large
+software group can be disabled in `settings.nix`:
+
+- `features.devCore`: common development commands, shell integrations, and
+  rootless Podman; turning it off also disables Podman's system setup.
+- `features.languageTools.{c,python,go,rust,nodejs,nix}`: independent SDK and
+  language-server groups. Project-specific versions belong in project
+  `devShell`s.
+- `features.localAI`: local inference tools and Continue's local-provider
+  configuration. The NixOS AI services follow the same setting.
+- `features.extraBrowsers`: Brave and ungoogled Chromium; Firefox and Tor
+  Browser remain available.
+- `features.extraEditors`: VSCodium and Sublime Text/Merge; Vim and Neovim
+  remain available as the lightweight default editors.
+- `features.office.{libreOffice,thunderbird,kdeConnect,syncthing}`: individual
+  personal applications.
+
+All switches default to `true` to preserve current behavior. KDE Connect and
+Syncthing are packages only: the profile does not enable a Syncthing service or
+open firewall ports. Pair devices and allow network traffic only when you choose
+to use them. Syncthing folder and device configuration remains user-owned.
+
+### Project-local development environments
+
+This repository exposes `nix develop .#c`, `.#python`, `.#go`, `.#rust`,
+`.#nodejs` and `.#nix`; `nix develop` provides the common tools. Language
+packages are shared with the standalone template in `templates/project`.
+To initialize a new project from a trusted local checkout, run inside the new
+project directory (replace the example path with your checkout):
+
+```bash
+nix flake init -t /path/to/nix-framework#project
+nix flake lock
+```
+
+Review `.envrc`, choose a language such as `use flake .#python`, then run
+`direnv allow`. Commit the generated lock and the project's language dependency
+lock. Tools then enter and leave the environment with the project; disabling
+global `features.languageTools.*` does not disable these shells. The template
+README explains how to combine languages and create a Python environment.
+
 ## Package ownership
 
 Packages are installed at the narrowest appropriate scope:
@@ -95,7 +138,7 @@ This avoids a large duplicated `environment.systemPackages` list.
 - `docs/install/prepare.md`: supported live environment and reviewed Git source
 - `docs/install/configure.md`: installation settings, timezone, and target disk
 - `docs/install/storage.md`: plan, destructive fresh-install formatting,
-  mount verification, and manual recovery after interruption
+  mount verification, guarded recovery and inspection after interruption
 - `docs/install/system.md`: install the reviewed snapshot, set the account, and
   reboot
 - `docs/install/first-boot.md`: hardware and service checks after installation

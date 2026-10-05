@@ -20,6 +20,8 @@ sys.path.insert(0, str(args.helpers.resolve()))
 import common  # noqa: E402
 import storage  # noqa: E402
 import cli  # noqa: E402
+import layout  # noqa: E402
+import record  # noqa: E402
 
 
 VALID_SETTINGS = {
@@ -32,6 +34,36 @@ VALID_SETTINGS = {
 }
 SIZE = 2_000_000_000_000
 SWAP_SIZE = 40 * 1024**3
+
+
+def devices():
+    subvolumes = {'/root': '/', '/home': '/home', '/nix': '/nix', '/log': '/var/log',
+                  '/snapshots': '/.snapshots', '/ollama': '/var/lib/private/ollama'}
+    return {
+        'extraKinds': [], 'diskNames': ['main'], 'vgNames': ['vg'],
+        'disk': {'main': {'type': 'disk', 'device': VALID_SETTINGS['diskDevice'],
+                          'content': {'type': 'gpt', 'partitionNames': ['ESP', 'cryptroot'],
+                                      'partitions': {
+                                          'ESP': {'type': 'EF00', 'size': '1G', 'index': 1,
+                                                  'label': 'disk-main-ESP',
+                                                  'content': {'type': 'filesystem', 'format': 'vfat',
+                                                              'mountpoint': '/boot', 'mountOptions': ['umask=0077']}},
+                                          'cryptroot': {'type': '8300', 'size': '100%', 'index': 2,
+                                                        'label': 'disk-main-cryptroot',
+                                                        'content': {'type': 'luks', 'name': 'cryptroot',
+                                                                    'askPassword': True,
+                                                                    'extraFormatArgs': ['--type', 'luks2'],
+                                                                    'content': {'type': 'lvm_pv', 'vg': 'vg'}}}}}}},
+        'lvm_vg': {'vg': {'type': 'lvm_vg', 'lvNames': ['root', 'swap'], 'lvs': {
+            'root': {'size': '100%FREE', 'content': {'type': 'btrfs', 'subvolumes': {
+                name: {'mountpoint': target, 'mountOptions': ['compress=zstd:3']}
+                for name, target in subvolumes.items()}}},
+            'swap': {'size': '40G', 'content': {'type': 'swap', 'resumeDevice': True}},
+        }}}
+    }
+
+
+LAYOUT = layout.from_disko(devices(), VALID_SETTINGS['diskDevice'])
 
 
 def config(source=Path("/nix/store/reviewed-source")):
@@ -86,6 +118,16 @@ class SettingsAndEvaluation(unittest.TestCase):
         with patch.object(common, "run", side_effect=["/nix/store/system.drv", "/dev/disk/by-id/other"]):
             with self.assertRaisesRegex(common.Stop, "Disko target differs"):
                 common.evaluate(config())
+
+    def test_layout_contract_rejects_unsupported_topology(self):
+        changed = devices()
+        changed['disk']['main']['content']['partitions']['ESP']['index'] = 2
+        with self.assertRaisesRegex(common.Stop, 'Unsupported Disko topology'):
+            layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
+        changed = devices()
+        del changed['lvm_vg']['vg']['lvs']['root']['content']['subvolumes']['/home']
+        with self.assertRaisesRegex(common.Stop, 'persistent state'):
+            layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
 
     def test_live_environment_rejects_installed_system_or_non_uefi_boot(self):
         with patch.object(common.sys, "platform", "linux"), patch.object(common.os, "geteuid", return_value=0), \
@@ -196,18 +238,24 @@ class FreshStorage(unittest.TestCase):
         with patch.object(storage, "disk_identity", return_value=disk()):
             with patch.object(storage.Path, "exists", return_value=True):
                 with self.assertRaisesRegex(common.Stop, "cryptroot mapping"):
-                    storage.fresh_storage(config())
+                    storage.fresh_storage(config(), LAYOUT)
             with patch.object(storage.Path, "exists", return_value=False):
                 with patch.object(storage, "query", return_value={"report": [{"vg": [{"vg_name": "vg"}]}]}):
                     with self.assertRaisesRegex(common.Stop, "volume group"):
-                        storage.fresh_storage(config())
+                        storage.fresh_storage(config(), LAYOUT)
+
+    def test_small_disk_refused_before_any_format_command(self):
+        small = storage.Disk('/dev/nvme0n1', '259:0', 'SERIAL', 20 * 1024**3, 'MODEL')
+        with patch.object(storage, 'disk_identity', return_value=small):
+            with self.assertRaisesRegex(common.Stop, 'too small'):
+                storage.fresh_storage(config(), LAYOUT)
 
 
 class MountedTarget(unittest.TestCase):
     def setUp(self):
         self.selected = disk()
         self.mounts = []
-        for target, (fstype, fsroot) in storage.MOUNTS.items():
+        for target, (fstype, fsroot) in LAYOUT.targets.items():
             self.mounts.append({
                 "target": target,
                 "source": "/dev/mapper/vg-root" if fstype == "btrfs" else "/dev/nvme0n1p1",
@@ -237,8 +285,10 @@ class MountedTarget(unittest.TestCase):
              patch.object(storage, "query", side_effect=self.query), \
              patch.object(storage, "active_swaps", side_effect=lambda: deepcopy(self.swaps)), \
              patch.object(storage, "backing_disks", side_effect=backing or (lambda _: {self.selected.number})), \
+             patch.object(storage, "check_partitions"), \
+             patch.object(storage, "check_esp_mount"), \
              patch.object(storage, "show_disk"):
-            return storage.verify_mounts(config())
+            return storage.verify_mounts(config(), LAYOUT)
 
     def test_mixed_encrypted_and_plain_pvs_are_rejected(self):
         original = self.query
@@ -254,6 +304,26 @@ class MountedTarget(unittest.TestCase):
 
     def test_valid_layout_is_accepted(self):
         self.assertEqual(self.verify(), self.selected)
+
+    def test_efi_partition_must_be_the_evaluated_esp(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            expected = root / 'esp'
+            wrong = root / 'other-vfat'
+            expected.touch()
+            wrong.touch()
+            selected = common.Config(root, 'framework-pro', 'owner', str(root / 'disk'))
+            (root / 'disk-part1').symlink_to(expected)
+            correct_node = [{'type': 'part', 'parttype': layout.ESP_GUID,
+                             'partlabel': 'disk-main-ESP', 'partn': 1}]
+            with patch.object(storage, 'block_tree', return_value=correct_node):
+                storage.check_esp_mount(selected, LAYOUT, str(expected))
+                with self.assertRaisesRegex(common.Stop, 'not the evaluated ESP'):
+                    storage.check_esp_mount(selected, LAYOUT, str(wrong))
+            correct_node[0]['parttype'] = '0fc63daf-8483-4772-8e79-3d69d8477de4'
+            with patch.object(storage, 'block_tree', return_value=correct_node):
+                with self.assertRaisesRegex(common.Stop, 'type, label, or number'):
+                    storage.check_esp_mount(selected, LAYOUT, str(expected))
 
     def test_wrong_disk_is_rejected(self):
         with self.assertRaisesRegex(common.Stop, "different physical disk"):
@@ -286,6 +356,14 @@ class MountedTarget(unittest.TestCase):
 
 
 class StageOrdering(unittest.TestCase):
+    def setUp(self):
+        for target, name, value in ((cli, 'evaluate', LAYOUT),
+                                    (cli.record, 'verify', None),
+                                    (cli.record, 'create', None)):
+            patcher = patch.object(target, name, return_value=value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def format_with(self, *, tty=True, answer=None, disks=None, disko_error=None):
         selected = config()
         answer = answer if answer is not None else f"ERASE {selected.disk}"
@@ -411,6 +489,76 @@ class StageOrdering(unittest.TestCase):
              patch.object(cli, "show_disk") as show:
             self.assertEqual(cli.main(), 1)
             show.assert_not_called()
+
+    def test_recovery_refuses_wrong_partitions_before_opening_any_mapping(self):
+        with patch.object(cli, 'disk_identity', return_value=disk()), \
+             patch.object(cli, 'check_partitions', side_effect=common.Stop('wrong GPT')), \
+             patch.object(cli, 'recover_mounts') as mounts, patch.object(cli, 'disko') as disko:
+            with self.assertRaisesRegex(common.Stop, 'wrong GPT'):
+                cli.recover(config())
+            mounts.assert_not_called()
+            disko.assert_not_called()
+
+    def test_recovery_needs_exact_confirmation_and_records_verified_target(self):
+        selected = config()
+        with patch.object(cli, 'disk_identity', return_value=disk()), \
+             patch.object(cli, 'check_partitions'), patch.object(cli, 'show_disk'), \
+             patch.object(cli.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', return_value='RECOVER /dev/disk/by-id/other'), \
+             patch.object(cli, 'recover_mounts') as mounts:
+            with self.assertRaisesRegex(common.Stop, 'confirmation did not match'):
+                cli.recover(selected)
+            mounts.assert_not_called()
+        with patch.object(cli, 'disk_identity', return_value=disk()), \
+             patch.object(cli, 'check_partitions'), patch.object(cli, 'show_disk'), \
+             patch.object(cli.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', return_value=f'RECOVER {selected.disk}'), \
+             patch.object(cli, 'recover_mounts', return_value=disk()) as mounts:
+            cli.recover(selected)
+            mounts.assert_called_once()
+            cli.record.create.assert_called_with(selected, disk(), LAYOUT)
+
+    def test_recovery_refuses_colliding_vg_before_opening_luks(self):
+        with patch.object(storage, 'disk_identity', return_value=disk()), \
+             patch.object(storage, 'check_partitions', return_value=Path('/dev/null')), \
+             patch.object(storage, 'show_disk'), \
+             patch.object(storage, 'refuse_unrelated_mounts'), \
+             patch.object(storage, 'query', return_value={'report': [{'vg': [{'vg_name': 'vg'}]}]}), \
+             patch.object(storage, 'run') as command:
+            with self.assertRaisesRegex(common.Stop, 'without this disk'):
+                storage.recover_mounts(config(), LAYOUT)
+            self.assertEqual(command.call_count, 1)
+            self.assertEqual(command.call_args.args[:2], ('cryptsetup', 'isLuks'))
+
+    def test_recovery_refuses_unrelated_mount_before_cryptsetup(self):
+        with patch.object(storage, 'disk_identity', return_value=disk()), \
+             patch.object(storage, 'check_partitions', return_value=Path('/dev/null')), \
+             patch.object(storage, 'show_disk'), \
+             patch.object(storage, 'query', return_value={'filesystems': [
+                 {'target': '/mnt', 'source': '/dev/other'}]}), \
+             patch.object(storage, 'backing_disks', return_value={'259:9'}), \
+             patch.object(storage, 'run') as command:
+            with self.assertRaisesRegex(common.Stop, 'Unrelated disk'):
+                storage.recover_mounts(config(), LAYOUT)
+            command.assert_not_called()
+
+
+class InstallationRecord(unittest.TestCase):
+    def test_record_binds_source_disk_and_layout_without_credentials(self):
+        selected = common.Config(Path('/nix/store/reviewed'), 'framework-pro', 'owner',
+                                 VALID_SETTINGS['diskDevice'], False, 'tree-hash', 'commit-hash')
+        with tempfile.TemporaryDirectory() as temporary, \
+             patch.object(record, 'RECORD', Path(temporary) / 'installer.json'):
+            record.create(selected, disk(), LAYOUT)
+            data = record.verify(selected, disk(), LAYOUT)
+            self.assertEqual(data['source_tree'], 'tree-hash')
+            self.assertNotIn('password', str(data).lower())
+            with self.assertRaisesRegex(common.Stop, 'differs'):
+                record.verify(common.Config(selected.source, selected.hostname, selected.username,
+                                            selected.disk, False, 'other-tree', selected.base_commit),
+                              disk(), LAYOUT)
+            with self.assertRaisesRegex(common.Stop, 'differs'):
+                record.verify(selected, disk(serial='different'), LAYOUT)
 
 
 if __name__ == "__main__":
