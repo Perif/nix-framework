@@ -71,7 +71,7 @@ the existing `power`, `builds`, `storage`, `network`, `ai`, `display`, `audio`,
 ```nix
 {
   hostname = "framework-pro";
-  timeZone = "America/Chicago";
+  timeZone = null; # Filled by the detection command below; or set an explicit IANA zone.
   defaultLocale = "en_US.UTF-8";
   consoleKeyMap = "us";
 
@@ -117,8 +117,24 @@ the existing `power`, `builds`, `storage`, `network`, `ai`, `display`, `audio`,
 }
 ```
 
-The explicit IANA time zone controls Plasma without GeoClue. Change it and
-rebuild when travelling; keep the Plasma clock widget set to **Local**.
+Resolve the timezone before evaluating or installing:
+
+```bash
+nix run .#detect-timezone
+```
+
+This performs one HTTPS lookup to ipapi.co using the installer's public IP and
+writes the detected IANA zone into `settings.nix`. Review the printed zone;
+a VPN/proxy or inaccurate IP location can select the wrong region. On failure,
+installation stays blocked until you retry or select a zone manually:
+
+```bash
+nix run .#detect-timezone -- --timezone Europe/Paris
+```
+
+A manually configured zone is preserved on subsequent detection runs. The saved
+zone controls Plasma without ongoing geolocation. Change it and rebuild when
+travelling; keep the Plasma clock widget set to **Local**.
 
 ## 4. Evaluate before erasing anything
 

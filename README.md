@@ -38,7 +38,7 @@ Target:
   unfiltered Firefox recovery path
 - NetworkManager WireGuard client support and command-line tools
 - randomized network identities and explicit host hardening
-- GeoClue disabled with an explicit time zone and automatic NTP clock sync
+- One-time installation timezone detection; GeoClue disabled and NTP clock sync enabled
 - Nix-daemon access limited to root and the configured login user
 - global staged credential/PII commit checks with local-hook chaining
 - adaptive Intel thermal and zram-aware responsiveness tuning
@@ -113,8 +113,8 @@ every NixOS and Home Manager module as the `settings` argument, so nothing else
 needs editing when these change:
 
 - `hostname`: `networking.hostName` and the flake output name
-- `timeZone`: the IANA zone used by the system and Plasma; update it and rebuild
-  after travel because automatic location detection is disabled
+- `timeZone`: starts as `null`; `nix run .#detect-timezone` saves the installation
+  zone. Explicit zones are preserved; update and rebuild after travel.
 - `defaultLocale`, `consoleKeyMap`: other regional settings
 - `dns.providerName`, `dns.servers`, `dns.dohUrl`: one coordinated unfiltered
   encrypted-DNS provider definition

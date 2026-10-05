@@ -53,6 +53,9 @@
     {
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
+      packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix {
+        pkgs = import nixpkgs { system = "x86_64-linux"; };
+      };
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
       packages.x86_64-linux.qobuz-player =
         (import nixpkgs { system = "x86_64-linux"; }).callPackage ./pkgs/qobuz-player.nix
@@ -76,6 +79,16 @@
             pkgs.runCommand "qbz-configuration-tests" { } ''
               touch "$out"
             '';
+          install-timezone =
+            pkgs.runCommand "install-timezone-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                export PYTHONTZPATH="${pkgs.tzdata}/share/zoneinfo"
+                python3 ${./tests/test_install_timezone.py} --helper ${./scripts/detect-timezone.py}
+                touch "$out"
+              '';
           power-management =
             pkgs.runCommand "power-management-tests"
               {

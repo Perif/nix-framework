@@ -13,6 +13,10 @@ in
 {
   assertions = [
     {
+      assertion = settings.timeZone != null;
+      message = "settings.nix: run nix run .#detect-timezone during installation, or set timeZone to an explicit IANA zone.";
+    }
+    {
       assertion = !(hasHashedPassword && hasInitialPassword);
       message = ''
         settings.nix: set at most one of user.hashedPassword or
@@ -28,8 +32,8 @@ in
     }
   ];
 
-  # Keep wall-clock display and daylight-saving rules deterministic without
-  # sharing location data. Change the IANA zone in settings.nix after travel.
+  # Installation resolves the zone once and saves it in settings.nix.
+  # Keep runtime wall-clock and daylight-saving rules deterministic; no geolocation.
   time.timeZone = settings.timeZone;
 
   # Clock synchronization does not require geolocation: NTP synchronizes UTC,

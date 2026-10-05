@@ -49,6 +49,9 @@ jobs:
             min-free = 2147483648
             max-free = 5368709120
 
+      - name: Test installation timezone detection
+        run: nix build .#checks.x86_64-linux.install-timezone --no-link --print-build-logs
+
       - name: Test laptop power-management helpers
         run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
 
@@ -72,6 +75,7 @@ jobs:
       - name: Select non-destructive CI settings
         run: |
           sed -i 's|/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID|/dev/disk/by-id/ci-validation-disk|' settings.nix
+          nix run .#detect-timezone -- --timezone UTC
 
       - name: Evaluate every flake output with default application selections
         run: nix flake check --no-build --all-systems

@@ -59,6 +59,12 @@ desktop components from requesting automatic location for travel-based time
 zones, weather, or Night Color. Firefox geolocation remains separately disabled
 by its managed profile.
 
+During installation, `nix run .#detect-timezone` performs a one-time HTTPS
+public-IP lookup to ipapi.co and saves the returned IANA zone in `settings.nix`.
+The provider sees the installer's public IP; VPNs/proxies can affect the result.
+An explicit `timeZone`, or `--timezone Area/City`, skips the lookup. This does
+not enable ongoing geolocation or change the installed desktop policy.
+
 Accurate time does not require location. `systemd-timesyncd` synchronizes the
 system clock over NTP, and the explicit IANA value in `settings.timeZone`
 converts that clock to local wall time and applies daylight-saving transitions

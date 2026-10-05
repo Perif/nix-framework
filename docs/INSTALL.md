@@ -19,7 +19,7 @@ All installation-specific configuration is in `settings.nix`:
 | Setting | Required action |
 | --- | --- |
 | `hostname` | Keep `framework-pro` or choose the final hostname. |
-| `timeZone` | Set the local IANA time zone, such as `America/Chicago`. GeoClue is disabled, so update this value and rebuild after travelling to another zone. |
+| `timeZone` | Starts as `null`; run the install-time detection command below to save an IANA zone, or select one explicitly. The saved zone remains fixed after installation. |
 | `defaultLocale` | Keep or replace `en_US.UTF-8`. |
 | `consoleKeyMap` | Keep or replace `us`. |
 | `dns.*` | Keep or consistently replace the unfiltered encrypted upstream and bootstrap addresses. Review the Blocky switch, privacy list, and allowlist using `docs/NETWORKING.md`. |
@@ -172,7 +172,7 @@ marked for replacement and use the exact `INSTALL_DISK` value verified above:
 {
   hostname = "framework-pro";
 
-  timeZone = "America/Chicago";
+  timeZone = null; # Filled by the detection command below; or set an explicit IANA zone.
   defaultLocale = "en_US.UTF-8";
   consoleKeyMap = "us";
 
@@ -234,6 +234,33 @@ sshAuthorizedKeys = [
   "ssh-ed25519 AAAAC3... workstation"
 ];
 ```
+
+### Detect the installation timezone
+
+Before proceeding to evaluation or disk partitioning, run:
+
+```bash
+nix run .#detect-timezone
+nix eval --raw --impure --expr '(import ./settings.nix).timeZone'
+```
+
+The helper makes one HTTPS request to [ipapi.co](https://ipapi.co/api/) using the
+installer's public IP, validates the returned IANA zone against the pinned
+timezone database, and writes it into `settings.nix`. It does not change the
+live installer's clock or send Wi-Fi scan/GPS data. Review the printed zone:
+a VPN/proxy or incorrect IP geolocation may return a different region.
+
+An explicit zone is preserved without a network lookup. To bypass detection,
+correct a result, or recover from an unavailable/rate-limited service, use:
+
+```bash
+nix run .#detect-timezone -- --timezone Europe/Paris
+```
+
+You can also set `timeZone` directly. A failed lookup leaves the file unchanged;
+`null` blocks system evaluation rather than silently selecting Chicago or UTC.
+No location service is enabled on the installed laptop. After travel, change
+this saved value and rebuild as described in the first-boot checks.
 
 List available regional values when needed:
 

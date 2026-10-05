@@ -8,10 +8,10 @@
   #   nixos-rebuild switch --flake .#<hostname>
   hostname = "framework-pro";
 
-  # Regional settings used by the system, Plasma and console. Keep an explicit
-  # IANA zone because GeoClue location detection is disabled for privacy. Change
-  # this value and rebuild when travelling to a different time zone.
-  timeZone = "America/Chicago";
+  # Resolve once during installation: nix run .#detect-timezone
+  # null requires detection (or an explicit IANA zone) before system evaluation.
+  # The saved zone stays fixed after installation; GeoClue remains disabled.
+  timeZone = null;
   defaultLocale = "en_US.UTF-8";
   consoleKeyMap = "us";
 
