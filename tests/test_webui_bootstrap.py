@@ -192,6 +192,29 @@ class WebuiBootstrapTests(unittest.TestCase):
             make_user_database(config.state_dir / "data" / "webui.db", [(TEST_EMAIL, "admin")])
             self.assertEqual(self.module.check_service_may_start(config), 0)
 
+    def test_main_reports_transient_database_error_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = make_config(self.module, root)
+            argv = ["webui-bootstrap", "--check-start", "--state-dir", str(config.state_dir),
+                    "--permit-file", str(config.permit_file)]
+            stderr = io.StringIO()
+            with patch.object(self.module, "database_state",
+                              side_effect=self.module.RetryableDatabase("database is locked")), \
+                 patch.object(sys, "argv", argv), contextlib.redirect_stderr(stderr):
+                try:
+                    self.module.main()
+                except SystemExit as exit_info:
+                    code = exit_info.code
+                except self.module.RetryableDatabase:
+                    self.fail("RetryableDatabase escaped main() as an uncaught exception")
+                else:
+                    self.fail("main() returned instead of exiting")
+            self.assertEqual(code, 1)
+            self.assertIn("webui-bootstrap: ", stderr.getvalue())
+            self.assertIn("database is locked", stderr.getvalue())
+            self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_timeout_stops_service_and_removes_runtime_files_for_empty_db_retry(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

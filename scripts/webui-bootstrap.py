@@ -322,14 +322,11 @@ def bootstrap(config: BootstrapConfig, email: str, password: str, name: str) -> 
     email = validate_email(email)
     assert_bootstrap_allowed(config.state_dir, email)
     content = render_environment(email, password, name)
-    interrupted = False
     owned: dict[Path, FileIdentity] = {}
     service_attempted = False
     previous_sigterm = signal.getsignal(signal.SIGTERM)
 
     def handle_sigterm(signum: int, frame: object) -> None:
-        nonlocal interrupted
-        interrupted = True
         raise Stop("Interrupted by SIGTERM; bootstrap files were cleaned up")
 
     signal.signal(signal.SIGTERM, handle_sigterm)
@@ -358,8 +355,6 @@ def bootstrap(config: BootstrapConfig, email: str, password: str, name: str) -> 
                 remove_owned_file(config.permit_file, owned.get(config.permit_file))
         finally:
             signal.signal(signal.SIGTERM, previous_sigterm)
-        if interrupted:
-            password = ""
 
 
 def parse_args(argv: Iterable[str]) -> argparse.Namespace:
@@ -421,6 +416,9 @@ def main() -> None:
         raise SystemExit(run(sys.argv[1:]))
     except Stop as error:
         print(f"webui-bootstrap: {error}", file=sys.stderr)
+        raise SystemExit(1)
+    except RetryableDatabase as error:
+        print(f"webui-bootstrap: {error}; retry once the Open WebUI database is idle", file=sys.stderr)
         raise SystemExit(1)
     except subprocess.CalledProcessError as error:
         print(f"webui-bootstrap: systemctl failed with exit code {error.returncode}", file=sys.stderr)
