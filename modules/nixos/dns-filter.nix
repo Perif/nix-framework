@@ -91,14 +91,9 @@ in
     };
   };
 
-  # resolved must not advertise loopback DNS before Blocky is ready to accept
-  # it. Blocky's bootstrap addresses let it initialize without resolved.
-  systemd.services.systemd-resolved = lib.mkIf cfg.enable {
-    after = [ "blocky.service" ];
-    wants = [ "blocky.service" ];
-  };
-
-  # The upstream check should run after NetworkManager has established a
-  # usable connection instead of racing early boot.
+  # Keep resolved's upstream early-boot ordering: it runs before sysinit.target.
+  # Ordering it after a regular service such as Blocky creates a boot cycle.
+  # Blocky starts independently after networking; local DNS may briefly return
+  # failure until it is ready. Bootstrap IPs avoid depending on resolved here.
   systemd.services.blocky.after = lib.mkIf cfg.enable [ "network-online.target" ];
 }

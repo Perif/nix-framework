@@ -7,8 +7,11 @@ let
   # instead of restoring an end-of-life cryptographic library.
   # Reuse the locked Nixpkgs recipe with a targeted stable release pin. Do not
   # update the whole system lock just to advance this binary editor.
+  # Keep this a path so Nix can resolve it through the fetched source tree.
+  # String interpolation can copy a lazily fetched Nixpkgs tree into an
+  # unrealised store path on a fresh CI runner.
   sublimeTextBase = pkgs.callPackage (import
-    "${pkgs.path}/pkgs/applications/editors/sublime/4/common.nix"
+    (pkgs.path + "/pkgs/applications/editors/sublime/4/common.nix")
     {
       buildVersion = "4213";
       dev = false;

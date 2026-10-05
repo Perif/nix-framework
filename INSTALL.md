@@ -63,7 +63,10 @@ Stop if the model, serial, size, or current contents are not the intended disk.
 ## 3. Edit the installation settings
 
 Open `settings.nix` and replace the disk, account, regional, and Git identity
-values. Keep both password fields `null` for the preferred install path:
+values. Keep both password fields `null` for the preferred install path.
+The following is an excerpt to edit in place, not a replacement file: retain
+the existing `power`, `network`, `ai`, `display`, `audio` and
+`features.thunderbolt` settings.
 
 ```nix
 {

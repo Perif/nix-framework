@@ -163,8 +163,10 @@ Edit the file:
 nano settings.nix
 ```
 
-The relevant structure should look like this. Replace every value marked for
-replacement and use the exact `INSTALL_DISK` value verified above:
+The following excerpt shows installation-specific fields to edit in place.
+Do not replace the whole file: retain the existing `power`, `network`, `ai`,
+`display`, `audio` and `features.thunderbolt` settings. Replace every value
+marked for replacement and use the exact `INSTALL_DISK` value verified above:
 
 ```nix
 {

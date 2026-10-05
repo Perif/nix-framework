@@ -38,6 +38,10 @@ dns = {
 - Blocky listens only on `127.0.0.1:5353` and `[::1]:5353`; no LAN or web/API
   listener is opened;
 - systemd-resolved routes ordinary queries to those loopback listeners;
+- resolved retains its early-boot ordering; Blocky starts independently after
+  networking. System DNS can briefly fail until Blocky is ready. Do not order
+  resolved after Blocky: resolved runs before `sysinit.target`, while Blocky
+  is a regular service that starts after it, creating a boot dependency cycle;
 - Blocky forwards allowed queries to the standard, unfiltered Cloudflare
   resolver over DNS-over-HTTPS on port 443;
 - the two bootstrap addresses resolve the DoH hostname and list-download
