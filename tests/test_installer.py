@@ -78,16 +78,19 @@ class SettingsAndEvaluation(unittest.TestCase):
     def test_swap_inventory_empty_active_and_invalid_output(self):
         for output, expected in (
             ('', []),
-            ('/dev/dm-2 42949668864\n/dev/zram0 8589930496',
-             [{'name': '/dev/dm-2', 'size': 42949668864},
-              {'name': '/dev/zram0', 'size': 8589930496}]),
+            ('/dev/dm-2 partition 42949668864\n/dev/zram0 partition 8589930496\n'
+             '/swapfile file 1073741824\n/dev/disk/by-id/usb-Flash\\x20Key partition 512',
+             [{'name': '/dev/dm-2', 'type': 'partition', 'size': 42949668864},
+              {'name': '/dev/zram0', 'type': 'partition', 'size': 8589930496},
+              {'name': '/swapfile', 'type': 'file', 'size': 1073741824},
+              {'name': '/dev/disk/by-id/usb-Flash Key', 'type': 'partition', 'size': 512}]),
         ):
             with patch.object(storage, 'run', return_value=output) as command:
                 self.assertEqual(storage.active_swaps(), expected)
                 command.assert_called_once_with(
-                    'swapon', '--show=NAME,SIZE', '--raw', '--noheadings',
+                    'swapon', '--show=NAME,TYPE,SIZE', '--raw', '--noheadings',
                     '--bytes', capture=True)
-        for output in ('/dev/dm-2 unknown', '/dev/dm-2 partition 42949668864 0 -2'):
+        for output in ('/dev/dm-2 partition unknown', '/dev/dm-2 partition 42949668864 0 -2'):
             with self.subTest(output=output), patch.object(storage, 'run', return_value=output):
                 with self.assertRaises(ValueError):
                     storage.active_swaps()
@@ -601,6 +604,36 @@ class StageOrdering(unittest.TestCase):
                         verify.assert_called_once_with(config(), LAYOUT)
                     self.assertFalse(any(c.args[0] in ('mount', 'mkfs', 'mkswap')
                                          for c in command.call_args_list))
+
+    def test_reconciliation_ignores_swap_files_and_vanished_swap_devices(self):
+        active = [{'name': '/swapfile', 'type': 'file', 'size': 1024**3},
+                  {'name': '/dev/gone', 'type': 'partition', 'size': 1024**3}]
+        with patch.object(storage, 'disk_identity', return_value=disk()), \
+             patch.object(storage, 'check_partitions', return_value=Path('/dev/target-part2')), \
+             patch.object(storage, 'show_disk'), \
+             patch.object(storage, 'refuse_unrelated_mounts'), \
+             patch.object(Path, 'exists', autospec=True, side_effect=lambda p: str(p) != '/dev/gone'), \
+             patch.object(Path, 'resolve', autospec=True, side_effect=lambda p, **_: p), \
+             patch.object(storage, 'check_cryptroot'), \
+             patch.object(storage, 'check_vg_pv'), \
+             patch.object(storage, 'check_encrypted_ancestry'), \
+             patch.object(storage, 'mounted_target_subset', return_value=LAYOUT.targets), \
+             patch.object(storage, 'active_swaps', return_value=active), \
+             patch.object(storage, 'backing_disks') as backing, \
+             patch.object(storage, 'verify_mounts', return_value=disk()):
+            def fake_run(*command, **kwargs):
+                if command[0] == 'blkid':
+                    return {'/dev/mapper/vg-root': 'btrfs',
+                            '/dev/mapper/vg-swap': 'swap'}.get(command[-1], 'vfat')
+                return ''
+
+            with patch.object(storage, 'run', side_effect=fake_run) as command:
+                try:
+                    self.assertEqual(storage.recover_mounts(config(), LAYOUT), disk())
+                except (common.Stop, FileNotFoundError, subprocess.CalledProcessError) as error:
+                    self.fail(f'an unrelated swap file or vanished device aborted recovery: {error!r}')
+            backing.assert_not_called()
+            self.assertEqual(command.call_args.args, ('swapon', '/dev/mapper/vg-swap'))
 
     def test_recovery_refuses_unrelated_mount_before_cryptsetup(self):
         with patch.object(storage, 'disk_identity', return_value=disk()), \

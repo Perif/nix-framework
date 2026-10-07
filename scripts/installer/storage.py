@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 import stat
 
 from common import Stop, query, run
@@ -34,15 +35,19 @@ def block_tree(device=None, inverse=False):
     return query(*args)['blockdevices']
 
 
+RAW_ESCAPE = re.compile(r'\\x([0-9a-fA-F]{2})')
+
+
 def active_swaps():
     # swapon selects columns through --show, not --output (which abbreviates
-    # --output-all). Raw output escapes whitespace in device names.
-    rows = run('swapon', '--show=NAME,SIZE', '--raw', '--noheadings', '--bytes',
+    # --output-all). Raw output escapes whitespace in names as \xHH.
+    rows = run('swapon', '--show=NAME,TYPE,SIZE', '--raw', '--noheadings', '--bytes',
                capture=True)
     swaps = []
     for row in rows.splitlines():
-        name, size = row.split()
-        swaps.append({'name': name, 'size': int(size)})
+        name, kind, size = row.split()
+        name = RAW_ESCAPE.sub(lambda match: chr(int(match.group(1), 16)), name)
+        swaps.append({'name': name, 'type': kind, 'size': int(size)})
     return swaps
 
 
@@ -287,8 +292,12 @@ def recover_mounts(config, layout, after_root=None):
     swaps = active_swaps()
     for active in swaps:
         path = Path(active['name'])
-        if path.resolve() != expected_swap and path.exists() and disk.number in backing_disks(path):
+        # Only another block device on the selected disk conflicts. Swap files
+        # and devices that vanished are not probed with lsblk.
+        if active['type'] != 'partition' or not path.exists():
+            continue
+        if path.resolve() != expected_swap and disk.number in backing_disks(path):
             raise Stop('A different swap device is active on the selected disk.')
-    if not any(Path(s['name']).resolve(strict=True) == expected_swap for s in swaps):
+    if not any(Path(s['name']).resolve() == expected_swap for s in swaps):
         run('swapon', '/dev/mapper/vg-swap')
     return verify_mounts(config, layout)
