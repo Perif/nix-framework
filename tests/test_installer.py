@@ -129,8 +129,14 @@ class SettingsAndEvaluation(unittest.TestCase):
             layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
         changed = devices()
         del changed['lvm_vg']['vg']['lvs']['root']['content']['subvolumes']['/home']
-        with self.assertRaisesRegex(common.Stop, 'persistent state'):
-            layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
+        # Which subvolumes exist is decided by the reviewed disk.nix alone; the
+        # installer verifies the evaluated layout rather than a second copy of it.
+        try:
+            reduced = layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
+        except common.Stop as error:
+            self.fail(f'a reviewed subvolume change was refused by a duplicated policy: {error}')
+        self.assertNotIn('/mnt/home', reduced.targets)
+        self.assertIn('/mnt/nix', reduced.targets)
 
     def test_layout_rejects_zero_sized_esp_or_swap_before_format(self):
         for component in ('ESP', 'swap'):

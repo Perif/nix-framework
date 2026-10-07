@@ -129,10 +129,8 @@ def from_disko(devices, selected_disk):
     targets = {target for target, _, _ in mounts}
     if len(targets) != len(mounts) or '/mnt' not in targets or '/mnt/nix' not in targets:
         raise Stop('Disko must define distinct root and Nix mount points.')
-    # Retain the laptop's state boundaries; additional subvolumes are supported.
-    required = {'/mnt/home', '/mnt/var/log', '/mnt/.snapshots', '/mnt/var/lib/private/ollama'}
-    if not required <= targets:
-        raise Stop('Disko is missing a required persistent state subvolume.')
+    # Which further subvolumes exist is the reviewed disk.nix's decision; the
+    # evaluated layout is verified as-is rather than against a second copy.
     esp_bytes = gib_size(esp['size'])
     swap_bytes = gib_size(swap['size'])
     # This is a feasibility floor, not a promise that every future build fits.
