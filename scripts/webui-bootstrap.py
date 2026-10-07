@@ -261,8 +261,11 @@ def restart_service(service: str) -> None:
 
 def check_http_ready(host: str, port: int) -> bool:
     request = urllib.request.Request(f"http://{host}:{port}/", method="GET")
+    # The service is loopback-only; never route the probe through a proxy
+    # inherited from the invoking shell's environment.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
-        with urllib.request.urlopen(request, timeout=2.0) as response:
+        with opener.open(request, timeout=2.0) as response:
             return response.status < 500
     except urllib.error.HTTPError as error:
         return error.code < 500

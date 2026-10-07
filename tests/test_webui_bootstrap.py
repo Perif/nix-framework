@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import http.server
 import importlib.util
 import io
 import os
+import threading
 import signal
 import sqlite3
 import stat
@@ -214,6 +216,27 @@ class WebuiBootstrapTests(unittest.TestCase):
             self.assertIn("webui-bootstrap: ", stderr.getvalue())
             self.assertIn("database is locked", stderr.getvalue())
             self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_readiness_probe_ignores_proxy_environment(self) -> None:
+        class Ready(http.server.BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, *args: object) -> None:
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Ready)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            # A proxy that refuses connections; a probe routed through it fails.
+            with patch.dict(os.environ, {"http_proxy": "http://127.0.0.1:9", "HTTP_PROXY": "http://127.0.0.1:9",
+                                         "no_proxy": "example.invalid", "NO_PROXY": "example.invalid"}):
+                self.assertTrue(self.module.check_http_ready("127.0.0.1", server.server_address[1]))
+        finally:
+            server.shutdown()
+            server.server_close()
 
     def test_timeout_stops_service_and_removes_runtime_files_for_empty_db_retry(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
