@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   settings,
@@ -20,15 +21,19 @@ in
       assertion = limit == null || (builtins.isInt limit && limit >= 1 && limit <= 100);
       message = "power.chargeLimit must be null or an integer from 1 to 100.";
     }
+    {
+      # The module below is out-of-tree; nixos-hardware's framework/kmod.nix
+      # (hardware.framework.enableKmod) adds it for kernels >= 6.10. Without it
+      # systemd-modules-load would fail at every boot.
+      assertion =
+        limit == null
+        || lib.any (package: lib.getName package == "framework-laptop-kmod") config.boot.extraModulePackages;
+      message = "power.chargeLimit needs the framework_laptop kernel module; keep nixos-hardware's hardware.framework.enableKmod on or set power.chargeLimit = null.";
+    }
   ];
 
   services.power-profiles-daemon.enable = true;
 
-  # The module itself comes from nixos-hardware's framework/kmod.nix
-  # (hardware.framework.enableKmod, on by default for kernels >= 6.10), which
-  # the series3 profile imports. Disabling that option makes
-  # systemd-modules-load fail at boot while this unit may still succeed
-  # through the in-tree cros_charge-control driver.
   boot.kernelModules = lib.optional (limit != null) "framework_laptop";
   systemd.services.framework-charge-limit = lib.mkIf (limit != null) {
     description = "Set the Framework battery charge limit";
