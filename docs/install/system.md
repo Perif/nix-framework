@@ -10,13 +10,16 @@ The install stage rechecks the mount sources and required subvolumes, copies the
 reviewed Git-backed configuration snapshot to `/mnt/etc/nixos` without `.git`
 history, and runs `nixos-install` against that installed snapshot. Its reported
 base commit and staged-tree identity should match the revision reviewed before
-formatting; if the source changed, stop and review it before installing. The
+formatting. If the source changed, review it first; the stage then shows both
+identities and requires an exact `REPLACE SOURCE <tree>` confirmation before it
+replaces the copied configuration and re-binds the record. The
 stage does not rely on shell variables from another stage and does not reboot
 automatically.
 
 The persistent `/mnt/etc/nix-framework-installer.json` record must match the
-selected source, disk and evaluated storage layout. Preserve it; do not remove
-it to bypass a mismatch. After interruption, use the guarded `recover` stage
+selected disk and evaluated storage layout; a changed reviewed source is accepted
+only through that confirmation. Preserve the record; do not remove it to bypass
+a mismatch. After interruption, use the guarded `recover` stage
 described in the storage guide before retrying installation.
 
 ```bash

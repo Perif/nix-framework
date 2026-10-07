@@ -389,6 +389,7 @@ class StageOrdering(unittest.TestCase):
     def setUp(self):
         for target, name, value in ((cli, 'evaluate', LAYOUT),
                                     (cli.record, 'verify', None),
+                                    (cli.record, 'source_matches', True),
                                     (cli.record, 'create', None)):
             patcher = patch.object(target, name, return_value=value)
             patcher.start()
@@ -630,6 +631,102 @@ class InstallationRecord(unittest.TestCase):
                               disk(), LAYOUT)
             with self.assertRaisesRegex(common.Stop, 'differs'):
                 record.verify(selected, disk(serial='different'), LAYOUT)
+
+
+class ChangedSourceAfterFormat(unittest.TestCase):
+    """A reviewed source edit after format must be an explicit, supported retry path."""
+
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        patcher = patch.object(record, 'RECORD', Path(temporary.name) / 'installer.json')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.recorded = common.Config(Path('/nix/store/reviewed'), 'framework-pro', 'owner',
+                                      VALID_SETTINGS['diskDevice'], False, 'tree-hash', 'commit-hash')
+        self.changed = common.Config(Path('/nix/store/fixed'), 'framework-pro', 'owner',
+                                     VALID_SETTINGS['diskDevice'], False, 'fixed-tree', 'fixed-commit')
+        record.create(self.recorded, disk(), LAYOUT)
+        self.target = Path('/mnt/etc/nixos')
+        self.installed = common.Config(self.target, 'framework-pro', 'owner', VALID_SETTINGS['diskDevice'])
+
+    def install(self, selected, *, tty=True, answer=None):
+        prompt = patch('builtins.input', return_value=answer) if answer is not None else \
+            patch('builtins.input', side_effect=AssertionError('no confirmation expected'))
+        with patch.object(cli, 'evaluate', return_value=LAYOUT), patch.object(cli, 'verify_mounts', return_value=disk()), \
+             patch.object(cli, 'copy_source', return_value=self.target) as copy, \
+             patch.object(cli, 'read_config', return_value=self.installed), \
+             patch.object(cli.sys.stdin, 'isatty', return_value=tty), prompt, \
+             patch.object(cli, 'run') as run:
+            try:
+                cli.install_system(selected)
+                error = None
+            except common.Stop as stop:
+                error = stop
+        return error, copy, run
+
+    def test_install_replaces_changed_source_only_after_exact_confirmation(self):
+        error, copy, run = self.install(self.changed, answer='REPLACE SOURCE fixed-tree')
+        self.assertIsNone(error, f'confirmed source change was refused: {error}')
+        copy.assert_called_once_with(self.changed, replace=True)
+        self.assertEqual(run.call_args.args[0], 'nixos-install')
+        record.verify(self.changed, disk(), LAYOUT)  # The record now binds the new source.
+
+    def test_install_keeps_record_and_target_when_confirmation_is_wrong(self):
+        error, copy, run = self.install(self.changed, answer='REPLACE SOURCE tree-hash')
+        self.assertIsNotNone(error)
+        self.assertIn('did not match', str(error))
+        copy.assert_not_called()
+        run.assert_not_called()
+        record.verify(self.recorded, disk(), LAYOUT)
+
+    def test_install_refuses_changed_source_without_terminal(self):
+        error, copy, run = self.install(self.changed, tty=False, answer='REPLACE SOURCE fixed-tree')
+        self.assertIsNotNone(error)
+        self.assertIn('interactive', str(error))
+        copy.assert_not_called()
+        run.assert_not_called()
+
+    def test_install_with_recorded_source_never_prompts(self):
+        error, copy, run = self.install(self.recorded)
+        self.assertIsNone(error, f'unchanged source was refused: {error}')
+        copy.assert_called_once_with(self.recorded, replace=False)
+        self.assertEqual(run.call_args.args[0], 'nixos-install')
+
+    def test_recovery_mounts_existing_target_despite_changed_source(self):
+        def mount_existing(config, layout, after_root=None):
+            after_root(disk())
+            return disk()
+
+        with patch.object(cli, 'evaluate', return_value=LAYOUT), patch.object(cli, 'disk_identity', return_value=disk()), \
+             patch.object(cli, 'check_partitions'), patch.object(cli, 'show_disk'), \
+             patch.object(cli.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', return_value=f'RECOVER {self.changed.disk}'), \
+             patch.object(cli, 'recover_mounts', side_effect=mount_existing):
+            try:
+                cli.recover(self.changed)
+            except common.Stop as error:
+                self.fail(f'recovery refused a target whose source changed after format: {error}')
+        record.verify(self.recorded, disk(), LAYOUT)  # Recovery leaves re-binding to the install stage.
+
+    def test_copy_source_replaces_stale_target_only_when_asked(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'source'
+            source.mkdir()
+            (source / 'flake.nix').write_text('new')
+            parent = root / 'etc'
+            parent.mkdir()
+            (parent / 'nixos').mkdir()
+            (parent / 'nixos' / 'flake.nix').write_text('old')
+            selected = common.Config(source, 'framework-pro', 'owner', VALID_SETTINGS['diskDevice'])
+            with patch.object(cli, 'validate_source'):
+                with self.assertRaisesRegex(common.Stop, 'differs'):
+                    cli.copy_source(selected, parent=parent)
+                self.assertEqual((parent / 'nixos' / 'flake.nix').read_text(), 'old')
+                self.assertEqual(cli.copy_source(selected, replace=True, parent=parent), parent / 'nixos')
+            self.assertEqual((parent / 'nixos' / 'flake.nix').read_text(), 'new')
+            self.assertEqual(sorted(entry.name for entry in parent.iterdir()), ['nixos'])
 
 
 if __name__ == "__main__":

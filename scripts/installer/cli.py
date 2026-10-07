@@ -22,16 +22,22 @@ def disko(config, dry=False):
     run(*args, '--mode', 'destroy,format,mount', '--flake', config.flake)
 
 
+def confirm(prompt, expected, *, missing_terminal, mismatch):
+    """Require the exact phrase on an interactive terminal; never read it from a pipe."""
+    if not sys.stdin.isatty():
+        raise Stop(missing_terminal)
+    print(f'{prompt} Type exactly: {expected}', flush=True)
+    if input().strip() != expected:
+        raise Stop(mismatch)
+
+
 def format_disk(config):
     layout = evaluate(config)
     before = fresh_storage(config, layout)
     show_disk(config, before)
-    if not sys.stdin.isatty():
-        raise Stop('Formatting requires an interactive terminal; no unattended confirmation option exists.')
-    expected = f'ERASE {config.disk}'
-    print(f'ALL DATA ON THIS DISK WILL BE LOST. Type exactly: {expected}', flush=True)
-    if input().strip() != expected:
-        raise Stop('Disk erase confirmation did not match; nothing was formatted.')
+    confirm('ALL DATA ON THIS DISK WILL BE LOST.', f'ERASE {config.disk}',
+            missing_terminal='Formatting requires an interactive terminal; no unattended confirmation option exists.',
+            mismatch='Disk erase confirmation did not match; nothing was formatted.')
     if fresh_storage(config, layout) != before:
         raise Stop('Disk identity changed during confirmation; nothing was formatted.')
     disko(config)
@@ -50,18 +56,17 @@ def recover(config):
     disk = disk_identity(config)
     check_partitions(config, layout, disk)
     show_disk(config, disk)
-    if not sys.stdin.isatty():
-        raise Stop('Recovery requires an interactive terminal.')
-    expected = f'RECOVER {config.disk}'
-    print(f'Open and mount this existing target only. Type exactly: {expected}', flush=True)
-    if input().strip() != expected:
-        raise Stop('Recovery confirmation did not match; no mapping or mount was opened.')
+    confirm('Open and mount this existing target only.', f'RECOVER {config.disk}',
+            missing_terminal='Recovery requires an interactive terminal.',
+            mismatch='Recovery confirmation did not match; no mapping or mount was opened.')
     if disk_identity(config) != disk:
         raise Stop('Disk identity changed during recovery confirmation.')
 
     def existing_record(mounted_disk):
         if record.RECORD.exists() or record.RECORD.is_symlink():
-            record.verify(config, mounted_disk, layout)
+            # Disk and layout must match. A changed reviewed source is
+            # re-bound by the install stage after explicit confirmation.
+            record.verify(config, mounted_disk, layout, source=False)
         elif Path('/mnt/etc/NIXOS').exists() or Path('/mnt/etc/nixos').exists():
             raise Stop('An existing installation has no matching installer record; inspect it before recovery.')
 
@@ -70,22 +75,24 @@ def recover(config):
     print('Existing target mounted and verified. Continue with install; never rerun format.', flush=True)
 
 
-def copy_source(config):
+def copy_source(config, replace=False, parent=Path('/mnt/etc')):
     validate_source(config.source)
-    parent = Path('/mnt/etc')
     target = parent / 'nixos'
     if parent.is_symlink() or target.is_symlink():
         raise Stop('Refusing a symlink at the target configuration path.')
     parent.mkdir(exist_ok=True)
     if target.exists():
         # Never silently mix a retry with an old configuration. Use the existing
-        # target only if byte-for-byte identical; manual edits need explicit recovery.
+        # target only if byte-for-byte identical; replacing a differing copy
+        # requires the explicit source-change confirmation in install_system.
         comparison = subprocess.run(['diff', '-qr', '--no-dereference', str(config.source), str(target)],
                                     stdout=subprocess.PIPE, text=True)
-        if comparison.returncode == 1:
+        if comparison.returncode != 1:
+            comparison.check_returncode()
+            return target
+        if not replace:
             raise Stop('Target configuration differs; preserve/review it before retrying.')
-        comparison.check_returncode()
-        return target
+        shutil.rmtree(target)
     staging = Path(tempfile.mkdtemp(prefix='.nixos-stage-', dir=parent))
     try:
         shutil.copytree(config.source, staging, dirs_exist_ok=True, symlinks=True)
@@ -107,14 +114,28 @@ def copy_source(config):
 def install_system(config):
     layout = evaluate(config)
     before = verify_mounts(config, layout)
-    record.verify(config, before, layout)
-    target = copy_source(config)
+    recorded = record.verify(config, before, layout, source=False)
+    replace = not record.source_matches(config, recorded)
+    if replace:
+        # A reviewed fix after a failed install is a supported retry, but only
+        # when the operator explicitly accepts the new tree for this target.
+        print(f"Recorded source: commit {recorded.get('base_commit')}, tree {recorded.get('source_tree')}\n"
+              f"Current source:  commit {config.base_commit}, tree {config.source_tree}", flush=True)
+        confirm('The reviewed source changed since this target was formatted; the copied '
+                'configuration on the target will be replaced and the record re-bound.',
+                f'REPLACE SOURCE {config.source_tree[:12]}',
+                missing_terminal='The reviewed source changed since format; rerun install interactively '
+                                 'to accept it, or check out the recorded source.',
+                mismatch='Source replacement confirmation did not match; nothing was copied or installed.')
+    target = copy_source(config, replace=replace)
     installed = read_config(target)
     if (installed.hostname, installed.username, installed.disk, installed.declarative_password) != (
             config.hostname, config.username, config.disk, config.declarative_password):
         raise Stop('Copied configuration does not match the reviewed selection.')
     if verify_mounts(config, layout) != before:
         raise Stop('Disk identity changed before installation.')
+    if replace:
+        record.rebind(config, before, layout)
     run('nixos-install', '--root', '/mnt', '--flake', f'{target}#{config.hostname}', '--no-root-passwd')
     print('Installation finished. Run the account stage before rebooting.', flush=True)
 

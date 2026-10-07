@@ -98,17 +98,23 @@ and the EFI type, opens only the expected LUKS2 partition, activates only the
 expected LVs, retains correct existing mounts, mounts missing subvolumes and
 the exact EFI partition, and enables the expected encrypted swap. It never
 calls Disko, creates filesystems, or formats a partition. Incorrect filesystems,
-unrelated mappings, conflicting mounts, and changed source/layout records stop
-recovery. If it stops partway, preserve the state and inspect it before retrying.
+unrelated mappings, conflicting mounts, and a record for another disk or layout
+stop recovery. If it stops partway, preserve the state and inspect it before retrying.
 
 Successful format/recovery records the source tree/base commit, immutable source
 path, disk identity and layout fingerprint in
 `/mnt/etc/nix-framework-installer.json` (root-readable; no credentials).
-Installation requires a matching record. Recovery validates an existing record
-and never replaces it; when an interruption happened before record creation,
-it creates one only after the entire layout passes verification. Preserve the
-record with your reviewed source for troubleshooting. It is provenance metadata,
-not authentication against someone who can alter the disk as root.
+Installation requires a record for the same disk and layout. If the reviewed
+source changed since formatting (for example a fix after a failed
+`nixos-install`), `install` prints the recorded and current source and requires
+typing `REPLACE SOURCE <first 12 characters of the current tree>`; only then
+does it replace the copied configuration on the target and re-bind the record.
+Without a terminal it stops instead. Recovery validates the disk and layout of
+an existing record and never replaces it; when an interruption happened before
+record creation, it creates one only after the entire layout passes
+verification. Preserve the record with your reviewed source for
+troubleshooting. It is provenance metadata, not authentication against someone
+who can alter the disk as root.
 
 After recovery, run `mounts`, `install`, and `account` as applicable. A partially
 formatted target missing required filesystems or subvolumes needs manual

@@ -11,12 +11,26 @@ from common import Stop
 RECORD = Path('/mnt/etc/nix-framework-installer.json')
 
 
-def expected(config, disk, layout):
+SOURCE_FIELDS = ('source_tree', 'base_commit', 'source_store_path')
+
+
+def source_fields(config):
     return {
-        'version': 1,
         'source_tree': config.source_tree,
         'base_commit': config.base_commit,
         'source_store_path': str(config.source) if config.source_tree else '',
+    }
+
+
+def source_matches(config, data):
+    """Whether a record still binds the currently reviewed source."""
+    return all(data.get(field) == value for field, value in source_fields(config).items())
+
+
+def expected(config, disk, layout):
+    return {
+        'version': 1,
+        **source_fields(config),
         'disk_by_id': config.disk,
         'disk_serial': disk.serial,
         'disk_model': disk.model,
@@ -42,7 +56,7 @@ def verify(config, disk, layout, *, source=True):
     expected_data = expected(config, disk, layout)
     fields = ('version', 'disk_by_id', 'disk_serial', 'disk_model', 'disk_bytes', 'layout_sha256')
     if source:
-        fields += ('source_tree', 'base_commit', 'source_store_path')
+        fields += SOURCE_FIELDS
     if any(data.get(field) != expected_data[field] for field in fields):
         raise Stop('Installation record differs from selected source, disk, or storage layout; inspect before continuing.')
     return data
@@ -52,8 +66,20 @@ def create(config, disk, layout):
     if not config.source_tree or not config.base_commit:
         raise Stop('Cannot record an installation without a reviewed Git tree.')
     if RECORD.exists() or RECORD.is_symlink():
-        verify(config, disk, layout)
+        # An existing record keeps its source binding here. Only the install
+        # stage re-binds a changed reviewed source, after explicit confirmation.
+        verify(config, disk, layout, source=False)
         return
+    write(expected(config, disk, layout))
+
+
+def rebind(config, disk, layout):
+    """Bind the existing record for this disk and layout to the current source."""
+    verify(config, disk, layout, source=False)
+    write(expected(config, disk, layout))
+
+
+def write(data):
     if RECORD.parent.is_symlink():
         raise Stop('Refusing a symlink at the installation record directory.')
     RECORD.parent.mkdir(exist_ok=True)
@@ -61,7 +87,7 @@ def create(config, disk, layout):
     try:
         with os.fdopen(fd, 'w') as output:
             os.fchmod(output.fileno(), 0o600)
-            json.dump(expected(config, disk, layout), output, sort_keys=True, indent=2)
+            json.dump(data, output, sort_keys=True, indent=2)
             output.write('\n')
             output.flush()
             os.fsync(output.fileno())

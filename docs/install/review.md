@@ -27,6 +27,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 | A retry could silently mix configurations. | Refuse an existing target configuration unless its files match the reviewed snapshot. |
 | Correct mount names could conceal a different disk, subvolume, or plaintext PV. | Check mount sources, physical disk identity, Btrfs subvolume roots, exact encrypted LVM ancestry, and active encrypted swap. |
 | Pinned Disko formats swap but omits its activation from filesystem mount ordering (its mount order is built from `fileSystems` mount points while the swap entry is keyed by device path; unfixed upstream). | The real installer VM exposed the missing active swap. After Disko succeeds, reuse guarded existing-storage reconciliation to activate only the validated encrypted swap, then run the unchanged strict mount/swap verifier. |
+| A reviewed fix after a failed `nixos-install` could never be installed: the record pinned the source tree and the copied configuration refused to differ, while the guides forbade removing either. | `install` verifies disk and layout, prints the recorded and current source, requires `REPLACE SOURCE <tree>` on a terminal, then replaces the copied configuration and re-binds the record; recovery checks only disk and layout. |
 | An absolute target system-profile symlink could appear missing from the live ISO. | Recognize the symlink and validate the account inside the installed target. |
 | Tool output assumptions were wrong. | Request an explicit `lsblk` tree; select swap columns with `--show=NAME,SIZE` (`--output` abbreviates `--output-all`); archive rather than rely on a potentially unrealized metadata path. The real Linux inventory check caught the swap-column error before installation. |
 | Fresh-install, upgrade, and recovery instructions overlapped. | Separate routes and explain which commands are valid after partial installation. Clone and rebuild sequences stop on failures. |
@@ -40,7 +41,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 
 ## Evidence and remaining limits
 
-- The synthetic installer suite contains 36 tests, including fault paths; it passes
+- The synthetic installer suite contains 43 tests, including fault paths; it passes
   locally and through the packaged Apple Silicon Nix check.
 - The real Git/Nix source regression verifies an existing immutable snapshot,
   staged settings, exclusion of ignored/untracked files and Git history, and
@@ -50,7 +51,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 - Linux CI runs the synthetic suite, the packaged command's help, actual
   read-only `lsblk`/`findmnt`/`swapon` checks, and the source regression before
   the existing full system build. Consult the PR's checks for the current run.
-- Fifteen WebUI bootstrap fixture tests cover private runtime files, existing
+- Sixteen WebUI bootstrap fixture tests cover private runtime files, existing
   accounts, empty databases, readiness, restart, timeout and signal cleanup.
 - The `installer-vm` check exercises real partitioning, interruption recovery,
   installation, UEFI boot, LUKS unlock and login on a disposable virtual disk.
