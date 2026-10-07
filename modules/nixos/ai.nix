@@ -8,13 +8,7 @@
 let
   aiEnabled = settings.features.localAI;
   webuiEnabled = aiEnabled && settings.ai.webui.enable;
-  webuiBootstrapBase = pkgs.callPackage ../../pkgs/webui-bootstrap.nix { };
-  webuiBootstrap = pkgs.writeShellApplication {
-    name = "webui-bootstrap";
-    text = ''
-      exec ${webuiBootstrapBase}/bin/webui-bootstrap --port ${toString settings.ai.webui.port} "$@"
-    '';
-  };
+  webuiBootstrap = pkgs.callPackage ../../pkgs/webui-bootstrap.nix { port = settings.ai.webui.port; };
   webuiBootstrapEnvFile = "/run/open-webui-bootstrap.env";
   webuiBootstrapPermitFile = "/run/open-webui-bootstrap.start";
 in
@@ -102,7 +96,6 @@ in
     wantedBy = lib.mkForce [ ];
     requires = [ "ollama.service" ];
     after = [ "ollama.service" ];
-    path = [ webuiBootstrap ];
     serviceConfig = {
       EnvironmentFile = [ "-${webuiBootstrapEnvFile}" ];
       ExecCondition = "${webuiBootstrap}/bin/webui-bootstrap --check-start --permit-file ${webuiBootstrapPermitFile}";
