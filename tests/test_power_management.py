@@ -60,6 +60,51 @@ class PowerHelpers(unittest.TestCase):
                 self.finish(SERVICE_RESULT=result, EXIT_CODE=code, EXIT_STATUS=status)
                 self.assertTrue(self.marker.exists())
 
+    def test_marker_records_why_work_is_pending(self):
+        self.assertEqual(self.check_power(1).returncode, 1)
+        self.assertEqual(self.marker.read_text(), "deferred\n")
+        self.finish(SERVICE_RESULT="exec-condition", EXIT_CODE="exited", EXIT_STATUS="1")
+        self.assertEqual(self.marker.read_text(), "deferred\n")
+        self.assertEqual(self.check_power(0).returncode, 0)
+        self.assertEqual(self.marker.read_text(), "pending\n")
+
+    def test_failed_job_is_not_retried_on_ac_but_interrupted_job_is(self):
+        cases = [
+            (dict(SERVICE_RESULT="exit-code", EXIT_CODE="exited", EXIT_STATUS="1"), "failed\n"),
+            (dict(SERVICE_RESULT="timeout", EXIT_CODE="killed", EXIT_STATUS="TERM"), "interrupted\n"),
+            (dict(SERVICE_RESULT="signal", EXIT_CODE="killed", EXIT_STATUS="KILL"), "interrupted\n"),
+            (dict(SERVICE_RESULT="success", EXIT_CODE="killed", EXIT_STATUS="TERM"), "interrupted\n"),
+        ]
+        for env, expected in cases:
+            with self.subTest(**env):
+                self.marker.write_text("pending\n")
+                self.finish(**env)
+                self.assertEqual(self.marker.read_text(), expected)
+
+    def retry(self, content):
+        bindir = self.root / "bin"
+        bindir.mkdir(exist_ok=True)
+        log = self.root / "systemctl.log"
+        log.write_text("")
+        fake = bindir / "systemctl"
+        fake.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$*\" >> {log}\n")
+        fake.chmod(0o700)
+        if content is None:
+            self.marker.unlink(missing_ok=True)
+        else:
+            self.marker.write_text(content)
+        result = self.run_helper(ARGS.maintenance, "retry", self.marker, "nix-gc",
+                                 PATH=f"{bindir}:{os.environ['PATH']}")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return log.read_text()
+
+    def test_retry_starts_only_deferred_or_interrupted_work(self):
+        self.assertEqual(self.retry("deferred\n"), "--no-block start nix-gc.service\n")
+        self.assertEqual(self.retry("interrupted\n"), "--no-block start nix-gc.service\n")
+        self.assertEqual(self.retry("failed\n"), "")
+        self.assertEqual(self.retry("pending\n"), "")
+        self.assertEqual(self.retry(None), "")
+
     def test_unknown_power_state_fails_closed(self):
         self.assertEqual(self.check_power(2).returncode, 255)
         self.assertTrue(self.marker.exists())

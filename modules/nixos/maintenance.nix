@@ -16,14 +16,19 @@ let
   stateDir = "/var/lib/ac-maintenance";
   guard = pkgs.writeShellApplication {
     name = "ac-maintenance";
-    runtimeInputs = [ pkgs.coreutils ];
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.gnugrep
+      pkgs.systemd
+    ];
     text = builtins.readFile ./scripts/ac-maintenance.sh;
   };
 in
 {
   # Keep upstream calendar timers, scrub cancellation, priorities and commands.
-  # ExecCondition records a pending job when a calendar timer fires on battery;
-  # a small retry timer catches it on AC without running every job at each plug-in.
+  # ExecCondition records why a job is pending when a calendar timer fires; a
+  # small retry timer relaunches battery-deferred or interrupted work on AC,
+  # while a job that ran and failed waits for its next calendar run.
   config = lib.mkIf settings.power.maintenanceOnAC {
     systemd.services =
       lib.genAttrs units (unit: {
@@ -40,13 +45,11 @@ in
       })
       // {
         ac-maintenance-retry = {
-          description = "Retry pending laptop maintenance while on AC";
+          description = "Retry deferred or interrupted laptop maintenance while on AC";
           unitConfig.ConditionACPower = true;
           serviceConfig.Type = "oneshot";
           script = lib.concatMapStringsSep "\n" (unit: ''
-            if test -e ${stateDir}/${unit}.pending; then
-              ${pkgs.systemd}/bin/systemctl --no-block start ${unit}.service
-            fi
+            ${guard}/bin/ac-maintenance retry ${stateDir}/${unit}.pending ${unit}
           '') units;
         };
       };

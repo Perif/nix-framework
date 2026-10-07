@@ -314,17 +314,20 @@ Use `lspci -nnk` and `vainfo` after reboot to confirm the actual driver and code
 
 `power.maintenanceOnAC = true` gates Nix garbage collection and Btrfs scrubbing
 at service start. Their weekly/monthly schedules and upstream scrub
-cancellation remain intact. A job triggered on battery records a pending marker
-in `/var/lib/ac-maintenance`, then skips without a failure. Every 15 minutes
-(with up to one minute of timer coalescing), an AC-only retry service starts
-pending jobs. Markers survive reboot and clear only after successful completion;
-failures and interrupted jobs remain pending for retry. No pending job means no
-extra GC or scrub. Retried scrubs start a fresh scrub using the upstream command.
+cancellation remain intact. A job triggered on battery writes a `deferred`
+marker in `/var/lib/ac-maintenance`, then skips without a failure. Every 15
+minutes (with up to one minute of timer coalescing), an AC-only retry service
+starts jobs whose marker reads `deferred` or `interrupted`. Markers survive
+reboot and clear only after successful completion. A job that was killed or
+timed out is marked `interrupted` and retried on AC; a job that ran and exited
+with an error is marked `failed` and waits for its next calendar run instead of
+being relaunched every interval. No marker means no extra GC or scrub. Retried
+scrubs start a fresh scrub using the upstream command.
 
 Unplugging does not kill a job already running. This avoids interrupting GC and
 preserves normal scrub lifecycle management. The retry timer does not wake a
-sleeping laptop. Repeated job failures remain visible in the journal and may
-retry each interval on AC; resolve the reported cause. Nix-store optimization
+sleeping laptop. A failed job stays visible in the journal and in its marker;
+resolve the reported cause before its next calendar run. Nix-store optimization
 already has an upstream AC condition and is not modified here.
 
 ```bash
