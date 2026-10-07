@@ -88,13 +88,23 @@ def fresh_storage(config, layout):
                    f'{disk.size} bytes available, at least {layout.minimum_disk_bytes} required.')
     if Path('/dev/mapper/cryptroot').exists():
         raise Stop('cryptroot mapping already exists. Inspect/recover; do not repeat format.')
-    groups = query('vgs', '--reportformat', 'json', '-o', 'vg_name')['report']
-    if any(v['vg_name'].strip() == 'vg' for report in groups for v in report.get('vg', [])):
+    if vg_exists():
         raise Stop('A volume group named vg already exists. Resolve the collision before fresh formatting.')
     mounts = query('findmnt', '--json', '--output', 'TARGET')['filesystems']
     if any(n['target'] == '/mnt' or n['target'].startswith('/mnt/') for n in walk(mounts)):
         raise Stop('/mnt already contains mounted filesystems. Use mounts/install for a formatted target.')
     return disk
+
+
+def vg_exists(name='vg'):
+    groups = query('vgs', '--reportformat', 'json', '-o', 'vg_name')['report']
+    return any(v['vg_name'].strip() == name for report in groups for v in report.get('vg', []))
+
+
+def expected_device(config, layout, filesystem):
+    """The only device a target of this filesystem type may be mounted from."""
+    return (f'{config.disk}-part{layout.esp_partition}' if filesystem == 'vfat'
+            else '/dev/mapper/vg-root')
 
 
 def backing_disks(device):
@@ -214,9 +224,7 @@ def mounted_target_subset(config, layout, disk):
         source = m['source'].split('[', 1)[0]
         if (m['fstype'], m['fsroot']) != (fs, root) or backing_disks(source) != {disk.number}:
             raise Stop(f'Existing mount at {target} does not match the selected layout.')
-        expected_device = (f'{config.disk}-part{layout.esp_partition}' if fs == 'vfat'
-                           else '/dev/mapper/vg-root')
-        if Path(source).resolve(strict=True) != Path(expected_device).resolve(strict=True):
+        if Path(source).resolve(strict=True) != Path(expected_device(config, layout, fs)).resolve(strict=True):
             raise Stop(f'Existing mount at {target} uses the wrong partition or LV.')
     return present
 
@@ -245,8 +253,7 @@ def recover_mounts(config, layout, after_root=None):
         check_cryptroot(disk, partition)
     else:
         # A colliding VG on another disk must stop recovery before opening LUKS.
-        groups = query('vgs', '--reportformat', 'json', '-o', 'vg_name')['report']
-        if any(v['vg_name'].strip() == 'vg' for report in groups for v in report.get('vg', [])):
+        if vg_exists():
             raise Stop('Volume group vg exists without this disk\'s cryptroot mapping.')
         run('cryptsetup', 'open', '--type', 'luks2', str(partition), 'cryptroot')
         check_cryptroot(disk, partition)
@@ -275,8 +282,7 @@ def recover_mounts(config, layout, after_root=None):
         if path.is_symlink() or any(parent.is_symlink() for parent in path.parents if parent != Path('/')):
             raise Stop(f'Refusing a symlink in target mount path {target}.')
         path.mkdir(parents=True, exist_ok=True)
-        device = (f'{config.disk}-part{layout.esp_partition}' if fs == 'vfat'
-                  else '/dev/mapper/vg-root')
+        device = expected_device(config, layout, fs)
         options = list(layout.options[target])
         if fs == 'btrfs':
             options.insert(0, f'subvol={root}')
