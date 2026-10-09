@@ -62,7 +62,7 @@
       );
       templates.project = {
         path = ./templates/project;
-        description = "Project-local dev shells for C, Python, Go, Rust, Node.js and Nix";
+        description = "Project-local dev shells for C, Python, Go, Rust, Guile, Node.js and Nix";
       };
 
       # Run the same Disko revision used by this configuration with:
@@ -152,6 +152,7 @@
               '';
         }
         // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          touchpad = import ./tests/touchpad.nix { inherit pkgs; };
           software-profiles =
             assert import ./tests/software-profiles.nix {
               configuration = self.nixosConfigurations.${settings.hostname};

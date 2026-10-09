@@ -67,6 +67,20 @@ jobs:
       - name: Test laptop power-management helpers
         run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
 
+      - name: Test touchpad configuration preservation
+        run: nix build .#checks.x86_64-linux.touchpad --no-link --print-build-logs
+
+      - name: Smoke-test the Guile development shell
+        run: |
+          nix develop .#guile -c bash -euo pipefail <<'GUILE'
+          test "$(guile --no-auto-compile -c '(display (+ 20 22))')" = 42
+          work="$(mktemp -d)"
+          trap 'rm -rf -- "$work"' EXIT
+          printf '(display (+ 20 22))\n' > "$work/hello.scm"
+          guild compile -o "$work/hello.go" "$work/hello.scm"
+          test "$(guile --no-auto-compile -c "(load-compiled \"$work/hello.go\")")" = 42
+          GUILE
+
       - name: Test the production Git security hook
         run: nix build .#checks.x86_64-linux.git-security --no-link --print-build-logs
 

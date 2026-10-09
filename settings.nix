@@ -115,6 +115,7 @@
       python = true;
       go = true;
       rust = true;
+      guile = true; # Guile 3 Scheme interpreter, REPL and guild compiler.
       nodejs = true;
       nix = true;
     };
@@ -146,6 +147,20 @@
     lowBatteryProfile = "power-saver";
     maintenanceOnAC = true; # Defer GC/scrub on battery, retry pending work on AC.
     chargeLimit = 80; # 1..100, or null to leave firmware/Plasma in control.
+  };
+
+  # Plasma Wayland defaults; existing per-device GUI choices take precedence.
+  # See docs/TOUCHPAD.md for alternatives and optional haptic-click tuning.
+  touchpad = {
+    enable = true;
+    disableWhileTyping = true;
+    tapToClick = true;
+    tapAndDrag = false; # Use a physical press to drag; reduces accidental drags.
+    tapDragLock = false;
+    clickMethod = "clickfinger"; # Or "button-areas" for bottom-right clicks.
+    naturalScrolling = false; # Set true if you prefer content to follow fingers.
+    pointerAcceleration = 0.0; # -1.0..1.0; neutral speed, driver acceleration profile.
+    scrollFactor = 1.0; # Positive multiplier; try 0.75 if scrolling is too fast.
   };
 
   # null retains NixOS defaults until measurements on the actual laptop.

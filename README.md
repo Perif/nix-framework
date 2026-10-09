@@ -132,7 +132,7 @@ needs editing when these change:
 - `ai.webui`: on-demand Open WebUI enablement and port; signup is disabled and
   `sudo webui-bootstrap` creates the first administrator privately
 - `features.devCore` and `features.languageTools`: common development tools and
-  individually selectable C, Python, Go, Rust, Node.js and Nix toolchains
+  individually selectable C, Python, Go, Rust, Guile, Node.js and Nix toolchains
 - `features.localAI`, `features.extraBrowsers`, `features.extraEditors`: optional
   application groups; see [software selections](docs/WORKSTATION-APPS.md)
 - `features.office`: individual LibreOffice, Thunderbird, KDE Connect and
@@ -148,6 +148,8 @@ needs editing when these change:
   association for EasyEffects; configure both together
 - `ai`: local-model context, output and concurrency defaults, plus Ollaya enablement
 - `power`: AC/battery profiles, AC-only maintenance starts, and battery charge cap
+- `touchpad`: optional Plasma Wayland defaults for tapping, dragging, scrolling
+  and clicks; see [touchpad settings and haptic tuning](docs/TOUCHPAD.md)
 - `network.wifiPowerSave`: optional Wi-Fi power saving (`null`, `false`, or `true`)
 - `features.thunderbolt`: optional Bolt dock authorization (off by default)
 - `git.userName`, `git.userEmail`: git identity

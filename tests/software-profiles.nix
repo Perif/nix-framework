@@ -36,6 +36,22 @@ let
     }
   );
   pythonHome = pythonOnly.home-manager.users.${settings.user.name};
+  guileOnly = evaluate (
+    minimal
+    // {
+      touchpad = settings.touchpad // {
+        enable = false;
+      };
+      features = minimal.features // {
+        languageTools = minimal.features.languageTools // {
+          guile = true;
+        };
+      };
+    }
+  );
+  guileHome = guileOnly.home-manager.users.${settings.user.name};
+  hasGuile =
+    homeConfig: builtins.any (package: (package.pname or "") == "guile") homeConfig.home.packages;
 in
 assert !cfg.services.ollama.enable;
 assert !cfg.services.open-webui.enable;
@@ -51,6 +67,13 @@ assert !cfg.services.syncthing.enable;
 assert pythonHome.programs.vscodium.enable;
 assert !pythonHome.programs.direnv.enable;
 assert !(pythonHome.home.file ? ".continue/config.yaml");
+assert !hasGuile home && !hasGuile pythonHome && hasGuile guileHome;
+assert !guileHome.programs.direnv.enable;
+assert !(guileHome.home.activation ? touchpadDefaults);
 # Evaluate complete generations too: conditional package selection must not
 # hide missing option references or assertions in either smaller profile.
-builtins.deepSeq [ cfg.system.build.toplevel.drvPath pythonOnly.system.build.toplevel.drvPath ] true
+builtins.deepSeq [
+  cfg.system.build.toplevel.drvPath
+  pythonOnly.system.build.toplevel.drvPath
+  guileOnly.system.build.toplevel.drvPath
+] true

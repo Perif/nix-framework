@@ -56,6 +56,7 @@ One module is used for an application when it has meaningful configuration:
 - Firefox
 - Tor Browser package boundary
 - Plasma session-lock policy
+- Plasma Wayland touchpad defaults (preserving per-device GUI overrides)
 - Ghostty
 - Vim
 - Sublime Text / Sublime Merge
@@ -79,9 +80,9 @@ software group can be disabled in `settings.nix`:
 
 - `features.devCore`: common development commands, shell integrations, and
   rootless Podman; turning it off also disables Podman's system setup.
-- `features.languageTools.{c,python,go,rust,nodejs,nix}`: independent SDK and
-  language-server groups. Project-specific versions belong in project
-  `devShell`s.
+- `features.languageTools.{c,python,go,rust,guile,nodejs,nix}`: independent language
+  toolchains, including language servers where supplied. Project-specific
+  versions belong in project `devShell`s.
 - `features.localAI`: local inference tools and Continue's local-provider
   configuration. The NixOS AI services follow the same setting.
 - `features.extraBrowsers`: Brave and ungoogled Chromium; Firefox and Tor
@@ -98,7 +99,7 @@ to use them. Syncthing folder and device configuration remains user-owned.
 
 ### Project-local development environments
 
-This repository exposes `nix develop .#c`, `.#python`, `.#go`, `.#rust`,
+This repository exposes `nix develop .#c`, `.#python`, `.#go`, `.#rust`, `.#guile`,
 `.#nodejs` and `.#nix`; `nix develop` provides the common tools. Language
 packages are shared with the standalone template in `templates/project`.
 To initialize a new project from a trusted local checkout, run inside the new
