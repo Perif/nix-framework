@@ -21,14 +21,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # QBZ: native Qobuz client. Upstream documents its own flake as the
-    # freshest Nix packaging path. It is built from source on this machine;
-    # see README "Destructive install".
-    qbz = {
-      url = "github:vicrodh/qbz";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # NUR provides the maintained Firefox add-on package set used by
     # Home Manager below. Exact revisions are pinned by flake.lock.
     nur = {
@@ -46,11 +38,11 @@
 
   outputs =
     {
+      self,
       nixpkgs,
       home-manager,
       nixos-hardware,
       disko,
-      qbz,
       nur,
       lanzaboote,
       ...
@@ -58,11 +50,31 @@
     let
       # Hostname, login user, password and git identity live in one file.
       settings = import ./settings.nix;
+      # One Nixpkgs instantiation shared by every x86_64-linux package output.
+      linuxPkgs = import nixpkgs { system = "x86_64-linux"; };
     in
     {
+      devShells = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+        system:
+        import ./templates/project/shells.nix {
+          pkgs = import nixpkgs { inherit system; };
+        }
+      );
+      templates.project = {
+        path = ./templates/project;
+        description = "Project-local dev shells for C, Python, Go, Rust, Node.js and Nix";
+      };
+
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
+      packages.x86_64-linux.installer = import ./pkgs/installer.nix { pkgs = linuxPkgs; };
+      packages.x86_64-linux.webui-bootstrap = import ./pkgs/webui-bootstrap.nix { pkgs = linuxPkgs; };
+      packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix { pkgs = linuxPkgs; };
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
+      packages.x86_64-linux.qobuz-player =
+        linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
+      packages.x86_64-linux.ollaya =
+        linuxPkgs.callPackage ./pkgs/ollaya.nix { };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
         system:
@@ -74,6 +86,55 @@
           };
         in
         {
+          webui-bootstrap =
+            pkgs.runCommand "webui-bootstrap-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python3 ${./tests/test_webui_bootstrap.py} --script ${./scripts/webui-bootstrap.py}
+                touch "$out"
+              '';
+          qbz-configuration =
+            assert import ./tests/qbz-module.nix { inherit pkgs; };
+            pkgs.runCommand "qbz-configuration-tests" { } ''
+              touch "$out"
+            '';
+          installer =
+            pkgs.runCommand "installer-safety-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python3 ${./tests/test_installer.py} --helpers ${./scripts/installer}
+                touch "$out"
+              '';
+          install-timezone =
+            pkgs.runCommand "install-timezone-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                export PYTHONTZPATH="${pkgs.tzdata}/share/zoneinfo"
+                python3 ${./tests/test_install_timezone.py} --helper ${./scripts/detect-timezone.py}
+                touch "$out"
+              '';
+          power-management =
+            pkgs.runCommand "power-management-tests"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                  pkgs.bash
+                  pkgs.shellcheck
+                ];
+              }
+              ''
+                shellcheck ${./modules/nixos/scripts/ac-maintenance.sh} ${./modules/nixos/scripts/charge-limit.sh}
+                python3 ${./tests/test_power_management.py} \
+                  --maintenance ${./modules/nixos/scripts/ac-maintenance.sh} \
+                  --charge ${./modules/nixos/scripts/charge-limit.sh}
+                touch "$out"
+              '';
           git-security =
             pkgs.runCommand "git-security-integration-tests"
               {
@@ -89,6 +150,21 @@
                   --hook ${hooks.securityPreCommit}/bin/git-security-pre-commit
                 touch "$out"
               '';
+        }
+        // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          software-profiles =
+            assert import ./tests/software-profiles.nix {
+              configuration = self.nixosConfigurations.${settings.hostname};
+              inherit settings;
+              inherit (nixpkgs) lib;
+            };
+            pkgs.runCommand "software-profile-selection-tests" { } ''
+              touch "$out"
+            '';
+          installer-vm = pkgs.testers.runNixOSTest (
+            import ./tests/installer-vm.nix { inherit nixpkgs disko; }
+          );
+          dns-boot = pkgs.testers.runNixOSTest (import ./tests/dns-boot.nix);
         }
       );
 
@@ -119,10 +195,9 @@
               useUserPackages = true;
               backupFileExtension = "hm-backup";
 
-              # Expose settings and non-nixpkgs application flakes to Home
-              # Manager modules.
+              # Expose installation settings to Home Manager modules.
               extraSpecialArgs = {
-                inherit qbz settings;
+                inherit settings;
               };
 
               users.${settings.user.name} = import ./home/user;

@@ -9,6 +9,7 @@
     ../../modules/nixos/desktop.nix
     ../../modules/nixos/controllers.nix
     ../../modules/nixos/power.nix
+    ../../modules/nixos/maintenance.nix
     ../../modules/nixos/performance.nix
     ../../modules/nixos/security.nix
     ../../modules/nixos/secure-boot.nix

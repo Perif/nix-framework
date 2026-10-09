@@ -1,0 +1,136 @@
+name: NixOS validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nixos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  x86_64-linux:
+    name: Evaluate and build x86_64-linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out the configuration
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Reclaim space from unused hosted-runner toolchains
+        if: runner.environment == 'github-hosted'
+        shell: bash
+        run: |
+          df -h /
+          # This job obtains its build tools from Nix. Keep the runner's
+          # action runtimes, hosted tool cache, Git, and system Python intact.
+          for toolchain in /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift; do
+            if [[ -d "$toolchain" ]]; then
+              sudo du -sh -- "$toolchain"
+              sudo rm -rf -- "$toolchain"
+            fi
+          done
+          df -h /
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@51f3067b56fe8ae331890c77d4e454f6d60615ff # v31.10.2
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            min-free = 2147483648
+            max-free = 5368709120
+
+      - name: Test staged installer safety and command packaging
+        run: |
+          nix build .#checks.x86_64-linux.installer --no-link --print-build-logs
+          nix run .#installer -- --help
+          nix shell --inputs-from . nixpkgs#python3 nixpkgs#util-linux -c \
+            python3 tests/test_installer_linux.py --helpers scripts/installer
+          nix shell --inputs-from . nixpkgs#python3 nixpkgs#git nixpkgs#nix -c \
+            python3 tests/test_installer_source.py --helpers scripts/installer --config .
+
+      - name: Test installation timezone detection
+        run: nix build .#checks.x86_64-linux.install-timezone --no-link --print-build-logs
+
+      - name: Test secure first-admin setup
+        run: nix build .#checks.x86_64-linux.webui-bootstrap --no-link --print-build-logs
+
+      - name: Test laptop power-management helpers
+        run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
+
+      - name: Test the production Git security hook
+        run: nix build .#checks.x86_64-linux.git-security --no-link --print-build-logs
+
+      - name: Scan fetched Git history for credentials
+        run: nix shell --inputs-from . nixpkgs#gitleaks -c gitleaks git --redact --log-opts=--all
+
+      - name: Scan the current committed tree for PII
+        shell: bash
+        run: |
+          scan_dir="$(mktemp -d)"
+          trap 'rm -rf -- "$scan_dir"' EXIT
+          git archive HEAD | tar -x -C "$scan_dir"
+          git -C "$scan_dir" init -q
+          git -C "$scan_dir" add --all
+          cd "$scan_dir"
+          python3 home/modules/git-hooks/staged-pii-scan.py
+
+      - name: Select non-destructive CI settings
+        run: |
+          sed -i 's|/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID|/dev/disk/by-id/ci-validation-disk|' settings.nix
+          nix run .#detect-timezone -- --timezone UTC
+
+      - name: Evaluate every flake output with default application selections
+        run: nix flake check --no-build --all-systems
+
+      - name: Boot the production DNS stack with offline fixtures
+        run: nix build .#checks.x86_64-linux.dns-boot --no-link --print-build-logs
+
+      - name: Build the NixOS system with default application selections
+        run: |
+          host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"
+          nix build ".#nixosConfigurations.${host}.config.system.build.toplevel" \
+            --no-link \
+            --print-build-logs
+
+  installer-vm:
+    name: Install and recover in a disposable VM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out the configuration
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+      - name: Reclaim space from unused hosted-runner toolchains
+        if: runner.environment == 'github-hosted'
+        shell: bash
+        run: |
+          df -h /
+          # The VM closure and disposable image need the same free space as
+          # the system build. Preserve action runtimes and the hosted tool cache.
+          for toolchain in /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift; do
+            if [[ -d "$toolchain" ]]; then
+              sudo du -sh -- "$toolchain"
+              sudo rm -rf -- "$toolchain"
+            fi
+          done
+          df -h /
+      - name: Install Nix
+        uses: cachix/install-nix-action@51f3067b56fe8ae331890c77d4e454f6d60615ff # v31.10.2
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            min-free = 2147483648
+            max-free = 5368709120
+      - name: Install, recover, reboot and authenticate in a disposable VM
+        run: nix build .#checks.x86_64-linux.installer-vm --no-link --print-build-logs

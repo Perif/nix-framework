@@ -1,17 +1,46 @@
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
 
 let
-  # Build 4205 ships two plug-in hosts. Only the legacy Python 3.3 host links
+  languages = settings.features.languageTools;
+  # Build 4213 ships two plug-in hosts. Only the legacy Python 3.3 host links
   # to OpenSSL 1.1; the Python 3.14 host uses OpenSSL 3. Replace the broad
   # Nixpkgs rpath input and remove the legacy host so old plug-ins fail closed
   # instead of restoring an end-of-life cryptographic library.
-  sublimeTextBase = pkgs.sublime4-dev.override {
-    openssl_1_1 = pkgs.openssl_3_5;
-  };
+  # Reuse the locked Nixpkgs recipe with a targeted stable release pin. Do not
+  # update the whole system lock just to advance this binary editor.
+  # Keep this a path so Nix can resolve it through the fetched source tree.
+  # String interpolation can copy a lazily fetched Nixpkgs tree into an
+  # unrealised store path on a fresh CI runner.
+  sublimeTextBase = pkgs.callPackage (import
+    (pkgs.path + "/pkgs/applications/editors/sublime/4/common.nix")
+    {
+      buildVersion = "4213";
+      dev = false;
+      x64sha256 = "sha256-lhlCckQvia4V0TpskRjXkDV4tXiauIdLhnVYqm6RRak=";
+      aarch64sha256 = "sha256-4V9H7xQ+CyLl3CnPrAamP5ZGZXp6+Y6Ovyl1prxT6PE=";
+    }
+  ) { openssl_1_1 = pkgs.openssl_3_5; };
 
   sublimeTextUnwrapped = sublimeTextBase.unwrapped.overrideAttrs (oldAttrs: {
     postInstall = (oldAttrs.postInstall or "") + ''
+      test -x "$out/plugin_host-3.14"
       rm -f "$out/plugin_host-3.3" "$out/Lib/python3.3.zip"
+      # Fail a future packaging change that reintroduces the obsolete crypto
+      # dependency in one of the surviving ELF binaries or bundled Python.
+      test ! -e "$out/libssl.so.1.1"
+      test ! -e "$out/libcrypto.so.1.1"
+      for binary in sublime_text plugin_host-3.14 crash_handler libpython3.14.so.1.0; do
+        needed="$(${pkgs.binutils}/bin/readelf -d "$out/$binary")"
+        if printf '%s\n' "$needed" | grep -Eq 'NEEDED.*lib(ssl|crypto)\.so\.1\.1'; then
+          echo "Unexpected OpenSSL 1.1 dependency in $binary" >&2
+          exit 1
+        fi
+      done
     '';
   });
 
@@ -50,17 +79,81 @@ let
     meta = sublimeTextBase.meta // {
       description = "Sublime Text with the legacy OpenSSL 1.1 plug-in host removed";
       longDescription = ''
-        Sublime Text build 4205 using its Python 3.14 plug-in host and OpenSSL
+        Sublime Text stable build ${sublimeTextBase.version} using its Python 3.14 plug-in host and OpenSSL
         3. The obsolete Python 3.3 plug-in host is intentionally unavailable.
       '';
     };
   };
+
+  languageServers =
+    lib.optionalAttrs languages.python {
+      basedpyright = {
+        enabled = true;
+        command = [
+          "${pkgs.basedpyright}/bin/basedpyright-langserver"
+          "--stdio"
+        ];
+        selector = "source.python";
+        diagnostics_mode = "workspace";
+        settings.basedpyright = {
+          disableOrganizeImports = true;
+          analysis = {
+            diagnosticMode = "openFilesOnly";
+            typeCheckingMode = "basic";
+          };
+        };
+      };
+      ruff = {
+        enabled = true;
+        command = [
+          "${pkgs.ruff}/bin/ruff"
+          "server"
+        ];
+        selector = "source.python";
+        diagnostics_mode = "workspace";
+      };
+    }
+    // lib.optionalAttrs languages.go {
+      gopls = {
+        enabled = true;
+        command = [ "${pkgs.gopls}/bin/gopls" ];
+        selector = "source.go";
+        diagnostics_mode = "workspace";
+        settings.gopls = {
+          gofumpt = true;
+          staticcheck = true;
+          usePlaceholders = true;
+        };
+      };
+    }
+    // lib.optionalAttrs languages.rust {
+      "rust-analyzer" = {
+        enabled = true;
+        command = [ "${pkgs.rust-analyzer}/bin/rust-analyzer" ];
+        selector = "source.rust";
+        diagnostics_mode = "workspace";
+        settings."rust-analyzer" = {
+          check.command = "clippy";
+          cargo.buildScripts.enable = true;
+          procMacro.enable = true;
+        };
+      };
+    }
+    // lib.optionalAttrs languages.nix {
+      nixd = {
+        enabled = true;
+        command = [ "${pkgs.nixd}/bin/nixd" ];
+        selector = "source.nix";
+        diagnostics_mode = "workspace";
+        settings.nixd.formatting.command = [ "${pkgs.nixfmt}/bin/nixfmt" ];
+      };
+    };
 in
 {
   assertions = [
     {
-      assertion = lib.versionAtLeast sublimeTextBase.version "4205";
-      message = "Secure Sublime packaging requires build 4205 or newer with the Python 3.14 plug-in host.";
+      assertion = lib.versionAtLeast sublimeTextBase.version "4213";
+      message = "Secure Sublime packaging requires stable build 4213 or newer with the Python 3.14 plug-in host.";
     }
   ];
 
@@ -76,6 +169,7 @@ in
         "font_size": 10,
         "hardware_acceleration": "opengl",
         "update_check": false,
+        "disable_plugin_host_3.3": true,
 
         "atomic_save": true,
         "auto_complete": true,
@@ -137,70 +231,8 @@ in
       }
     '';
 
-    "sublime-text/Packages/User/LanguageServers.sublime-settings".text = ''
-      {
-        "basedpyright": {
-          "enabled": true,
-          "command": ["${pkgs.basedpyright}/bin/basedpyright-langserver", "--stdio"],
-          "selector": "source.python",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "basedpyright": {
-              "disableOrganizeImports": true,
-              "analysis": {
-                "diagnosticMode": "openFilesOnly",
-                "typeCheckingMode": "basic"
-              }
-            }
-          }
-        },
-        "ruff": {
-          "enabled": true,
-          "command": ["${pkgs.ruff}/bin/ruff", "server"],
-          "selector": "source.python",
-          "diagnostics_mode": "workspace"
-        },
-        "gopls": {
-          "enabled": true,
-          "command": ["${pkgs.gopls}/bin/gopls"],
-          "selector": "source.go",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "gopls": {
-              "gofumpt": true,
-              "staticcheck": true,
-              "usePlaceholders": true
-            }
-          }
-        },
-        "rust-analyzer": {
-          "enabled": true,
-          "command": ["${pkgs.rust-analyzer}/bin/rust-analyzer"],
-          "selector": "source.rust",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "rust-analyzer": {
-              "check": { "command": "clippy" },
-              "cargo": { "buildScripts": { "enable": true } },
-              "procMacro": { "enable": true }
-            }
-          }
-        },
-        "nixd": {
-          "enabled": true,
-          "command": ["${pkgs.nixd}/bin/nixd"],
-          "selector": "source.nix",
-          "diagnostics_mode": "workspace",
-          "settings": {
-            "nixd": {
-              "formatting": {
-                "command": ["${pkgs.nixfmt}/bin/nixfmt"]
-              }
-            }
-          }
-        }
-      }
-    '';
+    "sublime-text/Packages/User/LanguageServers.sublime-settings".text =
+      builtins.toJSON languageServers;
 
     "sublime-merge/Packages/User/Preferences.sublime-settings".text = ''
       {

@@ -2,6 +2,7 @@
 import argparse
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -79,6 +80,25 @@ class SecurityTests(unittest.TestCase):
                                 env=self.env, capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
 
+    def test_decimal_coefficients_are_not_card_numbers(self):
+        card = "4" + "1" * 15
+        self.stage("preset.json", '{"frequency": 474.7170715332031, '
+                   '"gain": -17.599999999999998, "fraction": 0.' + card +
+                   ', "integer": ' + card + '.25}\n')
+        result = self.scan()
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_card_formats_and_sentence_punctuation_still_block(self):
+        card = "4" + "1" * 15
+        groups = [card[i:i + 4] for i in range(0, len(card), 4)]
+        for candidate in (card, " ".join(groups), "-".join(groups), card + "."):
+            with self.subTest(candidate_format=len(candidate)):
+                self.stage("data.txt", "Card: " + candidate + "\n")
+                result = self.scan()
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("payment-card", result.stderr)
+                self.assertNotIn(candidate, result.stdout + result.stderr)
+
     def install_hook(self):
         if HOOK is None:
             self.skipTest("pass --hook to exercise the Nix-packaged production hook")
@@ -103,7 +123,10 @@ class SecurityTests(unittest.TestCase):
     def test_local_hook_failure_is_preserved(self):
         self.install_hook()
         local = self.root / ".git/hooks/pre-commit"
-        local.write_text("#!/usr/bin/env bash\necho chained-hook >&2\nexit 1\n")
+        # Nix's Linux build sandbox has no /usr/bin/env. Use its supplied Bash.
+        bash = shutil.which("bash", path=self.env.get("PATH"))
+        self.assertIsNotNone(bash)
+        local.write_text(f"#!{bash}\necho chained-hook >&2\nexit 1\n")
         local.chmod(0o755)
         self.stage("safe.txt", "safe\n")
         result = self.run_cmd("git", "commit", "-qm", "must fail")

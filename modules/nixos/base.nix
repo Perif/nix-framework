@@ -9,10 +9,17 @@ let
   user = settings.user;
   hasHashedPassword = user.hashedPassword != null;
   hasInitialPassword = user.initialPassword != null;
-  dnsFilteringEnabled = settings.dns.filtering.enable;
 in
 {
   assertions = [
+    {
+      assertion = builtins.match "[a-z_][a-z0-9_-]{0,31}" user.name != null && user.name != "root";
+      message = "settings.user.name must be a non-root Linux username (lowercase letters, digits, underscore or hyphen).";
+    }
+    {
+      assertion = settings.timeZone != null;
+      message = "settings.nix: run nix run .#detect-timezone during installation, or set timeZone to an explicit IANA zone.";
+    }
     {
       assertion = !(hasHashedPassword && hasInitialPassword);
       message = ''
@@ -29,8 +36,8 @@ in
     }
   ];
 
-  # Keep wall-clock display and daylight-saving rules deterministic without
-  # sharing location data. Change the IANA zone in settings.nix after travel.
+  # Installation resolves the zone once and saves it in settings.nix.
+  # Keep runtime wall-clock and daylight-saving rules deterministic; no geolocation.
   time.timeZone = settings.timeZone;
 
   # Clock synchronization does not require geolocation: NTP synchronizes UTC,
@@ -50,6 +57,7 @@ in
       # hardware address across networks without breaking DHCP leases on every
       # reconnect.
       wifi = {
+        powersave = settings.network.wifiPowerSave;
         scanRandMacAddress = true;
         macAddress = "stable-ssid";
       };
@@ -74,36 +82,6 @@ in
     # This is normally enabled by NixOS, but declaring it makes the laptop's
     # closed-by-default inbound policy explicit and reviewable.
     firewall.enable = true;
-  };
-
-  # Route ordinary system queries through loopback Blocky when filtering is
-  # enabled. Otherwise use the configured upstream directly with strict DoT.
-  # The root routing domain keeps queries away from DHCP-provided resolvers; a
-  # WireGuard profile can still claim a more-specific private suffix for split
-  # DNS. The Blocky-to-provider hop remains encrypted with DoH.
-  services.resolved = {
-    enable = true;
-    settings.Resolve = {
-      DNS =
-        if dnsFilteringEnabled then
-          [
-            "127.0.0.1:5353"
-            "[::1]:5353"
-          ]
-        else
-          settings.dns.servers;
-      FallbackDNS = [ ];
-      Domains = [ "~." ];
-      DNSOverTLS = if dnsFilteringEnabled then false else true;
-
-      # Cloudflare validates DNSSEC upstream. Local validation is disabled for
-      # compatibility with incorrectly signed domains, which otherwise fail to
-      # resolve even though they are not on the selected local blocklist.
-      DNSSEC = false;
-
-      # Avoid broadcasting single-label name queries to the local network.
-      LLMNR = false;
-    };
   };
 
   # Permit only the proprietary packages deliberately retained by this build.
@@ -154,6 +132,7 @@ in
   boot.initrd.systemd.enable = true;
 
   services.fwupd.enable = true;
+  services.hardware.bolt.enable = settings.features.thunderbolt;
 
   services.fstrim = {
     enable = true;

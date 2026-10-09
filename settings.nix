@@ -8,10 +8,10 @@
   #   nixos-rebuild switch --flake .#<hostname>
   hostname = "framework-pro";
 
-  # Regional settings used by the system, Plasma and console. Keep an explicit
-  # IANA zone because GeoClue location detection is disabled for privacy. Change
-  # this value and rebuild when travelling to a different time zone.
-  timeZone = "America/Chicago";
+  # Resolve once during installation: nix run .#detect-timezone
+  # null requires detection (or an explicit IANA zone) before system evaluation.
+  # The saved zone stays fixed after installation; GeoClue remains disabled.
+  timeZone = null;
   defaultLocale = "en_US.UTF-8";
   consoleKeyMap = "us";
 
@@ -90,14 +90,124 @@
   };
 
   features = {
-    # QBZ builds from source and can be expensive during installation. Set
-    # false for the initial install if needed, then true after the first boot.
-    qbz = true;
+    wine = true;
+    keepassxc = true;
+    # Upstream QBZ source and distribution were withdrawn in September 2026.
+    # Enable only after supplying your own package recipe below.
+    qbz = false;
 
     # Leave false for the initial installation. After the first boot, create
     # and verify local Secure Boot keys by following docs/INSTALL.md, then set
     # this to true before enabling Secure Boot in firmware.
     secureBoot = false;
+
+    # Optional Thunderbolt/USB4 authorization daemon for docks that need it.
+    # This does not automatically authorize unknown devices.
+    thunderbolt = false;
+
+    # Software groups are installed by default to preserve the current
+    # workstation. Disable an application group here to reduce the closure.
+    # Development core includes common CLI tools and rootless Podman; language
+    # toolchains can be selected independently below.
+    devCore = true;
+    languageTools = {
+      c = true;
+      python = true;
+      go = true;
+      rust = true;
+      nodejs = true;
+      nix = true;
+    };
+
+    localAI = true;
+    extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
+    extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
+
+    office = {
+      libreOffice = true;
+      thunderbird = true;
+      kdeConnect = true;
+      syncthing = true;
+    };
+  };
+
+  qbz = {
+    # Optional path to a user-supplied Nix package recipe, evaluated using
+    # pkgs.callPackage. Enabling features.qbz requires an existing Nix path,
+    # for example ./local/qbz.nix. Add it to Git before flake evaluation.
+    packageFile = null;
+  };
+
+  # Plasma applies these on login and when the power source changes. PPD owns
+  # Intel EPP/platform policy; do not also run TLP or a governor-switching script.
+  power = {
+    acProfile = "performance";
+    batteryProfile = "balanced";
+    lowBatteryProfile = "power-saver";
+    maintenanceOnAC = true; # Defer GC/scrub on battery, retry pending work on AC.
+    chargeLimit = 80; # 1..100, or null to leave firmware/Plasma in control.
+  };
+
+  # null retains NixOS defaults until measurements on the actual laptop.
+  # maxJobs: positive integer or "auto"; cores: nonnegative integer (0 = all).
+  # See docs/PERFORMANCE.md before choosing limits for builds alongside AI.
+  builds = {
+    maxJobs = null;
+    cores = null;
+  };
+
+  storage.homeSnapshots = false; # Optional short-retention /home snapshots.
+
+  network = {
+    # null: NetworkManager default; false: disable power saving as a Wi-Fi
+    # reliability workaround; true: enable power saving. See docs/NETWORKING.md.
+    wifiPowerSave = null;
+  };
+
+  ai = {
+    webui = {
+      enable = true; # Installed, localhost-only, started on demand.
+      port = 3000; # Keep 8080 free for llama.cpp.
+      # Signup stays disabled. Run `sudo webui-bootstrap` once to create the
+      # administrator interactively without placing credentials in this file.
+    };
+    # A bounded starting point for 32 GiB shared CPU/GPU memory, not a RAM cap.
+    contextLength = 8192;
+    maxOutputTokens = 2048;
+    maxLoadedModels = 1;
+    parallelRequests = 1;
+    keepAlive = "5m";
+    # f16 preserves quality. q8_0 halves KV storage where Flash Attention works;
+    # benchmark model quality/latency before changing it. FA stays auto-detected.
+    kvCacheType = "f16";
+    ollaya = {
+      enable = true;
+    };
+  };
+
+  # Profile selection installs a stable alias; apply it in Plasma afterward.
+  # "native" requires selecting the default/no-ICC mode in Plasma explicitly.
+  display = {
+    profile = "notebookcheck"; # "notebookcheck", "native", or "custom"
+    iccProfile = null; # For "custom", e.g. ./assets/color/my-panel.icc
+    # Additional measured profiles to install for comparison in Plasma.
+    # Example: studio = ./assets/color/my-panel-120nits.icc;
+    extraIccProfiles = { };
+  };
+
+  # Optional declarative EasyEffects autoload binding. Copy both exact fields
+  # from a speaker-only rule made in EasyEffects (docs/AUDIO.md). Until then,
+  # the preset is installed but must be selected/associated in the GUI.
+  # Do not use a headphone route or a generic sound-card profile here.
+  audio = {
+    # Available: "FW13SpeakersV2-Loudness", "FW13Pro-EQ-Limiter",
+    # "FW13Pro-bit0fun", "Flat", or "Custom" (requires customPreset).
+    # All bundled presets remain available in the GUI. This chooses the
+    # declarative speaker autoload rule when device and route are both set.
+    speakerPreset = "FW13SpeakersV2-Loudness";
+    customPreset = null; # EasyEffects output JSON, e.g. ./assets/audio/mine.json
+    speakerDevice = null;
+    speakerRoute = null;
   };
 
   git = {

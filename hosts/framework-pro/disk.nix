@@ -10,10 +10,11 @@
     {
       assertion =
         lib.hasPrefix "/dev/disk/by-id/" config.disko.devices.disk.main.device
-        && config.disko.devices.disk.main.device != "/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID";
+        && !(lib.hasInfix "REPLACE" config.disko.devices.disk.main.device)
+        && builtins.match ".*-part[0-9]+" config.disko.devices.disk.main.device == null;
       message = ''
         settings.nix: replace diskDevice with the verified /dev/disk/by-id/...
-        path for the installation target before running Disko.
+        whole-disk path (not a partition) for the installation target before running Disko.
       '';
     }
   ];

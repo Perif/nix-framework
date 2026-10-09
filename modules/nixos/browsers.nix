@@ -1,4 +1,4 @@
-{ ... }:
+{ lib, settings, ... }:
 
 let
   uBlockOriginLiteId = "ddkjiahejlhfcafbddmgiahcphecmpfh";
@@ -47,7 +47,7 @@ let
     TorDisabled = true;
   };
 in
-{
+lib.mkIf settings.features.extraBrowsers {
   # NixOS writes these shared managed policies for ungoogled Chromium and
   # Brave. The browser UI will therefore truthfully say that it is managed by
   # an organization.

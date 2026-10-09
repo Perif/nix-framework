@@ -5,6 +5,10 @@ the editor, its extensions, and the Continue model configuration declarative.
 It is intended for light, on-demand assistance through the loopback-only
 Ollama service or a manually started llama.cpp server.
 
+For standalone local chat, Open WebUI is installed on demand at
+`http://127.0.0.1:3000`. See [startup and account setup](WORKSTATION-APPS.md#open-webui).
+It shares Ollama with Continue; it does not start another model runtime.
+
 ## Installed components
 
 - VSCodium with update, experiment, crash-report, and telemetry checks disabled;
@@ -225,15 +229,32 @@ selecting the Ollama provider.
 
 ## Change the local resource limit
 
-The shared Continue configuration limits both providers to an 8,192-token
-context and 2,048 generated tokens. If a measured task needs more context,
-edit both relevant values in `home/modules/vscodium.nix`:
+Edit the `ai` block in `settings.nix`. Its default context is 8,192 tokens,
+with at most 2,048 generated tokens in Continue; both editor providers use
+these values. Ollama also receives the context default, a single loaded-model
+limit, one parallel request, and a five-minute idle timeout. These are defaults,
+not a hard memory quota: model metadata and API requests can override context
+and keep-alive, and a single model can still exhaust memory. A manually started
+llama.cpp server must use the matching `--ctx-size`.
 
-```yaml
-defaultCompletionOptions:
-  contextLength: 16384
-  maxTokens: 4096
+```nix
+ai = {
+  contextLength = 8192;
+  maxOutputTokens = 2048;
+  maxLoadedModels = 1;
+  parallelRequests = 1;
+  keepAlive = "5m";
+  kvCacheType = "f16";
+  ollaya.enable = true;
+};
 ```
+
+Flash Attention remains on Ollama's support-detected default. `q8_0` is an
+optional KV-cache setting that saves memory when Flash Attention is active;
+compare quality and logs before adopting it. `q4_0` trades more precision for
+memory and is not the recommended default. Cloud inference and web search in
+Ollama are explicitly disabled through `OLLAMA_NO_CLOUD=1`; model pulls still
+require network access.
 
 Apply the change safely:
 
@@ -245,6 +266,116 @@ sudo nixos-rebuild switch --flake .#framework-pro
 
 Larger values increase time-to-first-token and memory use; they do not improve
 every task.
+
+## Intel acceleration and measured tuning
+
+Ollama and the standalone llama.cpp package use Vulkan through Mesa's Intel
+driver. `OLLAMA_IGPU_ENABLE=1` explicitly admits the integrated Intel GPU:
+Ollama 0.32.3 otherwise drops integrated Vulkan devices during discovery, even
+with the Vulkan package installed. The Framework hardware module already supplies Intel graphics and
+compute runtimes. Installing OpenCL, oneAPI or OpenVINO does not change these
+applications' inference backend. The NPU is not used by either configured
+runtime. There is no measured basis here to replace Vulkan with SYCL or to
+claim this is the fastest possible stack for every model.
+
+Check on the laptop while a model is loaded:
+
+```bash
+vulkaninfo --summary
+llama-server --list-devices
+ollama ps
+journalctl -b -u ollama.service --no-pager
+sudo intel_gpu_top
+free -h
+```
+
+Look for the Intel device, model offload in the logs and GPU activity during
+inference. `ollama ps` reports CPU/GPU placement. Software Vulkan rendering or
+CPU fallback is not proof of GPU acceleration. Intel's integrated GPU shares
+RAM and power with the CPU, so leave room for Plasma and other applications.
+
+For a GGUF already on disk, compare the same prompt/generation sizes under the
+same power profile. Repeat each run and record prompt-processing and decoding
+rates separately; do not compare different quantizations as a backend test:
+
+```bash
+llama-bench -m "$HOME/Models/REPLACE_WITH_MODEL.gguf" -ngl 0 -p 512 -n 128 -r 5
+llama-bench -m "$HOME/Models/REPLACE_WITH_MODEL.gguf" -ngl 99 -p 512 -n 128 -r 5
+```
+
+For CPU measurements, also sweep `-t 4`, `-t 8` and the physical-core count from
+`lscpu`. These are comparison points, not prescribed thread counts for this
+hybrid CPU. Compare cold load time separately from warm requests, then check
+sustained speed, temperature and desktop responsiveness. Test AC `balanced`
+against `performance`: CPU and integrated-GPU power competition can make a
+larger CPU budget slower for some GPU workloads.
+
+## Ollaya: Jev-style decision models
+
+`ai.ollaya.enable = true` installs Ollaya 0.7.5 and an on-demand user service.
+It has its own API on loopback port 11435, separate from Ollama's 11434.
+Ollaya handles typed decisions; it is not a Continue chat provider. The closed
+Jev weights are not included. Open alternatives include `jevk5` and
+`winnow:e4b`; `laya:en` is a smaller encoder starting point for CPU use.
+Consult the model's license and evaluate its decisions on your actual task.
+
+This package pins the official Linux CPU archive and patches its ELF loader
+and library paths for NixOS. It preserves Ollaya's matching llama.cpp libraries
+because their ABI is checked by the application. It does not substitute the
+separately installed llama.cpp or install a CUDA pack. **Intel GPU/NPU
+acceleration is not supported by this Ollaya configuration.** ONNX graph
+optimizations are enabled upstream; CPU thread selection remains upstream's.
+In 0.7.5 the GGUF backend uses half the logical CPU count by default and the
+daemon exposes no supported thread-count setting. That heuristic needs
+benchmarking on this hybrid Intel CPU before calling it optimized.
+
+After rebuilding, log out/in to refresh the user environment, then:
+
+```bash
+ollaya-on
+curl --fail http://127.0.0.1:11435/api/version
+ollaya llama-devices
+ollaya pull laya:en
+ollaya list
+```
+
+A minimal decision request:
+
+```bash
+curl --fail-with-body http://127.0.0.1:11435/api/decide \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"laya:en","state":"Please reset my login password.","questions":{"team":{"type":"choice","instructions":"Select the responsible team.","criteria":{"billing":"Payments and invoices","account":"Login and password access"}}}}'
+```
+
+To compare a Jev-style GGUF model, deliberately download `ollaya pull jevk5`
+and change the request's model to `jevk5`. Alternatively try `winnow:e4b`.
+CPU latency will differ substantially from upstream GPU benchmarks. Warm the
+model first, repeat a fixed request and compare `eval_duration`,
+`total_duration`, memory use and correctness. Use `ollaya ps` and
+`journalctl --user -u ollaya.service` to inspect the runner.
+
+The service permits one resident model, a queue of 16 requests and a
+five-minute idle timeout. Its models live in `~/.ollaya/models` on the existing
+home subvolume, outside root snapshots; back them up separately if needed.
+No models are downloaded during rebuild. Stop it with `ollaya-off`.
+
+The upstream CLI can auto-start a background daemon if the service is stopped.
+Prefer `ollaya-on` first, so systemd owns its lifecycle and logs. If you already
+started one through the CLI, run `ollaya stop` before `ollaya-on`; `ollaya-off`
+only stops the managed unit. Unlike Ollama's system service, this user service
+runs with your user identity and is not a filesystem isolation boundary.
+Setting `ai.ollaya.enable = false` removes the integration after rebuilding;
+it does not delete downloaded models.
+
+For an existing TypeSafe SDK client, point `TYPESAFE_BASE_URL` at
+`http://127.0.0.1:11435`, provide the SDK's required nonempty local API-key
+placeholder, and select an installed open model. No remote TypeSafe service
+or genuine Jev model is configured. See the upstream compatibility reference.
+
+On the target laptop, build the package with `nix build .#ollaya` before
+activation. Its install checks exercise CLI startup and CPU backend discovery
+without downloading a model. Evaluation on macOS does not run those checks
+or establish successful inference; perform the decision request above too.
 
 ## Privacy and agent safety boundary
 
@@ -278,3 +409,11 @@ the laptop.
 - [Continue offline configuration](https://docs.continue.dev/guides/running-continue-without-internet)
 - [Ollama Linux documentation](https://docs.ollama.com/linux)
 - [llama.cpp server](https://github.com/ggml-org/llama.cpp/tree/master/tools/server)
+- [Ollama GPU support](https://docs.ollama.com/gpu)
+- [Ollama memory and Flash Attention settings](https://docs.ollama.com/faq)
+- [Ollaya 0.7.5 release](https://github.com/ollaya-dev/ollaya/releases/tag/v0.7.5)
+- [Ollaya API and environment](https://github.com/ollaya-dev/ollaya/blob/v0.7.5/docs/api.md)
+- [Ollaya CPU inference implementation](https://github.com/ollaya-dev/ollaya/tree/v0.7.5/crates/ollaya-runner/src)
+- [Ollaya TypeSafe compatibility](https://ollaya.dev/docs/typesafe-compatibility)
+
+- [Pinned Ollama integrated-GPU admission](https://github.com/ollama/ollama/blob/v0.32.3/discover/runner.go)

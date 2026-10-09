@@ -14,13 +14,21 @@ Target:
 - fingerprint authentication for login and session unlock; password-only sudo
 - declarative five-minute Plasma auto-lock and immediate lock after resume
 - PipeWire desktop audio
+- EasyEffects with a pinned Framework 13 Pro speaker preset and Flat fallback
+- Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
+- qobuz-player terminal streaming client and MusicBrainz Picard tag editor
+- Wine WoW64 / Winetricks, KeePassXC with Firefox integration, and mpv
+- direnv / nix-direnv project shells and NH rebuild previews
+- on-demand localhost Open WebUI using the existing Ollama service
 - PCM through 768 kHz where source + ALSA device support it
 - Sublime Text / Sublime Merge
 - VSCodium with pinned local-agent, Nix, Python, Go, and Rust extensions
 - Vim / Neovim
 - Ghostty
 - llama.cpp / on-demand loopback-only Ollama Vulkan
+- Ollaya decision models on Intel CPU, with an on-demand local user service
+- automatic Plasma power profiles: performance on AC, balanced on battery
 - rootless Podman
 - Home Manager
 - hardened Firefox privacy profile with declarative extensions
@@ -30,12 +38,12 @@ Target:
   unfiltered Firefox recovery path
 - NetworkManager WireGuard client support and command-line tools
 - randomized network identities and explicit host hardening
-- GeoClue disabled with an explicit time zone and automatic NTP clock sync
+- One-time installation timezone detection; GeoClue disabled and NTP clock sync enabled
 - Nix-daemon access limited to root and the configured login user
 - global staged credential/PII commit checks with local-hook chaining
 - adaptive Intel thermal and zram-aware responsiveness tuning
 - NVMe SMART monitoring, Btrfs scrub, and retained Snapper root snapshots
-- QBZ / Qobuz native client with direct-ALSA support
+- optional user-supplied QBZ package (upstream distribution has closed)
 
 ## Repository
 
@@ -76,9 +84,11 @@ Target:
 │       ├── git.nix
 │       ├── zsh.nix
 │       ├── dev-tools.nix
+│       ├── workstation-apps.nix
 │       ├── ai.nix
 │       ├── vscodium.nix
 │       ├── strawberry.nix
+│       ├── music-tools.nix
 │       ├── qbz.nix
 │       └── dc-elite.nix
 └── docs/
@@ -103,8 +113,8 @@ every NixOS and Home Manager module as the `settings` argument, so nothing else
 needs editing when these change:
 
 - `hostname`: `networking.hostName` and the flake output name
-- `timeZone`: the IANA zone used by the system and Plasma; update it and rebuild
-  after travel because automatic location detection is disabled
+- `timeZone`: starts as `null`; `nix run .#detect-timezone` saves the installation
+  zone. Explicit zones are preserved; update and rebuild after travel.
 - `defaultLocale`, `consoleKeyMap`: other regional settings
 - `dns.providerName`, `dns.servers`, `dns.dohUrl`: one coordinated unfiltered
   encrypted-DNS provider definition
@@ -114,10 +124,36 @@ needs editing when these change:
 - `user.name`, `user.description`: the login user
 - `user.hashedPassword` or `user.initialPassword`: optional declarative password
 - `user.sshAuthorizedKeys`: sshd is enabled only when this list is non-empty
-- `features.qbz`: include or defer the resource-intensive QBZ build
+- `features.qbz`: opt into a separately supplied QBZ package; disabled by default
+- `qbz.packageFile`: Nix package expression for that optional integration
+- `features.wine` / `features.keepassxc`: installed by default; can be disabled
+- `builds.maxJobs` / `builds.cores`: optional measured build limits (`null` keeps defaults)
+- `storage.homeSnapshots`: opt-in short-retention home snapshots
+- `ai.webui`: on-demand Open WebUI enablement and port; signup is disabled and
+  `sudo webui-bootstrap` creates the first administrator privately
+- `features.devCore` and `features.languageTools`: common development tools and
+  individually selectable C, Python, Go, Rust, Node.js and Nix toolchains
+- `features.localAI`, `features.extraBrowsers`, `features.extraEditors`: optional
+  application groups; see [software selections](docs/WORKSTATION-APPS.md)
+- `features.office`: individual LibreOffice, Thunderbird, KDE Connect and
+  Syncthing switches; network applications start manually
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
+- `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma
+- `display.iccProfile`, `display.extraIccProfiles`: your own calibration and
+  optional additional ICCs for comparison; see [display options](docs/DISPLAY.md#profile-options)
+- `audio.speakerPreset`, `audio.customPreset`: choose among four bundled
+  presets or your own output JSON; see [audio options](docs/AUDIO.md#choosing-another-preset)
+- `audio.speakerDevice`, `audio.speakerRoute`: optional exact speaker autoload
+  association for EasyEffects; configure both together
+- `ai`: local-model context, output and concurrency defaults, plus Ollaya enablement
+- `power`: AC/battery profiles, AC-only maintenance starts, and battery charge cap
+- `network.wifiPowerSave`: optional Wi-Fi power saving (`null`, `false`, or `true`)
+- `features.thunderbolt`: optional Bolt dock authorization (off by default)
 - `git.userName`, `git.userEmail`: git identity
+
+See [workstation applications](docs/WORKSTATION-APPS.md) for Windows applications,
+1Password migration, project shells, rebuilds, video playback and local AI chat.
 
 ### Password
 
@@ -143,42 +179,39 @@ from a recent kernel.
 Keep the existing `flake.lock` in source control. It makes input revisions
 reproducible; update it deliberately after reviewing upstream changes.
 
-NixOS hardware, NUR, QBZ, Disko, Home Manager, and Lanzaboote all follow the
+NixOS hardware, NUR, Disko, Home Manager, and Lanzaboote all follow the
 same pinned Nixpkgs revision. This removes redundant package-set evaluations and
 prevents those inputs from silently using different library versions.
+
+The 2026-09-28 refresh updates Nixpkgs, Home Manager, nixos-hardware, Disko and
+NUR. The 2026-10-04 review removes the unavailable QBZ flake input after its
+upstream shutdown; a warm local cache had hidden the missing download. See
+[update notes](docs/UPDATES.md).
+
+After activation, follow [display setup](docs/DISPLAY.md) to verify the panel
+and select its ICC, and [speaker setup](docs/AUDIO.md#easyeffects-speaker-preset)
+to associate the preset with the actual speaker device and route.
 
 Do not routinely change `system.stateVersion` or `home.stateVersion`; those
 values represent compatibility state, not the version you are upgrading to.
 
 ## Installation
 
-Start with [INSTALL.md](INSTALL.md), then follow the canonical detailed
-[docs/INSTALL.md](docs/INSTALL.md) from start to finish. It includes:
-
-- UEFI, network, and installer preparation
-- exact `settings.nix` fields to replace
-- repeated NVMe model/serial/by-id verification
-- pre-destructive Nix and Disko evaluation
-- LUKS, LVM, Btrfs, swap, and mount verification
-- installation with a password that never enters the flake
-- first-boot firmware, fingerprint, session-lock, hibernation, graphics, and
-  audio checks
-- network-randomization, snapshot, scrub, firewall, and timer verification
-- Blocky, encrypted DNS, Tor Browser, and WireGuard client verification
-- Brave, ungoogled Chromium, uBlock Origin Lite, the editor/language toolchain,
-  VSCodium, and local-AI verification
-- Git credential/PII hook verification
-- thermal, power-profile, compressed-memory, and hardware-acceleration checks
-- post-install Framework Secure Boot key creation, signing, and enrollment
-- a lighter first-install path that defers QBZ compilation
-
-Do not copy the Disko command out of context. It erases the configured drive.
+Choose the correct route in [INSTALL.md](INSTALL.md). The
+[installation index](docs/INSTALL.md) separates fresh installation into source
+review, settings and drive selection, storage, system installation, and
+first-boot checks. Existing systems use the
+[upgrade guide](docs/install/upgrade.md); they must not run the fresh-install
+format stage. Secure Boot and routine customization have separate guides.
 
 ### Sublime Text compatibility boundary
 
-Nixpkgs' regular Sublime Text build 4200 still links both plug-in hosts to
-end-of-life OpenSSL 1.1. This configuration instead pins build 4205, substitutes
-OpenSSL 3, and removes the legacy Python 3.3 plug-in host and standard library.
+The locked Nixpkgs defaults are older than the current stable editor. This
+configuration reuses that packaging recipe with a targeted, hash-pinned stable
+build 4213 (21 September 2026), without updating the system lock. It substitutes
+OpenSSL 3, removes the legacy Python 3.3 plug-in host and standard library, and
+explicitly sets `disable_plugin_host_3.3 = true`. Build-time checks reject
+OpenSSL 1.1 dependencies in the surviving editor/plugin-host binaries and Python.
 The editor and Python 3.14 plug-in host remain available without permitting an
 insecure Nix package. A plug-in that explicitly requires the old 3.3 host will
 fail to load and should be upgraded or replaced.
@@ -197,12 +230,13 @@ Linux; a successful Nix evaluation does not establish runtime compatibility.
 Both boot modes retain three EFI generations; check `/boot` space around
 kernel updates. Ollama state now uses a separate Btrfs subvolume, outside root
 snapshots. Existing installs must follow the
-[migration procedure](docs/INSTALL.md#one-time-model-storage-migration-for-an-existing-installation)
-before activation; fresh Disko installs create it automatically. SMART warnings
+[migration procedure](docs/install/upgrade.md#one-time-ollama-storage-migration)
+before activation; fresh installs create it automatically. SMART warnings
 persist across logout and notify the configured Plasma user until acknowledged.
-The [installation guide](docs/INSTALL.md) includes the notification test and
-the production Git-hook test commands. CI adds credential-history and PII-tree
-scans. DNS now uses HaGeZi Normal + full TIF with a documented size fallback.
+The [first-boot guide](docs/install/first-boot.md) includes the notification
+test, and [validation](docs/install/validation.md) describes the production
+Git-hook tests and CI scans. DNS now uses HaGeZi Normal + full TIF with a
+documented size fallback.
 
 ## Rebuild
 
@@ -224,23 +258,27 @@ the installation guide.
 
 ## Validation status
 
-The complete NixOS/Home Manager derivation passed
-`nix flake check --no-build --all-systems` with Nix 2.35.2 on 2026-09-08 using a validation-only disk value
-and QBZ enabled. The exact generated DNS YAML also passed the pinned Blocky
-0.29.0 parser, and all generated Sublime settings passed JSON parsing. No full
-Linux system or QBZ build was run on this ARM macOS validation host. The
-checked-in disk sentinel intentionally makes normal evaluation fail until it is
-replaced with the installation target's stable by-id path.
+The updated complete NixOS/Home Manager derivations evaluated on 2026-10-04
+with a validation-only disk value;
+`nix flake check --no-build --all-systems` also passed. All eleven production
+Git-security integration tests and eight power-helper tests passed on
+aarch64-darwin; Linux CI also passed these tests. The evaluated closure
+includes Linux 7.2.8, Plasma 6.6.6, EasyEffects 8.2.4, Brave 1.95.104,
+ungoogled Chromium 154.0.8037.57. QBZ is disabled by default because its pinned
+upstream source is no longer available.
 
-The evaluated closure includes VSCodium 1.116.02821, Brave 1.94.117, ungoogled
-Chromium 152.0.7977.82, twelve immutable VSCodium extensions, both loopback
-model providers, managed Vim/VSCodium/Sublime settings, Blocky, the configured-
-user Plasma lock policy, the password-only sudo/fingerprint-unlock PAM split,
-and an Ollama unit without a boot target. Runtime desktop, service, DNS, editor,
-and browser behavior still needs first-boot verification on the x86_64-linux
-laptop.
+The ICC and speaker-preset files passed structural and checksum checks. No
+full Linux system build, activation, display calibration measurement, or
+audio hardware test was performed on this ARM macOS host. The checked-in disk
+sentinel intentionally prevents installation until replaced with the verified
+target's stable by-id path. See [current update notes](docs/UPDATES.md) for the
+QBZ availability and remaining laptop checks. CI evaluates and builds the same
+default application configuration; a separately supplied QBZ package needs its
+own Linux build/runtime validation.
 
-Run the validation section in `docs/INSTALL.md` before the destructive step.
+Review the [source and settings](docs/install/prepare.md) before the
+[storage plan and format stage](docs/install/storage.md). Repository checks are
+in [the validation guide](docs/install/validation.md).
 
 ## Performance
 
@@ -290,8 +328,8 @@ client-side enforcement boundary are in
 ## Linux build verification
 
 The pinned GitHub Actions workflow in `.github/workflows/nix.yml` evaluates all
-flake outputs and builds the complete QBZ-deferred x86_64-linux system on every
-push and pull request. This complements local evaluation on non-Linux hosts.
+flake outputs and builds the default x86_64-linux system for pull requests and
+pushes to `main`. This complements local evaluation on non-Linux hosts.
 
 ## Zsh
 
@@ -311,16 +349,21 @@ a Home Manager package cannot provide. `podman-compose` stays in Home Manager.
 
 ## QBZ
 
-QBZ is installed from:
+QBZ's author [closed the project and distribution channels](https://github.com/vicrodh/qbz).
+The old pinned source returns 404 on fresh machines, so it is no longer a flake
+input and `features.qbz` defaults to `false`. Existing store copies are not
+redistributed by this repository.
 
-```text
-github:vicrodh/qbz
+If you independently maintain a working package, supply its Nix expression:
+
+```nix
+features.qbz = true;
+qbz.packageFile = ./pkgs/qbz-local.nix;
 ```
 
-rather than from the release-branch nixpkgs package. The project documents its
-flake as the freshest Nix packaging path. `flake.lock` pins the exact revision
-used by this system. `settings.features.qbz` allows its expensive source build
-to be deferred until after the first boot.
+That example path must exist and return a derivation through `pkgs.callPackage`.
+Pin and verify the package's sources yourself; setting the flag alone is
+rejected. Strawberry remains installed for local direct-ALSA playback.
 
 For the DC-Elite, use QBZ's `ALSA Direct` backend and select the DC-Elite
 hardware device. See `docs/AUDIO.md`.

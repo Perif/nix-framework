@@ -35,9 +35,14 @@ dns = {
 };
 ```
 
-- Blocky listens only on `127.0.0.1:5353` and `[::1]:5353`; no LAN or web/API
+- Blocky listens only on `127.0.0.1:5335` and `[::1]:5335`; port 5335 avoids
+  the multicast-DNS reservation on 5353. No LAN or web/API
   listener is opened;
 - systemd-resolved routes ordinary queries to those loopback listeners;
+- resolved retains its early-boot ordering; Blocky starts independently after
+  networking. System DNS can briefly fail until Blocky is ready. Do not order
+  resolved after Blocky: resolved runs before `sysinit.target`, while Blocky
+  is a regular service that starts after it, creating a boot dependency cycle;
 - Blocky forwards allowed queries to the standard, unfiltered Cloudflare
   resolver over DNS-over-HTTPS on port 443;
 - the two bootstrap addresses resolve the DoH hostname and list-download
@@ -117,14 +122,14 @@ systemctl is-active blocky.service
 systemctl show blocky.service -p ActiveState -p SubState
 resolvectl status
 resolvectl query example.com
-ss -lntup | grep ':5353'
+ss -lntup | grep ':5335'
 readlink -f /etc/resolv.conf
 ```
 
 Expected results:
 
-- Blocky is active and has only loopback listeners on port 5353.
-- Global DNS Servers lists `127.0.0.1:5353` and `[::1]:5353`.
+- Blocky is active and has only loopback listeners on port 5335.
+- Global DNS Servers lists `127.0.0.1:5335` and `[::1]:5335`.
 - `DNS over TLS` is not used on the local resolved-to-Blocky hop; Blocky's
   upstream transport is DoH on HTTPS port 443.
 - `/etc/resolv.conf` points into `/run/systemd/resolve/`.
@@ -284,3 +289,41 @@ replies work without an inbound rule.
 - [UniFi gateway ad blocking](https://help.ui.com/hc/en-us/articles/9794438523799-UniFi-Gateway-Ad-Blocking)
 - [WireGuard quick start](https://www.wireguard.com/quickstart/)
 - [Mullvad encrypted-DNS service notice](https://mullvad.net/en/help/dns-over-https-and-dns-over-tls)
+
+## Optional Wi-Fi power-saving override
+
+`settings.nix` provides a three-way NetworkManager default:
+
+```nix
+network.wifiPowerSave = null;
+```
+
+| Value | Behavior |
+| --- | --- |
+| `null` (default) | Do not set an extra global power-saving policy. |
+| `false` | Disable Wi-Fi power saving; a reliability troubleshooting option. |
+| `true` | Enable Wi-Fi power saving; may affect latency or reliability. |
+
+An [Intel BE211 Series 3 user configuration](https://github.com/jbrake/nixos-config/blob/main/hosts/framework-intel-core-ultra/configuration.nix)
+disables it for recurring `iwlmld` beacon-loss disconnects. That observation is
+not proof your laptop needs the workaround. Start with `null`; inspect
+`journalctl -b -k` for repeated disconnect/beacon-loss symptoms first.
+
+After changing the value and rebuilding, reconnect Wi-Fi to apply the policy.
+NetworkManager maps false to `wifi.powersave=2` and true to `wifi.powersave=3`
+in its global connection defaults. A saved connection's explicit override
+still wins. Inspect it with:
+
+```bash
+nmcli connection show --active
+nmcli -g 802-11-wireless.powersave connection show 'YOUR_CONNECTION_NAME'
+sudo NetworkManager --print-config
+```
+
+A saved value of `0` means use the global default; `1` means leave the current
+setting unchanged. If you previously set a per-connection override and want
+this Nix default to apply, deliberately set that connection back to `0` in
+NetworkManager, then reconnect. Returning the Nix option to `null` removes the
+global override after rebuilding; it does not erase custom saved profiles.
+Disabling power saving may increase battery draw; compare reliability and
+battery use before retaining it.

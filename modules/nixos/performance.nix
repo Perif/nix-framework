@@ -1,6 +1,27 @@
-{ ... }:
+{
+  config,
+  lib,
+  settings,
+  ...
+}:
 
 {
+  assertions = [
+    {
+      assertion =
+        settings.builds.maxJobs == null
+        || settings.builds.maxJobs == "auto"
+        || (builtins.isInt settings.builds.maxJobs && settings.builds.maxJobs > 0);
+      message = "builds.maxJobs must be null, auto, or a positive integer.";
+    }
+    {
+      assertion =
+        settings.builds.cores == null
+        || (builtins.isInt settings.builds.cores && settings.builds.cores >= 0);
+      message = "builds.cores must be null or a nonnegative integer (0 means all cores).";
+    }
+  ];
+  environment.systemPackages = [ config.boot.kernelPackages.turbostat ];
   # Use the firmware-provided Intel DPTF tables to manage sustained power and
   # thermal limits. This complements power-profiles-daemon: PPD selects the
   # requested platform profile, while thermald keeps the CPU inside the
@@ -21,10 +42,17 @@
   # Nix already defaults to all logical CPUs for parallel builds. Classify
   # those builds as non-interactive work and lower their best-effort I/O
   # priority so a large rebuild is less likely to make Plasma, audio, or the
-  # browser unresponsive. This does not cap build parallelism.
+  # browser unresponsive. Optional limits below complement scheduling priority.
   nix = {
     daemonCPUSchedPolicy = "batch";
     daemonIOSchedClass = "best-effort";
     daemonIOSchedPriority = 6;
+    settings =
+      lib.optionalAttrs (settings.builds.maxJobs != null) {
+        max-jobs = settings.builds.maxJobs;
+      }
+      // lib.optionalAttrs (settings.builds.cores != null) {
+        cores = settings.builds.cores;
+      };
   };
 }

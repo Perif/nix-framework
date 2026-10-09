@@ -3,21 +3,32 @@
 {
   imports = [
     ../modules/firefox.nix
-    ../modules/browsers.nix
     ../modules/privacy.nix
     ../modules/plasma-security.nix
+    ../modules/power.nix
     ../modules/ghostty.nix
     ../modules/vim.nix
-    ../modules/sublime.nix
     ../modules/git.nix
     ../modules/zsh.nix
-    ../modules/dev-tools.nix
-    ../modules/ai.nix
-    ../modules/vscodium.nix
+    ../modules/workstation-apps.nix
+    ../modules/personal-apps.nix
     ../modules/strawberry.nix
+    ../modules/music-tools.nix
     ../modules/dc-elite.nix
+    ../modules/display-color.nix
+    ../modules/easyeffects.nix
   ]
-  ++ lib.optional settings.features.qbz ../modules/qbz.nix;
+  ++ lib.optional settings.features.qbz ../modules/qbz.nix
+  ++ lib.optional settings.features.extraBrowsers ../modules/browsers.nix
+  ++ lib.optionals settings.features.extraEditors [
+    ../modules/sublime.nix
+    ../modules/vscodium.nix
+  ]
+  ++ lib.optional settings.features.localAI ../modules/ai.nix
+  ++ lib.optional (
+    settings.features.devCore
+    || builtins.any (enabled: enabled) (builtins.attrValues settings.features.languageTools)
+  ) ../modules/dev-tools.nix;
 
   home.username = settings.user.name;
   home.homeDirectory = "/home/${settings.user.name}";
