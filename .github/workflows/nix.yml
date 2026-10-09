@@ -49,6 +49,9 @@ jobs:
             min-free = 2147483648
             max-free = 5368709120
 
+      - name: Verify the bundled Firefox extension
+        run: nix build .#checks.x86_64-linux.bypass-paywalls-clean --no-link --print-build-logs
+
       - name: Test staged installer safety and command packaging
         run: |
           nix build .#checks.x86_64-linux.installer --no-link --print-build-logs

@@ -2,17 +2,12 @@
 
 let
   addons = pkgs.nur.repos.rycee.firefox-addons;
-  # Pin the publisher's versioned signed XPI directly. GitFlic's Git transport
-  # can fail with an incomplete pack, and its raw endpoint ignores commit
-  # selectors, so the fixed content hash is the immutable artifact identity.
-  bypassPaywallsSource = pkgs.fetchurl {
-    name = "bypass_paywalls_clean-4.4.5.6.xpi";
-    url = "https://gitflic.ru/project/magnolia1234/bpc_uploads/blob/raw?file=bypass_paywalls_clean-4.4.5.6.xpi";
-    hash = "sha256-XIQnrhAl89M4Y8SAvWVMzrYlpzcUvGe361Onl6Ry8bE=";
-  };
+  # Preserve the publisher's signed artifact locally: its rolling upload list
+  # prunes old releases. Shared metadata verifies the exact source bytes.
+  bypassPaywallsSource = import ../../pkgs/bypass-paywalls-clean/source.nix;
   bypassPaywallsClean = addons.bypass-paywalls-clean.overrideAttrs {
-    name = "bypass-paywalls-clean-4.4.5.6";
-    src = bypassPaywallsSource;
+    name = "bypass-paywalls-clean-${bypassPaywallsSource.version}";
+    inherit (bypassPaywallsSource) version src;
   };
 in
 {

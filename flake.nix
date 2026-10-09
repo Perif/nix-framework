@@ -100,6 +100,7 @@
             pkgs.runCommand "qbz-configuration-tests" { } ''
               touch "$out"
             '';
+          bypass-paywalls-clean = import ./tests/bypass-paywalls-clean.nix { inherit pkgs; };
           installer =
             pkgs.runCommand "installer-safety-tests"
               {
