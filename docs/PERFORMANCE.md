@@ -36,7 +36,8 @@ For a temporary comparison use `powerprofilesctl set balanced` or, if supported,
 | `power.hibernateOnAC` | `true` | `false` starts the combined-mode countdown after AC disconnects |
 
 1. Change the existing fields, apply, then log out/in.
-2. Save work and test the selected sleep mode from the power menu.
+2. Save work and disconnect external displays. Close the lid and resume, then
+   test the configured power button separately.
 3. Verify resume, lock screen, Wi-Fi and audio; use the
    [sleep measurement procedure](POWER-MEASUREMENTS.md#sleep-and-resume).
 
