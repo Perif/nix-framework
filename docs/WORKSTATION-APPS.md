@@ -16,6 +16,7 @@ rebuild to remove groups or individual optional applications:
 | `features.languageTools.nodejs` | Node.js. |
 | `features.languageTools.nix` | nixd and nixfmt. |
 | `features.localAI` | Home Manager local-model CLI/runtime integration and Continue's loopback-only provider config. The system AI services use the same switch. |
+| `features.rea` | REA CLI/MCP with Ghidra and Java; Continue uses Ollama, with optional Ollaya decision tools. See [REA](REA.md). |
 | `features.extraBrowsers` | Brave and ungoogled Chromium. Firefox and Tor Browser remain installed. |
 | `features.extraEditors` | VSCodium and Sublime Text/Merge. Vim and Neovim remain available. |
 | `features.office.libreOffice` | LibreOffice Qt build. |

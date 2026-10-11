@@ -73,6 +73,11 @@ jobs:
       - name: Test touchpad configuration preservation
         run: nix build .#checks.x86_64-linux.touchpad --no-link --print-build-logs
 
+      - name: Test REA analysis and optional Ollaya MCP
+        run: |
+          nix build .#checks.x86_64-linux.rea-configuration .#checks.x86_64-linux.rea \
+            --no-link --print-build-logs
+
       - name: Smoke-test the Guile development shell
         run: |
           nix develop .#guile -c bash -euo pipefail <<'GUILE'

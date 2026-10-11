@@ -71,10 +71,9 @@
       packages.x86_64-linux.webui-bootstrap = import ./pkgs/webui-bootstrap.nix { pkgs = linuxPkgs; };
       packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix { pkgs = linuxPkgs; };
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
-      packages.x86_64-linux.qobuz-player =
-        linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
-      packages.x86_64-linux.ollaya =
-        linuxPkgs.callPackage ./pkgs/ollaya.nix { };
+      packages.x86_64-linux.qobuz-player = linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
+      packages.x86_64-linux.ollaya = linuxPkgs.callPackage ./pkgs/ollaya.nix { };
+      packages.x86_64-linux.rea = linuxPkgs.callPackage ./pkgs/rea-with-ghidra.nix { };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
         system:
@@ -86,6 +85,7 @@
           };
         in
         {
+          rea = import ./tests/rea.nix { inherit pkgs; };
           webui-bootstrap =
             pkgs.runCommand "webui-bootstrap-tests"
               {
@@ -153,6 +153,11 @@
               '';
         }
         // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          rea-configuration =
+            assert import ./tests/rea-config.nix { inherit pkgs; };
+            pkgs.runCommand "rea-configuration-tests" { } ''
+              touch "$out"
+            '';
           touchpad = import ./tests/touchpad.nix { inherit pkgs; };
           software-profiles =
             assert import ./tests/software-profiles.nix {

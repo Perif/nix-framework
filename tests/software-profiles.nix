@@ -7,10 +7,14 @@ let
   minimal = settings // {
     timeZone = "UTC";
     diskDevice = "/dev/disk/by-id/evaluation-only";
+    rea = settings.rea // {
+      ollayaMcp = false;
+    };
     features = settings.features // {
       devCore = false;
       languageTools = lib.mapAttrs (_: _: false) settings.features.languageTools;
       localAI = false;
+      rea = false;
       extraBrowsers = false;
       extraEditors = false;
       office = lib.mapAttrs (_: _: false) settings.features.office;
@@ -50,6 +54,23 @@ let
     }
   );
   guileHome = guileOnly.home-manager.users.${settings.user.name};
+  reaOnly = evaluate (
+    minimal
+    // {
+      features = minimal.features // {
+        rea = true;
+      };
+    }
+  );
+  reaHome = reaOnly.home-manager.users.${settings.user.name};
+  hasRea =
+    homeConfig:
+    builtins.any (package: (package.meta.mainProgram or "") == "rea") homeConfig.home.packages;
+  hasGhidra =
+    homeConfig:
+    builtins.any (
+      package: (package.pname or "") == "ghidra" && package.version == "12.1.4"
+    ) homeConfig.home.packages;
   hasGuile =
     homeConfig: builtins.any (package: (package.pname or "") == "guile") homeConfig.home.packages;
 in
@@ -70,10 +91,16 @@ assert !(pythonHome.home.file ? ".continue/config.yaml");
 assert !hasGuile home && !hasGuile pythonHome && hasGuile guileHome;
 assert !guileHome.programs.direnv.enable;
 assert !(guileHome.home.activation ? touchpadDefaults);
+assert !hasRea home && !hasRea pythonHome && hasRea reaHome;
+assert !hasGhidra home && hasGhidra reaHome;
+assert !reaOnly.services.ollama.enable;
+assert !reaHome.programs.vscodium.enable;
+assert !(reaHome.home.file ? ".continue/config.yaml");
 # Evaluate complete generations too: conditional package selection must not
 # hide missing option references or assertions in either smaller profile.
 builtins.deepSeq [
   cfg.system.build.toplevel.drvPath
   pythonOnly.system.build.toplevel.drvPath
   guileOnly.system.build.toplevel.drvPath
+  reaOnly.system.build.toplevel.drvPath
 ] true

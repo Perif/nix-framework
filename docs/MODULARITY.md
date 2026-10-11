@@ -85,6 +85,9 @@ software group can be disabled in `settings.nix`:
   versions belong in project `devShell`s.
 - `features.localAI`: local inference tools and Continue's local-provider
   configuration. The NixOS AI services follow the same setting.
+- `features.rea`: REA CLI and its Ghidra/Java backend. Continue registration
+  also requires local AI and extra editors. `rea.ollayaMcp` optionally adds
+  Ollaya decision tools; see [REA setup](REA.md).
 - `features.extraBrowsers`: Brave and ungoogled Chromium; Firefox and Tor
   Browser remain available.
 - `features.extraEditors`: VSCodium and Sublime Text/Merge; Vim and Neovim

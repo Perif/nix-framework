@@ -28,6 +28,8 @@ Target:
 - Ghostty
 - llama.cpp / on-demand loopback-only Ollama Vulkan
 - Ollaya decision models on Intel CPU, with an on-demand local user service
+- REA reverse-engineering CLI and Ghidra analysis, using Ollama through Continue
+  with optional Ollaya decision tools; see [REA setup](docs/REA.md)
 - automatic Plasma power profiles: performance on AC, balanced on battery
 - rootless Podman
 - Home Manager
@@ -147,6 +149,8 @@ needs editing when these change:
 - `audio.speakerDevice`, `audio.speakerRoute`: optional exact speaker autoload
   association for EasyEffects; configure both together
 - `ai`: local-model context, output and concurrency defaults, plus Ollaya enablement
+- `features.rea`, `rea.ollamaModel`, `rea.ollayaMcp`: REA/Ghidra installation,
+  local tool-capable model choice, and optional Ollaya MCP integration
 - `power`: AC/battery profiles, AC-only maintenance starts, and battery charge cap
 - `touchpad`: optional Plasma Wayland defaults for tapping, dragging, scrolling
   and clicks; see [touchpad settings and haptic tuning](docs/TOUCHPAD.md)

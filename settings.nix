@@ -121,6 +121,7 @@
     };
 
     localAI = true;
+    rea = true; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/REA.md.
     extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
     extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
 
@@ -198,6 +199,15 @@
     ollaya = {
       enable = true;
     };
+  };
+
+  rea = {
+    # Continue uses this model through the existing loopback Ollama service.
+    # Download explicitly with `ollama pull qwen3:8b`; rebuilds never pull models.
+    ollamaModel = "qwen3:8b";
+    # Optional decision tools alongside REA, not a replacement chat provider.
+    # Requires localAI, extraEditors and ai.ollaya.enable; see docs/REA.md.
+    ollayaMcp = false;
   };
 
   # Profile selection installs a stable alias; apply it in Plasma afterward.

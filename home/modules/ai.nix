@@ -12,13 +12,8 @@ let
   ollayaEnabled = aiEnabled && settings.ai.ollaya.enable;
   webuiEnabled = aiEnabled && settings.ai.webui.enable;
   ollaya = pkgs.callPackage ../../pkgs/ollaya.nix { };
-  ollayaEnvironment = {
-    OLLAYA_HOST = "127.0.0.1:11435";
-    OLLAYA_DEVICE = "cpu";
-    OLLAYA_MODELS = "${config.home.homeDirectory}/.ollaya/models";
-    OLLAYA_MAX_LOADED_MODELS = "1";
-    OLLAYA_MAX_QUEUE = "16";
-    OLLAYA_KEEP_ALIVE = "5m";
+  ollayaEnvironment = import ./ollaya-environment.nix {
+    inherit (config.home) homeDirectory;
   };
 in
 

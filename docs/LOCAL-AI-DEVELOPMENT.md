@@ -1,5 +1,8 @@
 # VSCodium and local AI development
 
+For REA reverse-engineering tools backed by Ollama, including optional Ollaya
+MCP integration, follow [REA setup](REA.md).
+
 VSCodium is the open-source-binary build of VS Code. This configuration keeps
 the editor, its extensions, and the Continue model configuration declarative.
 It is intended for light, on-demand assistance through the loopback-only
