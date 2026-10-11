@@ -148,6 +148,9 @@
     lowBatteryProfile = "power-saver";
     maintenanceOnAC = true; # Defer GC/scrub on battery, retry pending work on AC.
     chargeLimit = 80; # 1..100, or null to leave firmware/Plasma in control.
+    sleepMode = "suspend-then-hibernate"; # Or "suspend" or "hibernate".
+    hibernateDelayMinutes = 60; # Positive integer; used by suspend-then-hibernate.
+    hibernateOnAC = true; # Set false to defer the hibernation countdown until unplugged.
   };
 
   # Plasma Wayland defaults; existing per-device GUI choices take precedence.
@@ -216,6 +219,13 @@
     # Keep built-in eDP panels in SDR, including Plasma's EDR emulation.
     # External monitors retain their own settings. See docs/DISPLAY.md.
     disableHdr = true;
+    # Optional AC/battery refresh switching at the current panel resolution.
+    # null on AC selects the highest advertised rate. External displays stay as set.
+    refreshRate = {
+      enable = false;
+      batteryHz = 60;
+      acHz = null;
+    };
     profile = "notebookcheck"; # "notebookcheck", "native", or "custom"
     iccProfile = null; # For "custom", e.g. ./assets/color/my-panel.icc
     # Additional measured profiles to install for comparison in Plasma.

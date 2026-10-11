@@ -236,7 +236,7 @@ source or low-battery state changes:
 
 Home Manager writes `PowerProfile` in the `[AC][Performance]`,
 `[Battery][Performance]` and `[LowBattery][Performance]` groups of
-`~/.config/powerdevilrc`. It also sets `SleepMode=3`, `LidAction=1`,
+`~/.config/powerdevilrc`. With the default sleep policy it also sets `SleepMode=3`, `LidAction=1`,
 `PowerButtonAction=1` and `InhibitLidActionWhenExternalMonitorPresent=true` under
 `[AC][SuspendAndShutdown]` and the corresponding Battery/LowBattery groups.
 Plasma therefore uses suspend-then-hibernate for lid closure and the power
@@ -291,6 +291,52 @@ powerprofilesctl launch \
 The performance profile may be unavailable or reported as degraded when the
 platform driver, temperature, charger, or safety state does not permit it. Do
 not override that condition with a forced CPU frequency.
+
+## Selectable sleep policy
+
+Edit the existing `power` block in `settings.nix`:
+
+```nix
+sleepMode = "suspend-then-hibernate"; # Or "suspend" or "hibernate".
+hibernateDelayMinutes = 60;
+hibernateOnAC = true;
+```
+
+These preserve the previous default: suspend followed by hibernation after
+60 minutes, including on AC. A low battery may trigger hibernation earlier.
+Set `hibernateOnAC = false` to start that countdown only after AC is disconnected.
+The positive integer delay and AC policy apply only to suspend-then-hibernate;
+they do not delay a direct hibernation request.
+
+The chosen mode controls logind's lid/power-button actions and Plasma's matching
+actions. Docked lid suspension remains suppressed. Plasma represents direct
+hibernation as action 2, not sleep mode 2 (which means hybrid sleep). Existing
+idle actions and timeouts remain yours: when choosing direct hibernation, also
+select **Hibernate** as the automatic idle action in Plasma if wanted. For the
+other two choices, an existing **Sleep** idle action follows the selected mode.
+Log out/in after a rebuild so PowerDevil reloads these settings.
+
+The encrypted 40 GiB physical swap and resume-device setup remain in place.
+Check resume on the actual laptop before relying on unattended sleep. Follow
+[repeatable overnight and resume checks](POWER-MEASUREMENTS.md#sleep-and-resume).
+No `mem_sleep_default=deep` workaround is added: only modes actually exposed by
+`/sys/power/mem_sleep` are available on the machine.
+
+## Targeted thermald update and diagnostics
+
+The service uses pinned **thermald 2.5.13**, retaining adaptive firmware-table
+control and the standard NixOS service/DBus setup. This updates only thermald,
+with a fixed source hash, rather than changing the entire Nixpkgs baseline.
+The [upstream release notes](https://github.com/intel/thermal_daemon/blob/v2.5.13/README.txt)
+cover power-limit restoration and adaptive-control fixes. No measured throughput
+or battery-life improvement is claimed. Check its journal and temperatures under
+your sustained workloads; the previous NixOS generation remains the rollback.
+
+`framework-power-report` provides a read-only JSON report and optional battery
+sampling/GPU counters. It is installed even when local AI is disabled. See the
+[power, browser decoding and sleep measurement guide](POWER-MEASUREMENTS.md).
+The optional [60 Hz battery preset](DISPLAY.md#optional-battery-refresh-preset)
+keeps the refresh/comfort tradeoff selectable.
 
 ## Xe graphics and modern video acceleration
 

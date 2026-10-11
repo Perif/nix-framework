@@ -18,6 +18,23 @@ in
 {
   assertions = [
     {
+      assertion = builtins.elem settings.power.sleepMode [
+        "suspend"
+        "hibernate"
+        "suspend-then-hibernate"
+      ];
+      message = "power.sleepMode must be suspend, hibernate, or suspend-then-hibernate.";
+    }
+    {
+      assertion =
+        builtins.isInt settings.power.hibernateDelayMinutes && settings.power.hibernateDelayMinutes > 0;
+      message = "power.hibernateDelayMinutes must be a positive integer.";
+    }
+    {
+      assertion = builtins.isBool settings.power.hibernateOnAC;
+      message = "power.hibernateOnAC must be a boolean.";
+    }
+    {
       assertion = limit == null || (builtins.isInt limit && limit >= 1 && limit <= 100);
       message = "power.chargeLimit must be null or an integer from 1 to 100.";
     }
@@ -27,7 +44,9 @@ in
       # systemd-modules-load would fail at every boot.
       assertion =
         limit == null
-        || lib.any (package: lib.getName package == "framework-laptop-kmod") config.boot.extraModulePackages;
+        || lib.any (
+          package: lib.getName package == "framework-laptop-kmod"
+        ) config.boot.extraModulePackages;
       message = "power.chargeLimit needs the framework_laptop kernel module; keep nixos-hardware's hardware.framework.enableKmod on or set power.chargeLimit = null.";
     }
   ];
@@ -58,14 +77,15 @@ in
     AllowSuspend = "yes";
     AllowHibernation = "yes";
     AllowSuspendThenHibernate = "yes";
-    HibernateDelaySec = "60min";
+    HibernateDelaySec = "${toString settings.power.hibernateDelayMinutes}min";
+    HibernateOnACPower = if settings.power.hibernateOnAC then "yes" else "no";
   };
 
   services.logind.settings.Login = {
-    HandleLidSwitch = "suspend-then-hibernate";
-    HandleLidSwitchExternalPower = "suspend-then-hibernate";
+    HandleLidSwitch = settings.power.sleepMode;
+    HandleLidSwitchExternalPower = settings.power.sleepMode;
     HandleLidSwitchDocked = "ignore";
-    HandlePowerKey = "suspend-then-hibernate";
+    HandlePowerKey = settings.power.sleepMode;
   };
 
   # Fast compressed swap for ordinary memory pressure. Hibernation goes

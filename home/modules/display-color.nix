@@ -11,9 +11,17 @@ let
   notebookcheck = ../../assets/color/framework-13-pro-MND508ZB1-1.icm;
   selected = if cfg.profile == "custom" then cfg.iccProfile else notebookcheck;
   validName = name: builtins.match "[A-Za-z0-9_-]+" name != null;
+  policyEnabled = cfg.disableHdr || cfg.refreshRate.enable;
+  validHz = value: builtins.isInt value && value >= 30 && value <= 240;
   sdrPolicy = pkgs.writeShellScript "framework-display-sdr" ''
     exec ${pkgs.python3}/bin/python3 ${./display-sdr.py} \
-      --doctor ${pkgs.kdePackages.libkscreen}/bin/kscreen-doctor
+      --doctor ${pkgs.kdePackages.libkscreen}/bin/kscreen-doctor \
+      ${lib.optionalString (!cfg.disableHdr) "--allow-hdr"} \
+      ${lib.optionalString cfg.refreshRate.enable ''
+        --busctl ${pkgs.systemd}/bin/busctl \
+        --battery-hz ${toString cfg.refreshRate.batteryHz} \
+        --ac-hz ${if cfg.refreshRate.acHz == null then "highest" else toString cfg.refreshRate.acHz}
+      ''}
   '';
   sessionUnit = {
     After = [ "plasma-kwin_wayland.service" ];
@@ -24,6 +32,13 @@ let
 in
 {
   assertions = [
+    {
+      assertion =
+        builtins.isBool cfg.refreshRate.enable
+        && validHz cfg.refreshRate.batteryHz
+        && (cfg.refreshRate.acHz == null || validHz cfg.refreshRate.acHz);
+      message = "display.refreshRate needs a boolean enable, integer batteryHz (30..240), and acHz = null or an integer (30..240).";
+    }
     {
       assertion = builtins.isBool cfg.disableHdr;
       message = "display.disableHdr must be a boolean.";
@@ -66,23 +81,23 @@ in
 
   # Use KWin's live API: never replace its monitor-layout/ICC state file.
   # Only change enabled eDP outputs that need it. KWin persists the result.
-  systemd.user.services.framework-display-sdr = lib.mkIf cfg.disableHdr {
+  systemd.user.services.framework-display-sdr = lib.mkIf policyEnabled {
     Unit = sessionUnit // {
-      Description = "Keep built-in displays in SDR";
+      Description = "Apply built-in display SDR and optional refresh policy";
       # Brightness/monitor changes may write KWin's state several times.
       StartLimitIntervalSec = 0;
     };
     Service = {
       Type = "oneshot";
       ExecStart = sdrPolicy;
-      TimeoutStartSec = 60;
+      TimeoutStartSec = 120;
     };
     Install.WantedBy = [ "plasma-workspace-wayland.target" ];
   };
 
   # Recheck on saved display changes (including docking/lid transitions),
   # without a polling daemon. A no-op check does not rewrite KWin's state.
-  systemd.user.paths.framework-display-sdr = lib.mkIf cfg.disableHdr {
+  systemd.user.paths.framework-display-sdr = lib.mkIf policyEnabled {
     Unit = sessionUnit // {
       Description = "Reapply built-in SDR policy after display changes";
     };

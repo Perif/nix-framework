@@ -10,13 +10,14 @@ Target:
 - LUKS2
 - staged signed Secure Boot with Lanzaboote
 - encrypted 40 GiB swap
-- suspend -> hibernate after 60 minutes
+- selectable sleep strategy; default suspend -> hibernate after 60 minutes
 - fingerprint authentication for login and session unlock; password-only sudo
 - declarative five-minute Plasma auto-lock and immediate lock after resume
 - PipeWire desktop audio
 - EasyEffects with a pinned Framework 13 Pro speaker preset and Flat fallback
 - Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
 - SDR policy for the built-in panel, with HDR and Plasma EDR disabled
+- optional 60 Hz battery refresh preset and read-only power/sleep diagnostics
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
 - qobuz-player terminal streaming client and MusicBrainz Picard tag editor
 - Wine WoW64 / Winetricks, KeePassXC with Firefox integration, and mpv

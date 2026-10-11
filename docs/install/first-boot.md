@@ -79,6 +79,12 @@ nix config show allowed-users
 nix config show trusted-users
 ```
 
+Capture a first-boot baseline with `framework-power-report > power-baseline.json`.
+Follow [browser hardware-decoding verification and sleep checks](../POWER-MEASUREMENTS.md)
+before treating driver installation as proof of acceleration or reliable resume.
+The report stays local and may include kernel-log device identifiers; review it
+before sharing. Missing permissions/sensors are reported, not treated as success.
+
 The expected performance values and safe use of the temporary performance
 profile are documented in `docs/PERFORMANCE.md`. Do not force thermald past a
 CPU-identification or adaptive-table error.

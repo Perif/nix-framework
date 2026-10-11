@@ -40,6 +40,12 @@ let
           python = true;
         };
       };
+      display = minimal.display // {
+        disableHdr = false;
+        refreshRate = minimal.display.refreshRate // {
+          enable = true;
+        };
+      };
     }
   );
   pythonHome = pythonOnly.home-manager.users.${settings.user.name};
@@ -99,6 +105,8 @@ assert !guileHome.programs.direnv.enable;
 assert !(guileHome.home.activation ? touchpadDefaults);
 assert home.systemd.user.services ? framework-display-sdr;
 assert home.systemd.user.paths ? framework-display-sdr;
+assert pythonHome.systemd.user.services ? framework-display-sdr;
+assert pythonHome.systemd.user.paths ? framework-display-sdr;
 assert !(guileHome.systemd.user.services ? framework-display-sdr);
 assert !(guileHome.systemd.user.paths ? framework-display-sdr);
 assert !hasRea home && !hasRea pythonHome && hasRea reaHome;

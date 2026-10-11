@@ -22,6 +22,11 @@ PANEL = {
     "scale": 1.5, "currentModeId": "2880x1920@120", "brightness": 0.4,
     "pos": {"x": 0, "y": 0},
 }
+MODES = [
+    {"id": "1", "size": {"width": 2880, "height": 1920}, "refreshRate": 120.0},
+    {"id": "2", "size": {"width": 2880, "height": 1920}, "refreshRate": 59.94},
+    {"id": "3", "size": {"width": 1920, "height": 1280}, "refreshRate": 60.0},
+]
 
 
 class DisplaySdr(unittest.TestCase):
@@ -53,26 +58,69 @@ data = json.loads(state.read_text())
 for arg in args:
     prefix, name, key, value = arg.split(".")
     assert prefix == "output"
-    assert (key, value) in [("hdr", "disable"), ("wcg", "disable"), ("edrPolicy", "never")]
     output = next(o for o in data["outputs"] if o["name"] == name)
-    output[key] = 0 if key == "edrPolicy" else False
+    if key == "mode":
+        assert value in [mode["id"] for mode in output["modes"]]
+        output["currentModeId"] = value
+    else:
+        assert (key, value) in [("hdr", "disable"), ("wcg", "disable"), ("edrPolicy", "never")]
+        output[key] = 0 if key == "edrPolicy" else False
 state.write_text(json.dumps(data))
 ''')
         self.doctor.chmod(0o700)
+        self.busctl = self.root / "busctl"
+        self.busctl.write_text(f"#!{sys.executable}\nimport os\nprint(os.environ['TEST_ON_BATTERY'])\n")
+        self.busctl.chmod(0o700)
 
-    def run_policy(self, data, failure=""):
+    def run_policy(self, data, failure="", refresh=False, on_battery="b true", allow_hdr=False):
         self.state.write_text(json.dumps(data))
         self.calls.write_text("")
         result = subprocess.run(
-            [sys.executable, str(ARGS.script), "--doctor", str(self.doctor)],
+            [sys.executable, str(ARGS.script), "--doctor", str(self.doctor)]
+            + (["--busctl", str(self.busctl), "--battery-hz", "60"] if refresh else [])
+            + (["--allow-hdr"] if allow_hdr else []),
             capture_output=True, text=True,
             env=os.environ | {
                 "TEST_DISPLAY_STATE": str(self.state),
                 "TEST_DISPLAY_CALLS": str(self.calls),
                 "TEST_DISPLAY_FAILURE": failure,
+                "TEST_ON_BATTERY": on_battery,
             },
         )
         return result, json.loads(self.state.read_text()), [json.loads(line) for line in self.calls.read_text().splitlines()]
+
+    def test_refresh_switches_on_battery_and_ac_preserving_other_outputs_and_settings(self):
+        panel = PANEL | {"currentModeId": "1", "modes": MODES}
+        external = panel | {"name": "DP-1"}
+        result, data, _ = self.run_policy({"outputs": [panel, external]}, refresh=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(data["outputs"], [panel | {"currentModeId": "2", "hdr": False, "wcg": False, "edrPolicy": 0}, external])
+        result, data, calls = self.run_policy(data, refresh=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(calls, [["--json"]])
+        result, data, _ = self.run_policy(data, refresh=True, on_battery="b false")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(data["outputs"][0]["currentModeId"], "1")
+        self.assertEqual(data["outputs"][1], external)
+
+    def test_refresh_can_run_without_enforcing_sdr(self):
+        panel = PANEL | {"currentModeId": "1", "modes": MODES}
+        result, data, _ = self.run_policy({"outputs": [panel]}, refresh=True, allow_hdr=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(data["outputs"][0], panel | {"currentModeId": "2"})
+
+    def test_unsupported_refresh_never_changes_resolution(self):
+        panel = PANEL | {"currentModeId": "1", "modes": [MODES[0], MODES[2]]}
+        result, data, _ = self.run_policy({"outputs": [panel]}, refresh=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(data["outputs"][0]["currentModeId"], "1")
+        self.assertIn("No advertised", result.stderr)
+
+    def test_upower_failure_still_enforces_sdr_without_guessing_power_source(self):
+        panel = PANEL | {"currentModeId": "1", "modes": MODES}
+        result, data, _ = self.run_policy({"outputs": [panel]}, refresh=True, on_battery="unknown")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(data["outputs"][0], panel | {"hdr": False, "wcg": False, "edrPolicy": 0})
 
     def test_only_active_internal_panel_changes_and_reapplication_is_read_only(self):
         external = PANEL | {"name": "DP-1"}

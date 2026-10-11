@@ -68,7 +68,10 @@ jobs:
         run: nix build .#checks.x86_64-linux.webui-bootstrap --no-link --print-build-logs
 
       - name: Test laptop power-management helpers
-        run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
+        run: |
+          nix build .#checks.x86_64-linux.power-management .#checks.x86_64-linux.power-report \
+            .#checks.x86_64-linux.power-settings --no-link --print-build-logs
+          nix run .#power-report -- --help
 
       - name: Test touchpad configuration preservation
         run: nix build .#checks.x86_64-linux.touchpad --no-link --print-build-logs

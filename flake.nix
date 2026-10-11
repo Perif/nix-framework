@@ -74,6 +74,8 @@
       packages.x86_64-linux.qobuz-player = linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
       packages.x86_64-linux.ollaya = linuxPkgs.callPackage ./pkgs/ollaya.nix { };
       packages.x86_64-linux.rea = linuxPkgs.callPackage ./pkgs/rea-with-ghidra.nix { };
+      packages.x86_64-linux.thermald = linuxPkgs.callPackage ./pkgs/thermald.nix { };
+      packages.x86_64-linux.power-report = import ./pkgs/power-report.nix { pkgs = linuxPkgs; };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
         system:
@@ -95,6 +97,10 @@
                 python3 ${./tests/test_display_sdr.py} --script ${./home/modules/display-sdr.py}
                 touch "$out"
               '';
+          power-report = pkgs.runCommand "power-report-tests" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+            python3 ${./tests/test_power_report.py} --script ${./scripts/power-report.py}
+            touch "$out"
+          '';
           webui-bootstrap =
             pkgs.runCommand "webui-bootstrap-tests"
               {
@@ -168,6 +174,7 @@
               touch "$out"
             '';
           touchpad = import ./tests/touchpad.nix { inherit pkgs; };
+          power-settings = import ./tests/power-settings.nix { inherit pkgs; };
           software-profiles =
             assert import ./tests/software-profiles.nix {
               configuration = self.nixosConfigurations.${settings.hostname};

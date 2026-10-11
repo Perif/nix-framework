@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   settings,
   ...
 }:
@@ -21,12 +22,16 @@
       message = "builds.cores must be null or a nonnegative integer (0 means all cores).";
     }
   ];
-  environment.systemPackages = [ config.boot.kernelPackages.turbostat ];
+  environment.systemPackages = [
+    config.boot.kernelPackages.turbostat
+    (import ../../pkgs/power-report.nix { inherit pkgs; })
+  ];
   # Use the firmware-provided Intel DPTF tables to manage sustained power and
   # thermal limits. This complements power-profiles-daemon: PPD selects the
   # requested platform profile, while thermald keeps the CPU inside the
   # machine's adaptive thermal envelope.
   services.thermald.enable = true;
+  services.thermald.package = pkgs.callPackage ../../pkgs/thermald.nix { };
 
   # zram has a much lower access cost than filesystem or NVMe-backed swap.
   # Prefer reclaiming inactive anonymous pages into the high-priority zram
