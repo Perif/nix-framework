@@ -64,6 +64,9 @@ in
       name = "REA";
       command = "${rea}/bin/rea";
       args = [ "mcp" ];
+      # Continue 1.2.22 also uses this for tool requests. Initial Ghidra
+      # analysis may exceed the MCP SDK's default one-minute request limit.
+      connectionTimeout = 300000;
     }
   ]
   ++ lib.optional settings.rea.ollayaMcp {

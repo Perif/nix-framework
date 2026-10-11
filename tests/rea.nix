@@ -8,7 +8,8 @@ pkgs.runCommand (if linux then "rea-ghidra-mcp-tests" else "rea-mcp-discovery-te
   {
     nativeBuildInputs = [
       pkgs.python3
-    ] ++ pkgs.lib.optional linux pkgs.stdenv.cc;
+    ]
+    ++ pkgs.lib.optional linux pkgs.stdenv.cc;
   }
   ''
     export HOME="$TMPDIR/home"
@@ -24,6 +25,6 @@ pkgs.runCommand (if linux then "rea-ghidra-mcp-tests" else "rea-mcp-discovery-te
       fi
     ''}
     python3 ${./test_rea_mcp.py} --rea ${rea}/bin/rea \
-      ${pkgs.lib.optionalString linux ''--target "$PWD/fixture" --ollaya ${ollaya}/bin/ollaya''}
+      ${pkgs.lib.optionalString linux ''--target "$PWD/fixture" --ghidra-headless ${rea.ghidra}/bin/ghidra-analyzeHeadless --ollaya ${ollaya}/bin/ollaya''}
     touch "$out"
   ''

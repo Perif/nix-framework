@@ -53,6 +53,7 @@ let
 in
 assert builtins.length default.mcpServers == 1;
 assert (builtins.head default.mcpServers).args == [ "mcp" ];
+assert (builtins.head default.mcpServers).connectionTimeout == 300000;
 assert lib.hasPrefix "/nix/store/" (builtins.head default.mcpServers).command;
 assert model.provider == "ollama" && model.apiBase == "http://127.0.0.1:11434";
 assert model.model == settings.rea.ollamaModel && model.capabilities == [ "tool_use" ];

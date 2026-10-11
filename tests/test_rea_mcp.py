@@ -84,7 +84,25 @@ class MCP:
         return logs
 
 
-def check(executable, target, ollaya=False):
+def diagnose_headless(executable, target, directory):
+    """Expose JVM/launcher output when the MCP provider hides a launch cause."""
+    project = Path(directory) / "headless-diagnostic"
+    project.mkdir()
+    command = [executable, str(project), "Fixture", "-import", str(Path(target).resolve()),
+               "-readOnly", "-deleteProject"]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=120,
+                                env={**os.environ, "HOME": directory})
+        print(f"Direct Ghidra diagnostic exit: {result.returncode}")
+        print("Ghidra stdout:\n" + result.stdout[-32000:])
+        print("Ghidra stderr:\n" + result.stderr[-32000:])
+    except subprocess.TimeoutExpired as error:
+        print("Direct Ghidra diagnostic timed out:", error.stdout, error.stderr)
+    except OSError as error:
+        print("Direct Ghidra diagnostic could not start:", error)
+
+
+def check(executable, target, ollaya=False, ghidra_headless=None):
     with tempfile.TemporaryDirectory(prefix="rea-mcp-") as directory:
         client = MCP(executable, directory)
         try:
@@ -109,6 +127,8 @@ def check(executable, target, ollaya=False):
             print(f"{'Ollaya' if ollaya else 'REA'} MCP: {len(tools)} tools; checks passed")
         except BaseException:
             print(client.close())
+            if target and ghidra_headless:
+                diagnose_headless(ghidra_headless, target, directory)
             raise
         else:
             client.close()
@@ -118,8 +138,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rea", required=True)
     parser.add_argument("--target", help="Small compiled fixture to analyze with Ghidra")
+    parser.add_argument("--ghidra-headless", help="Direct launcher for failure-only diagnostics")
     parser.add_argument("--ollaya", help="Also check Ollaya's optional stdio transport")
     args = parser.parse_args()
-    check(args.rea, args.target)
+    check(args.rea, args.target, ghidra_headless=args.ghidra_headless)
     if args.ollaya:
         check(args.ollaya, None, ollaya=True)

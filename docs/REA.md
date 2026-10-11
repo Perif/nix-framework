@@ -35,6 +35,7 @@ Open VSCodium's Continue panel, select **REA via Ollama**, and switch to
 **Agent** mode. The declarative MCP server invokes the exact installed `rea mcp`
 through stdio. No MCP network listener or API key is needed. If the editor was
 already open during the rebuild, restart it to reload its configuration.
+REA tool requests allow up to five minutes for Ghidra startup and analysis.
 
 **Before the first request, choose a small tool set.** REA 6.4 advertises a
 large catalog (170 tools in the initial local check). In Continue's tools menu,
