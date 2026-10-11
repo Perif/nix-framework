@@ -5,7 +5,7 @@
 # argument.
 {
   # networking.hostName and the flake output name:
-  #   nixos-rebuild switch --flake .#<hostname>
+  #   Follow docs/install/customization.md to build, test and apply.
   hostname = "framework-pro";
 
   # Resolve once during installation: nix run .#detect-timezone

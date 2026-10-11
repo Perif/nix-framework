@@ -1,5 +1,9 @@
 # Touchpad settings
 
+1. Edit the desired existing `touchpad` field in `/etc/nixos/settings.nix`.
+2. Follow [apply a change](install/customization.md), then log out/in.
+3. Test clicking, dragging and scrolling. Existing per-device GUI settings take precedence; use the instructions below if a default does not apply.
+
 This laptop uses Plasma Wayland. `settings.touchpad` selects user-session
 defaults through Home Manager. Rebuild, then log out and back in to reload them.
 These are a starting preference, not a hardware calibration or a measured fix.

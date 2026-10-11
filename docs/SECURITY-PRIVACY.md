@@ -299,14 +299,9 @@ verification, exceptions, and repository-hook compatibility are documented in
 
 Review upstream changes before updating the lock file:
 
-```bash
-cd /etc/nixos
-nix flake update
-nix flake check --no-build --all-systems
-sudo nixos-rebuild test --flake .#framework-pro
-systemctl --failed
-sudo nixos-rebuild switch --flake .#framework-pro
-```
+Follow [update pinned dependencies](UPDATES.md) and the
+[common change workflow](install/customization.md). Pause to verify the result
+before promotion; use the reboot path for boot-related updates.
 
 After security-relevant updates, reboot and check:
 

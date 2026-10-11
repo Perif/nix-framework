@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 import hashlib
 import json
+import posixpath
 
 from common import Stop, query
 
@@ -57,6 +58,13 @@ def gib_size(value):
             or not value[:-1].isdigit() or int(value[:-1]) <= 0):
         raise Stop(f'Unsupported Disko size {value!r}; use a positive fixed whole-GiB size.')
     return int(value[:-1]) * GIB
+
+
+def canonical_absolute_path(value, *, allow_root=True):
+    return (isinstance(value, str) and value.startswith('/')
+            and not value.startswith('//') and '\0' not in value
+            and posixpath.normpath(value) == value
+            and (allow_root or value != '/'))
 
 
 @dataclass(frozen=True)
@@ -118,11 +126,11 @@ def from_disko(devices, selected_disk):
     mounts = [('/mnt/boot', 'vfat', '/')]
     options = {'/mnt/boot': tuple(esp['content']['mountOptions'])}
     for subvolume, spec in subvolumes.items():
-        if not subvolume.startswith('/') or subvolume == '/' or spec.get('mountpoint') is None:
-            raise Stop('Every supported Btrfs subvolume needs an absolute name and mount point.')
-        mountpoint = spec['mountpoint']
-        if not mountpoint.startswith('/') or '/..' in mountpoint or '//' in mountpoint:
-            raise Stop('Unsafe Btrfs mount point in evaluated Disko configuration.')
+        if not canonical_absolute_path(subvolume, allow_root=False):
+            raise Stop('Every supported Btrfs subvolume needs a canonical absolute name.')
+        mountpoint = spec.get('mountpoint')
+        if not canonical_absolute_path(mountpoint):
+            raise Stop('Every supported Btrfs mount point needs a canonical absolute path.')
         target = '/mnt' if mountpoint == '/' else '/mnt' + mountpoint
         mounts.append((target, 'btrfs', subvolume))
         options[target] = tuple(spec['mountOptions'])

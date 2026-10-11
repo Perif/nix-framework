@@ -1,157 +1,93 @@
-# Configuration boundaries
+# Architecture and ownership
 
-The repository deliberately separates concerns.
+The configuration has one composition path:
 
-## Parameters
-
-`settings.nix`
-
-Contains installation-specific values: hostname, locale, time zone, destructive
-disk target, login user, optional declarative password, SSH keys, feature flags
-and git identity. It also owns the encrypted-DNS provider, Blocky enable switch,
-privacy-list URL, and allowlist. `flake.nix` passes it to every module as
-`settings`, so modules do not hardcode these machine/user choices.
-
-## Host
-
-`hosts/framework-pro/`
-
-Contains only machine-specific composition and storage:
-
-- module imports
-- 2 TB NVMe layout
-- LUKS2
-- encrypted 40 GiB swap
-- Btrfs
-- state version
-
-## NixOS modules
-
-`modules/nixos/`
-
-Contains privileged/system behavior:
-
-- base OS / firmware / login user / sshd / network identity defaults
-- loopback-only Blocky filtering, system-wide encrypted DNS, and WireGuard
-  client tools
-- unsigned-to-signed boot ownership and Lanzaboote staging
-- Btrfs scrub, Snapper retention and Nix-store maintenance
-- Plasma / graphics / Bluetooth / location-service policy
-- power and hibernation
-- sustained thermal, compressed-memory, and Nix-build responsiveness tuning
-- fprintd / PAM / kernel and network hardening
-- PipeWire / WirePlumber
-- hardened, manually started Ollama daemon
-- rootless Podman plumbing
-
-These should not live in Home Manager because they change services, hardware,
-boot, PAM, setuid wrappers or system policy.
-
-## Home Manager
-
-`home/user/` composes small reusable modules from `home/modules/`.
-
-One module is used for an application when it has meaningful configuration:
-
-- Firefox
-- Tor Browser package boundary
-- Plasma session-lock policy
-- Plasma Wayland touchpad defaults (preserving per-device GUI overrides)
-- Ghostty
-- Vim
-- Sublime Text / Sublime Merge
-- VSCodium and its immutable development extension profile
-- Git defaults, Gitleaks, and the staged PII hook
-- Zsh
-- Strawberry
-- optional user-supplied QBZ package (disabled by default)
-- DC-Elite helper
-- AI CLI/runtime packages
-
-Small unconfigured development binaries are intentionally grouped in
-`dev-tools.nix`; qobuz-player and MusicBrainz Picard are grouped in
-`music-tools.nix`. A one-file-per-package scheme would add structure without
-improving ownership or reuse.
-
-### Selectable workstation groups
-
-The default settings preserve the full existing workstation, but each large
-software group can be disabled in `settings.nix`:
-
-- `features.devCore`: common development commands, shell integrations, and
-  rootless Podman; turning it off also disables Podman's system setup.
-- `features.languageTools.{c,python,go,rust,guile,nodejs,nix}`: independent language
-  toolchains, including language servers where supplied. Project-specific
-  versions belong in project `devShell`s.
-- `features.localAI`: local inference tools and Continue's local-provider
-  configuration. The NixOS AI services follow the same setting.
-- `features.rea`: REA CLI and its Ghidra/Java backend. Continue registration
-  also requires local AI and extra editors. `rea.ollayaMcp` optionally adds
-  Ollaya decision tools; see [REA setup](REA.md).
-- `features.extraBrowsers`: Brave and ungoogled Chromium; Firefox and Tor
-  Browser remain available.
-- `features.extraEditors`: VSCodium and Sublime Text/Merge; Vim and Neovim
-  remain available as the lightweight default editors.
-- `features.office.{libreOffice,thunderbird,kdeConnect,syncthing}`: individual
-  personal applications.
-
-All switches default to `true` to preserve current behavior. KDE Connect and
-Syncthing are packages only: the profile does not enable a Syncthing service or
-open firewall ports. Pair devices and allow network traffic only when you choose
-to use them. Syncthing folder and device configuration remains user-owned.
-
-### Project-local development environments
-
-This repository exposes `nix develop .#c`, `.#python`, `.#go`, `.#rust`, `.#guile`,
-`.#nodejs` and `.#nix`; `nix develop` provides the common tools. Language
-packages are shared with the standalone template in `templates/project`.
-To initialize a new project from a trusted local checkout, run inside the new
-project directory (replace the example path with your checkout):
-
-```bash
-nix flake init -t /path/to/nix-framework#project
-nix flake lock
+```text
+settings.nix + flake.lock
+          │
+       flake.nix
+          ├── hosts/framework-pro/default.nix
+          │         ├── disk.nix                 storage contract
+          │         └── modules/nixos/*.nix     system services and hardware
+          └── home/user/default.nix
+                    └── home/modules/*.nix    applications and user settings
 ```
 
-Review `.envrc`, choose a language such as `use flake .#python`, then run
-`direnv allow`. Commit the generated lock and the project's language dependency
-lock. Tools then enter and leave the environment with the project; disabling
-global `features.languageTools.*` does not disable these shells. The template
-README explains how to combine languages and create a Python environment.
+## Where a change belongs
 
-## Package ownership
+| Concern | Owner | Rule |
+| --- | --- | --- |
+| Machine values, feature switches and bounded tuning | `settings.nix` | Preserve existing blocks; no secrets |
+| Input revisions and shared package set | `flake.nix`, `flake.lock` | Update deliberately; keep NixOS and Home Manager packages aligned |
+| Hardware composition and disk layout | `hosts/framework-pro/` | Keep host-specific topology here |
+| Boot, networking, PAM, privileged services and hardware | `modules/nixos/` | System behavior stays outside Home Manager |
+| Configured user applications and session policy | `home/modules/` | One module per meaningful configuration boundary |
+| Small unconfigured tools | `dev-tools.nix`, `music-tools.nix` | Group related packages; avoid one file per binary |
+| Project-specific versions and dependencies | Project `devShell` | Use the [project template](../templates/project/README.md) |
+| Custom upstream builds and wrappers | `pkgs/` | Pin sources/hashes; keep wrapper dependencies explicit |
+| Helper behavior and feature combinations | `tests/` and flake checks | Test production helpers and disabled profiles |
 
-Packages are installed at the narrowest appropriate scope:
+`home/user/default.nix` composes optional application groups. Their matching
+NixOS service setup uses the same settings. Disabling a feature should remove
+its packages, integration and commands together; it does not delete user data.
 
-- system-rescue and hardware diagnostics -> NixOS
-- user applications and developer CLI tools -> Home Manager
-- on-demand Ollama daemon -> NixOS service without a boot target
-- Ollama user CLI (same package as the service) + llama.cpp -> Home Manager
-- Podman -> NixOS service; podman-compose -> Home Manager
-- git-lfs -> programs.git.lfs in Home Manager, so the filter config is wired
-- Gitleaks and the staged PII scanner -> the Home Manager Git module, so the
-  tools and managed pre-commit hook are installed together
+## AI model and service architecture
 
-This avoids a large duplicated `environment.systemPackages` list.
+| Component | Role / endpoint | Source |
+| --- | --- | --- |
+| Ollama | On-demand system service; Intel Vulkan; `127.0.0.1:11434` | `modules/nixos/ai.nix` |
+| Ollama CLI | Same package as the system service | `home/modules/ai.nix` |
+| llama.cpp | Manually started Vulkan GGUF server; `127.0.0.1:8080` | `home/modules/ai.nix` |
+| Continue | Editor client, model entries and optional MCP tools | `home/modules/continue-config.nix` |
+| VSCodium | Immutable extensions and editor preferences | `home/modules/vscodium.nix` |
+| Open WebUI | On-demand web client sharing Ollama; `127.0.0.1:3000` | `modules/nixos/ai.nix`, `pkgs/webui-bootstrap.nix` |
+| Ollaya | Optional CPU decision-model user service; `127.0.0.1:11435` | `home/modules/ai.nix`, `ollaya-environment.nix`, `pkgs/ollaya.nix` |
+| REA/Ghidra | Analysis tools; Continue calls REA over stdio MCP | `home/modules/rea.nix`, `pkgs/rea.nix` |
 
-## Installation documentation
+`features.localAI` gates the local runtimes and services. Continue also requires
+`features.extraEditors`; REA tools require `features.rea`. REA's CLI works
+without local AI or the editor. `rea.ollayaMcp` requires the optional Ollaya
+integration. No rebuild downloads model weights.
 
-`INSTALL.md` at the repository root is only a route chooser. The detailed
-`docs/INSTALL.md` index points to separate procedures with one owner each:
+Model settings have distinct owners:
 
-- `docs/install/prepare.md`: supported live environment and reviewed Git source
-- `docs/install/configure.md`: installation settings, timezone, and target disk
-- `docs/install/storage.md`: plan, destructive fresh-install formatting,
-  mount verification, guarded recovery and inspection after interruption
-- `docs/install/system.md`: install the reviewed snapshot, set the account, and
-  reboot
-- `docs/install/first-boot.md`: hardware and service checks after installation
-- `docs/install/customization.md`: managed preferences and rebuild promotion
-- `docs/install/secure-boot.md`: the later signed-boot transition
-- `docs/install/upgrade.md`: existing-system migration and routine upgrades
-- `docs/install/validation.md`: repository and CI checks
+- `settings.nix`: context/output limits, Ollama concurrency and retention,
+  feature switches, and `rea.ollamaModel`.
+- `home/modules/continue-config.nix`: providers, model entries and MCP wiring.
+- User model stores: downloaded weights; never edit generated Continue YAML.
 
-Fresh-install commands use `nix run .#installer -- <stage>` from a reviewed
-Git checkout. Every stage reads its settings independently. The installed tree
-is a writable snapshot without Git history; it is not the trusted update
-checkout. The destructive `format` stage is not a recovery or upgrade command.
+Ollama state has its own `/ollama` Btrfs subvolume; Ollaya models live under
+`~/.ollaya/models`. Neither is included in root snapshots. The NPU is unused;
+Ollaya does not inherit Ollama's Vulkan backend. See [local AI setup](LOCAL-AI-DEVELOPMENT.md).
+
+## Installer boundary
+
+`scripts/installer/` owns stages; `pkgs/installer.nix` supplies their runtime.
+Storage expectations come from evaluated Disko, not a second hand-maintained
+partition map. Each stage snapshots the reviewed Git source independently.
+
+```text
+preflight → plan → format → mounts → install → account
+                     recovery: recover → mounts → install → account
+```
+
+`format` is destructive and requires exact disk confirmation. `recover` only
+opens and mounts a complete compatible layout. The disk/layout/source record
+prevents accidental cross-target continuation. The installed `/etc/nixos` is a
+writable source snapshot without Git history; keep a separate trusted checkout.
+
+## Add or change a feature
+
+1. Choose the owner in the first table; reuse the existing package set.
+2. If optional, gate system services, user packages, aliases and generated
+   configuration consistently. Keep personal GUI preferences user-owned unless
+   the documented policy intentionally manages them.
+3. Add meaningful checks for new behavior and enabled/disabled combinations.
+4. Document one short procedure: prerequisite → edit → common rebuild workflow
+   → expected result. Keep destructive recovery and advanced reference separate.
+5. Run [repository validation](install/validation.md), then verify the affected
+   behavior on the laptop.
+
+Entry points: [installation](INSTALL.md), [changes](install/customization.md),
+[recovery](install/recovery.md). Feature guides link to these procedures rather
+than maintaining their own activation sequences.

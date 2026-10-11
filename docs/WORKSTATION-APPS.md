@@ -1,5 +1,9 @@
 # Workstation applications
 
+1. Choose the feature below and edit only its existing field in `/etc/nixos/settings.nix`.
+2. Follow [apply a change](install/customization.md).
+3. Complete the app-specific first-use steps below and verify it opens.
+
 ## Selectable software groups
 
 The current workstation remains the default. Edit `settings.nix` before a
@@ -7,6 +11,8 @@ rebuild to remove groups or individual optional applications:
 
 | Setting | What it controls |
 | --- | --- |
+| `features.wine` | Wine WoW64 and Winetricks. |
+| `features.keepassxc` | KeePassXC and managed Firefox native integration. |
 | `features.devCore` | Common developer commands, Zsh fuzzy finder and directory-jump integrations, Git diff pager, and rootless Podman. |
 | `features.languageTools.c` | GCC, Make, CMake, Ninja, and pkg-config. |
 | `features.languageTools.python` | Python, uv, BasedPyright, and Ruff. |
@@ -26,7 +32,7 @@ rebuild to remove groups or individual optional applications:
 
 All switches default to `true` to preserve the existing installation. Project
 versions and project-only tools belong in each repository's Nix `devShell`; see
-the [project template and language shells](MODULARITY.md#project-local-development-environments).
+the [project template and language shells](../templates/project/README.md).
 
 KDE Connect and Syncthing are installed as applications only. This configuration
 does not enable a Syncthing service or open firewall ports. KDE Connect uses
@@ -144,11 +150,9 @@ project's `devShell`; global tools remain available for ad-hoc use.
 
 NH uses `/etc/nixos` as its default OS flake:
 
-```bash
-nh os build
-nh os test
-nh os switch
-```
+Follow [apply a change](install/customization.md). If using NH, run
+`nh os build`, then `nh os test`. **Stop and verify the changed behavior** before
+running `nh os switch` as a separate step.
 
 Build prepares a generation; test activates temporarily; switch activates and
 updates the boot default. Use NH's help to select a different flake location.

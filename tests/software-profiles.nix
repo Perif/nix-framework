@@ -29,6 +29,7 @@ let
       specialArgs.settings = selection;
       modules = [ { home-manager.extraSpecialArgs = lib.mkForce { settings = selection; }; } ];
     }).config;
+  defaultHome = configuration.config.home-manager.users.${settings.user.name};
   cfg = evaluate minimal;
   home = cfg.home-manager.users.${settings.user.name};
   pythonOnly = evaluate (
@@ -86,6 +87,34 @@ let
   hasGuile =
     homeConfig: builtins.any (package: (package.pname or "") == "guile") homeConfig.home.packages;
 in
+assert builtins.all
+  (
+    alias:
+    builtins.hasAttr alias defaultHome.programs.zsh.shellAliases
+    == configuration.config.services.ollama.enable
+  )
+  [
+    "ollama-on"
+    "ollama-off"
+    "ollama-status"
+  ];
+assert builtins.all
+  (
+    homeConfig:
+    builtins.all (alias: !(builtins.hasAttr alias homeConfig.programs.zsh.shellAliases)) [
+      "ollama-on"
+      "ollama-off"
+      "ollama-status"
+      "ollaya-on"
+      "webui-on"
+    ]
+  )
+  [
+    home
+    pythonHome
+    guileHome
+    reaHome
+  ];
 assert !cfg.services.ollama.enable;
 assert !cfg.services.open-webui.enable;
 assert !cfg.virtualisation.podman.enable;

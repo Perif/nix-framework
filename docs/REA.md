@@ -1,5 +1,9 @@
 # REA with local models
 
+1. Keep `features.rea`, `features.localAI` and `features.extraEditors` enabled.
+2. Apply any change using [the common workflow](install/customization.md).
+3. Follow [Start with Ollama](#start-with-ollama), then verify one small binary.
+
 `features.rea = true` installs [Reverse Engineer Anything (REA)](https://github.com/morluto/rea)
 6.4.0, its supported Ghidra 12.1.4 backend, and Java 21. REA supplies analysis
 commands and MCP tools. Continue runs the conversation using the existing
@@ -93,7 +97,7 @@ Ollaya's MCP can start its daemon, and `decide` can pull a missing model on
 first use; it also exposes `pull_model`. Keep these tools on **Ask First** and
 exclude `pull_model` if downloads should stay manual. For offline work,
 explicitly pull the chosen model beforehand using the
-[Ollaya setup guide](LOCAL-AI-DEVELOPMENT.md#ollaya-jev-style-decision-models).
+[Ollaya setup guide](LOCAL-AI-DEVELOPMENT.md#optional-ollaya-decision-models).
 Disabling `rea.ollayaMcp` removes the client connection while preserving the
 separately selected Ollaya CLI/service.
 

@@ -50,7 +50,7 @@
       yt-best = ''yt-dlp --format "bestvideo+bestaudio/best" --merge-output-format mp4 --write-subs --write-auto-subs --sub-lang en --embed-subs --convert-subs srt --embed-thumbnail --add-metadata'';
 
       # Common NixOS workflow. The explicit names make the activation behavior
-      # visible before a command is run: dry-build does not activate, test is
+      # visible before a command is run: dry-build previews builds, test is
       # temporary, boot activates after reboot, and switch activates now.
       rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
       ncheck = "nix flake check --no-build --all-systems /etc/nixos";
@@ -66,10 +66,6 @@
       nix-search = "nix search nixpkgs";
       nix-why = "nix why-depends /run/current-system";
 
-      # Ollama's hardened system service is deliberately not started at boot.
-      ollama-on = "sudo systemctl start ollama.service";
-      ollama-off = "sudo systemctl stop ollama.service";
-      ollama-status = "systemctl --no-pager --full status ollama.service";
     };
 
     # Keep the user's prompt and shell behavior explicit. Starship is not

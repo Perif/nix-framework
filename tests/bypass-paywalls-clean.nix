@@ -5,7 +5,12 @@ in
 pkgs.runCommand "bypass-paywalls-clean-integrity"
   {
     nativeBuildInputs = [ pkgs.python3 ];
-    inherit (source) src version addonId sha256;
+    inherit (source)
+      src
+      version
+      addonId
+      sha256
+      ;
     licenseFile = ../pkgs/bypass-paywalls-clean/LICENSE;
   }
   ''

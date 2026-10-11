@@ -119,10 +119,8 @@ BlockThirdPartyCookies = false;
 
 Test the next generation before making it permanent:
 
-```bash
-cd /etc/nixos
-sudo nixos-rebuild test --flake .#framework-pro
-```
+Follow [apply a change](install/customization.md), including its temporary
+activation and verification steps.
 
 Restore the privacy setting after the affected workflow is complete. Prefer a
 dedicated browser profile for a persistent compatibility exception.

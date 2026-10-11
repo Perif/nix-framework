@@ -1,5 +1,9 @@
 # Display color and SDR
 
+1. Choose [HDR policy](#hdr-disabled-on-the-built-in-panel), [AC/battery refresh](#optional-battery-refresh-preset), or [ICC selection](#select-once-in-plasma).
+2. For settings edits, use [apply a change](install/customization.md), then log out/in.
+3. Verify the built-in display and any connected external monitor. ICC files still need selection in Plasma.
+
 ## HDR disabled on the built-in panel
 
 `display.disableHdr = true` is the default. At Plasma Wayland login and after

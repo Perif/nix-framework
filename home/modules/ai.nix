@@ -55,7 +55,12 @@ in
   };
 
   programs.zsh.shellAliases =
-    lib.optionalAttrs ollayaEnabled {
+    lib.optionalAttrs aiEnabled {
+      ollama-on = "sudo systemctl start ollama.service";
+      ollama-off = "sudo systemctl stop ollama.service";
+      ollama-status = "systemctl --no-pager --full status ollama.service";
+    }
+    // lib.optionalAttrs ollayaEnabled {
       ollaya-on = "systemctl --user start ollaya.service";
       ollaya-off = "systemctl --user stop ollaya.service";
       ollaya-status = "systemctl --user status ollaya.service";

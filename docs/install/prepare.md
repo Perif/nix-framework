@@ -1,90 +1,60 @@
-# Prepare the installer and verify the source
+# 1. Prepare the installer
 
-This path is for a fresh installation on the Framework Laptop described by this
-repository. For an existing installation, use [the upgrade path](upgrade.md).
-Never run the fresh-install `format` stage on an installed system.
-
-## Supported environment
-
-Use the standard NixOS stable installer ISO, boot its UEFI entry with firmware
-Secure Boot disabled, and open a root shell. The staged installer supports this
-NixOS installer environment; it does not support netboot images, another Linux
-live system, or running the destructive stage from an installed NixOS system.
+1. Back up the target disk. Create a USB using the standard stable
+   [NixOS graphical installer ISO](https://nixos.org/download/).
+2. Disable firmware Secure Boot for installation. Boot the USB's **UEFI** entry
+   and select the **non-LTS kernel**, as directed by the
+   [Framework installation guide](https://guides.frame.work/Guide/NixOS+on+the+Framework+Laptop+13+Pro/780?lang=en).
+   Use the terminal procedure below; do not launch the graphical disk installer.
+3. Open a terminal and enter a root shell:
 
 ```bash
 sudo -i
 test -d /sys/firmware/efi/efivars
 ```
 
-If the UEFI check fails, stop and reboot the installer in UEFI mode. For Wi-Fi,
-connect with NetworkManager’s text interface and check that the Nix cache is
-reachable and the live clock is plausible:
+Stop if the UEFI check fails. Reboot the USB in UEFI mode.
+
+4. Connect to Wi-Fi if needed, verify connectivity and check the clock:
 
 ```bash
 nmtui
 curl --fail --head https://cache.nixos.org/
 timedatectl status
 export NIX_CONFIG="experimental-features = nix-command flakes"
-nix --version
 ```
 
-## Obtain and review a Git checkout
-
-Clone the repository at the revision you intend to install. Prefer a clone over
-copying a folder from another drive:
+5. Clone into a new directory. If the destination already exists, choose another
+   path and use it throughout these instructions.
 
 ```bash
 (
 set -eu
 test ! -e /tmp/nixos-config
-git clone REPLACE_WITH_TRUSTED_REPOSITORY_URL /tmp/nixos-config
-cd /tmp/nixos-config
+git clone https://github.com/Perif/nix-framework.git /tmp/nixos-config
 )
+cd /tmp/nixos-config
 ```
 
-If `/tmp/nixos-config` already exists, stop and choose a new destination; do not
-reuse an old checkout or remove it without checking whether it contains work.
-Update the remaining examples if you choose a different destination.
-
-Before running any Nix command from this checkout, verify that the repository
-and revision came from a source you trust. Compare the commit ID with the
-intended reviewed revision, and check out that exact revision if necessary.
-Inspect the repository identity, commit, changes, `flake.nix`, `flake.lock`, `settings.nix`, host disk definition,
-and the installer implementation. Confirm the `format` stage’s behavior from
-this reviewed revision. Do not execute an installer copied from an unreviewed
-source.
+6. Replace `REVIEWED_COMMIT` below with the exact commit you reviewed. Verify the
+   remote, commit and checked-in source **before executing this repository**.
+   `less` opens each complete file; press `:n` for the next file and `q` to quit.
 
 ```bash
-(
-set -eu
-cd /tmp/nixos-config
+git checkout --detach REVIEWED_COMMIT
 git remote -v
+git log -1 --oneline
 git status --short
-git log -1 --oneline --decorate
-git diff -- flake.nix flake.lock settings.nix hosts/framework-pro/disk.nix
-sed -n '1,180p' pkgs/installer.nix
-sed -n '1,220p' scripts/installer/cli.py
-sed -n '1,180p' scripts/installer/storage.py
-sed -n '1,180p' scripts/installer/common.py
-)
+less flake.nix flake.lock settings.nix hosts/framework-pro/disk.nix pkgs/installer.nix scripts/installer/*.py
 ```
 
-The installer takes a Git-backed flake snapshot. Untracked and ignored files
-are excluded, and the installed snapshot contains no `.git` history. Source
-symlinks are unsupported; copy any reviewed profile or package files into the
-checkout and update their references before staging. Tracked or staged files
-are still part of the source and are not private: never put private keys, VPN
-profiles, plaintext passwords, or other secrets in the source or Nix store. A
-declarative password hash is also copied into the world-readable Nix store and
-should be avoided.
+**Expected:** the intended repository and commit, with no local changes. Review
+all installer sources, including layout derivation and record validation.
+A clean `git diff` does not show the checked-in source.
 
-Use the clone with its Git metadata intact. A folder copy without `.git` is
-not a supported source; if network access is unavailable, transfer the complete
-trusted clone including `.git` rather than copying only the visible files.
+Keep `.git`: the installer requires a Git-backed source snapshot. Source symlinks
+are unsupported. Untracked/ignored files are excluded; deliberately stage any
+needed custom files later. Never put passwords, private keys or VPN secrets in
+this source: tracked files enter the world-readable Nix store.
 
-The `preflight` command also evaluates settings, so run it only after completing
-[configuration](configure.md), including setting and staging `diskDevice` and a
-non-null timezone. Each stage can run in a new root shell from the reviewed checkout; return to
-`/tmp/nixos-config` and export `NIX_CONFIG` first.
-
-Continue to [configure the installation](configure.md).
+**Next:** [2. Configure](configure.md).
