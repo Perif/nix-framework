@@ -22,6 +22,7 @@ an excerpt: preserve the existing `power`, `builds`, `storage`, `network`, `ai`,
 | `features.qbz` | Keep `false` unless you supply a separately maintained package. |
 | `features.devCore`, `features.languageTools.*` | Select common developer tools and individual language toolchains; use project shells for project-specific versions. |
 | `features.localAI`, `features.extraBrowsers`, `features.extraEditors` | Keep or disable the optional software groups. |
+| `features.rea`, `rea.ollamaModel`, `rea.ollayaMcp` | REA with configured Ghidra, its Ollama model choice, and optional Ollaya tools; see [REA setup](../REA.md). |
 | `features.office.*` | Select LibreOffice, Thunderbird, KDE Connect and Syncthing independently; see [software selections](../WORKSTATION-APPS.md). |
 | `features.secureBoot` | Keep `false` for initial installation. Enable only after the [post-install procedure](secure-boot.md). |
 | Git name and email | Replace the example identity. |

@@ -17,19 +17,17 @@ Nix flake rather than installed ad hoc.
 - Mozilla Multi-Account Containers
 - KeePassXC-Browser when `features.keepassxc` is enabled (the default)
 
-Bypass Paywalls Clean uses the publisher's signed [4.4.5.6 XPI](https://gitflic.ru/project/magnolia1234/bpc_uploads/blob/raw?file=bypass_paywalls_clean-4.4.5.6.xpi)
-from its [official Firefox project](https://gitflic.ru/project/magnolia1234/bypass-paywalls-firefox-clean),
-pinned by a fixed content hash in `home/modules/firefox.nix`. The publisher's
-[release-hashes.txt](https://gitflic.ru/project/magnolia1234/bpc_uploads/blob/raw?file=release-hashes.txt)
-lists SHA-256
-`5c8427ae1025f3d33863c480bd654cceb625a73714bc67b7eb53a797a472f1b1` for this
-file, matching the Nix hash. The XPI manifest reports version 4.4.5.6 and keeps
-the publisher's `magnolia@12.34` extension ID. The XPI includes Mozilla signing
-metadata. The locked NUR download for 4.4.5.3 was removed from the publisher's
-rolling upload list. GitFlic's public raw-file endpoint does not honor commit
-selectors, so this pin relies on the versioned filename plus the fixed hash;
-the hash will reject changed bytes if the publisher replaces that URL. Check
-the publisher's release hashes and signature metadata before updating it.
+Bypass Paywalls Clean uses the publisher's signed 4.4.6.6 XPI, kept unmodified
+in `pkgs/bypass-paywalls-clean/`. The publisher's rolling upload list removed
+previously pinned releases, so fresh builds now use the reviewed local artifact.
+Its SHA-256 is checked by Nix before packaging, and the portable
+`bypass-paywalls-clean` flake check verifies ZIP integrity, manifest version and
+extension ID, signing metadata, and the preserved MIT license.
+
+See the [source provenance and update instructions](../pkgs/bypass-paywalls-clean/PROVENANCE.md)
+for the publisher URL and verified hash. The extension remains `magnolia@12.34`;
+Firefox's signature enforcement is unchanged. Checking the archive's signing
+metadata does not independently validate Mozilla's signature chain.
 
 KeePassXC native messaging is configured by Home Manager. Enable browser
 integration and pair the database interactively; see the

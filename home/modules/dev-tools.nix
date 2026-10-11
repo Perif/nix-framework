@@ -70,6 +70,7 @@ let
         clippy
       ]
     )
+    ++ lib.optionals languages.guile [ pkgs.guile_3_0 ]
     ++ lib.optionals languages.nodejs [ pkgs.nodejs ]
     ++ lib.optionals languages.nix [
       pkgs.nixd

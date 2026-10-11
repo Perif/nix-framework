@@ -50,6 +50,7 @@ in
       pkg-config
     ]
   );
+  guile = shell [ pkgs.guile_3_0 ];
   nodejs = shell (with pkgs; [ nodejs ]);
   nix = shell (
     with pkgs;

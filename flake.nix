@@ -62,7 +62,7 @@
       );
       templates.project = {
         path = ./templates/project;
-        description = "Project-local dev shells for C, Python, Go, Rust, Node.js and Nix";
+        description = "Project-local dev shells for C, Python, Go, Rust, Guile, Node.js and Nix";
       };
 
       # Run the same Disko revision used by this configuration with:
@@ -71,10 +71,11 @@
       packages.x86_64-linux.webui-bootstrap = import ./pkgs/webui-bootstrap.nix { pkgs = linuxPkgs; };
       packages.x86_64-linux.detect-timezone = import ./pkgs/detect-timezone.nix { pkgs = linuxPkgs; };
       packages.x86_64-linux.disko = disko.packages.x86_64-linux.default;
-      packages.x86_64-linux.qobuz-player =
-        linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
-      packages.x86_64-linux.ollaya =
-        linuxPkgs.callPackage ./pkgs/ollaya.nix { };
+      packages.x86_64-linux.qobuz-player = linuxPkgs.callPackage ./pkgs/qobuz-player.nix { };
+      packages.x86_64-linux.ollaya = linuxPkgs.callPackage ./pkgs/ollaya.nix { };
+      packages.x86_64-linux.rea = linuxPkgs.callPackage ./pkgs/rea-with-ghidra.nix { };
+      packages.x86_64-linux.thermald = linuxPkgs.callPackage ./pkgs/thermald.nix { };
+      packages.x86_64-linux.power-report = import ./pkgs/power-report.nix { pkgs = linuxPkgs; };
 
       checks = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-darwin" ] (
         system:
@@ -86,6 +87,20 @@
           };
         in
         {
+          rea = import ./tests/rea.nix { inherit pkgs; };
+          display-sdr =
+            pkgs.runCommand "display-sdr-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python3 ${./tests/test_display_sdr.py} --script ${./home/modules/display-sdr.py}
+                touch "$out"
+              '';
+          power-report = pkgs.runCommand "power-report-tests" { nativeBuildInputs = [ pkgs.python3 ]; } ''
+            python3 ${./tests/test_power_report.py} --script ${./scripts/power-report.py}
+            touch "$out"
+          '';
           webui-bootstrap =
             pkgs.runCommand "webui-bootstrap-tests"
               {
@@ -100,6 +115,7 @@
             pkgs.runCommand "qbz-configuration-tests" { } ''
               touch "$out"
             '';
+          bypass-paywalls-clean = import ./tests/bypass-paywalls-clean.nix { inherit pkgs; };
           installer =
             pkgs.runCommand "installer-safety-tests"
               {
@@ -152,6 +168,13 @@
               '';
         }
         // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") {
+          rea-configuration =
+            assert import ./tests/rea-config.nix { inherit pkgs; };
+            pkgs.runCommand "rea-configuration-tests" { } ''
+              touch "$out"
+            '';
+          touchpad = import ./tests/touchpad.nix { inherit pkgs; };
+          power-settings = import ./tests/power-settings.nix { inherit pkgs; };
           software-profiles =
             assert import ./tests/software-profiles.nix {
               configuration = self.nixosConfigurations.${settings.hostname};

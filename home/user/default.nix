@@ -6,6 +6,7 @@
     ../modules/privacy.nix
     ../modules/plasma-security.nix
     ../modules/power.nix
+    ../modules/touchpad.nix
     ../modules/ghostty.nix
     ../modules/vim.nix
     ../modules/git.nix
@@ -25,6 +26,7 @@
     ../modules/vscodium.nix
   ]
   ++ lib.optional settings.features.localAI ../modules/ai.nix
+  ++ lib.optional settings.features.rea ../modules/rea.nix
   ++ lib.optional (
     settings.features.devCore
     || builtins.any (enabled: enabled) (builtins.attrValues settings.features.languageTools)

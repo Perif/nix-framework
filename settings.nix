@@ -115,11 +115,13 @@
       python = true;
       go = true;
       rust = true;
+      guile = true; # Guile 3 Scheme interpreter, REPL and guild compiler.
       nodejs = true;
       nix = true;
     };
 
     localAI = true;
+    rea = true; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/REA.md.
     extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
     extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
 
@@ -146,6 +148,23 @@
     lowBatteryProfile = "power-saver";
     maintenanceOnAC = true; # Defer GC/scrub on battery, retry pending work on AC.
     chargeLimit = 80; # 1..100, or null to leave firmware/Plasma in control.
+    sleepMode = "suspend-then-hibernate"; # Or "suspend" or "hibernate".
+    hibernateDelayMinutes = 60; # Positive integer; used by suspend-then-hibernate.
+    hibernateOnAC = true; # Set false to defer the hibernation countdown until unplugged.
+  };
+
+  # Plasma Wayland defaults; existing per-device GUI choices take precedence.
+  # See docs/TOUCHPAD.md for alternatives and optional haptic-click tuning.
+  touchpad = {
+    enable = true;
+    disableWhileTyping = true;
+    tapToClick = true;
+    tapAndDrag = false; # Use a physical press to drag; reduces accidental drags.
+    tapDragLock = false;
+    clickMethod = "clickfinger"; # Or "button-areas" for bottom-right clicks.
+    naturalScrolling = false; # Set true if you prefer content to follow fingers.
+    pointerAcceleration = 0.0; # -1.0..1.0; neutral speed, driver acceleration profile.
+    scrollFactor = 1.0; # Positive multiplier; try 0.75 if scrolling is too fast.
   };
 
   # null retains NixOS defaults until measurements on the actual laptop.
@@ -185,9 +204,28 @@
     };
   };
 
+  rea = {
+    # Continue uses this model through the existing loopback Ollama service.
+    # Download explicitly with `ollama pull qwen3:8b`; rebuilds never pull models.
+    ollamaModel = "qwen3:8b";
+    # Optional decision tools alongside REA, not a replacement chat provider.
+    # Requires localAI, extraEditors and ai.ollaya.enable; see docs/REA.md.
+    ollayaMcp = false;
+  };
+
   # Profile selection installs a stable alias; apply it in Plasma afterward.
   # "native" requires selecting the default/no-ICC mode in Plasma explicitly.
   display = {
+    # Keep built-in eDP panels in SDR, including Plasma's EDR emulation.
+    # External monitors retain their own settings. See docs/DISPLAY.md.
+    disableHdr = true;
+    # Optional AC/battery refresh switching at the current panel resolution.
+    # null on AC selects the highest advertised rate. External displays stay as set.
+    refreshRate = {
+      enable = false;
+      batteryHz = 60;
+      acHz = null;
+    };
     profile = "notebookcheck"; # "notebookcheck", "native", or "custom"
     iccProfile = null; # For "custom", e.g. ./assets/color/my-panel.icc
     # Additional measured profiles to install for comparison in Plasma.

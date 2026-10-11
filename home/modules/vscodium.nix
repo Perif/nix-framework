@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   settings,
@@ -175,45 +176,12 @@ in
       allowAnonymousTelemetry = false;
     };
 
-    # Both endpoints are loopback-only. AUTODETECT exposes models deliberately
-    # pulled into Ollama without hard-coding a large download into the rebuild.
-    ".continue/config.yaml".text = ''
-      name: Local-only development
-      version: 1.0.0
-      schema: v1
-
-      models:
-        - name: Ollama local models
-          provider: ollama
-          model: AUTODETECT
-          apiBase: http://127.0.0.1:11434
-          roles:
-            - chat
-            - edit
-            - apply
-          defaultCompletionOptions:
-            contextLength: ${toString settings.ai.contextLength}
-            maxTokens: ${toString settings.ai.maxOutputTokens}
-          requestOptions:
-            noProxy:
-              - 127.0.0.1
-              - localhost
-
-        - name: llama.cpp local server
-          provider: llama.cpp
-          model: local
-          apiBase: http://127.0.0.1:8080
-          roles:
-            - chat
-            - edit
-            - apply
-          defaultCompletionOptions:
-            contextLength: ${toString settings.ai.contextLength}
-            maxTokens: ${toString settings.ai.maxOutputTokens}
-          requestOptions:
-            noProxy:
-              - 127.0.0.1
-              - localhost
-    '';
+    # JSON is valid YAML and keeps commands, model names and home paths escaped.
+    ".continue/config.yaml".text = builtins.toJSON (
+      import ./continue-config.nix {
+        inherit pkgs lib settings;
+        inherit (config.home) homeDirectory;
+      }
+    );
   };
 }

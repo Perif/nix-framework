@@ -10,12 +10,14 @@ Target:
 - LUKS2
 - staged signed Secure Boot with Lanzaboote
 - encrypted 40 GiB swap
-- suspend -> hibernate after 60 minutes
+- selectable sleep strategy; default suspend -> hibernate after 60 minutes
 - fingerprint authentication for login and session unlock; password-only sudo
 - declarative five-minute Plasma auto-lock and immediate lock after resume
 - PipeWire desktop audio
 - EasyEffects with a pinned Framework 13 Pro speaker preset and Flat fallback
 - Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
+- SDR policy for the built-in panel, with HDR and Plasma EDR disabled
+- optional 60 Hz battery refresh preset and read-only power/sleep diagnostics
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
 - qobuz-player terminal streaming client and MusicBrainz Picard tag editor
 - Wine WoW64 / Winetricks, KeePassXC with Firefox integration, and mpv
@@ -28,6 +30,8 @@ Target:
 - Ghostty
 - llama.cpp / on-demand loopback-only Ollama Vulkan
 - Ollaya decision models on Intel CPU, with an on-demand local user service
+- REA reverse-engineering CLI and Ghidra analysis, using Ollama through Continue
+  with optional Ollaya decision tools; see [REA setup](docs/REA.md)
 - automatic Plasma power profiles: performance on AC, balanced on battery
 - rootless Podman
 - Home Manager
@@ -132,13 +136,14 @@ needs editing when these change:
 - `ai.webui`: on-demand Open WebUI enablement and port; signup is disabled and
   `sudo webui-bootstrap` creates the first administrator privately
 - `features.devCore` and `features.languageTools`: common development tools and
-  individually selectable C, Python, Go, Rust, Node.js and Nix toolchains
+  individually selectable C, Python, Go, Rust, Guile, Node.js and Nix toolchains
 - `features.localAI`, `features.extraBrowsers`, `features.extraEditors`: optional
   application groups; see [software selections](docs/WORKSTATION-APPS.md)
 - `features.office`: individual LibreOffice, Thunderbird, KDE Connect and
   Syncthing switches; network applications start manually
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
+- `display.disableHdr`: keep built-in eDP panels in SDR (default `true`)
 - `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma
 - `display.iccProfile`, `display.extraIccProfiles`: your own calibration and
   optional additional ICCs for comparison; see [display options](docs/DISPLAY.md#profile-options)
@@ -147,7 +152,11 @@ needs editing when these change:
 - `audio.speakerDevice`, `audio.speakerRoute`: optional exact speaker autoload
   association for EasyEffects; configure both together
 - `ai`: local-model context, output and concurrency defaults, plus Ollaya enablement
+- `features.rea`, `rea.ollamaModel`, `rea.ollayaMcp`: REA/Ghidra installation,
+  local tool-capable model choice, and optional Ollaya MCP integration
 - `power`: AC/battery profiles, AC-only maintenance starts, and battery charge cap
+- `touchpad`: optional Plasma Wayland defaults for tapping, dragging, scrolling
+  and clicks; see [touchpad settings and haptic tuning](docs/TOUCHPAD.md)
 - `network.wifiPowerSave`: optional Wi-Fi power saving (`null`, `false`, or `true`)
 - `features.thunderbolt`: optional Bolt dock authorization (off by default)
 - `git.userName`, `git.userEmail`: git identity

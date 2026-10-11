@@ -12,9 +12,11 @@ rebuild to remove groups or individual optional applications:
 | `features.languageTools.python` | Python, uv, BasedPyright, and Ruff. |
 | `features.languageTools.go` | Go, gopls, Delve, and golangci-lint. |
 | `features.languageTools.rust` | Rust, Cargo, rust-analyzer, rustfmt, and Clippy. |
+| `features.languageTools.guile` | Guile 3 Scheme interpreter, REPL, and `guild` compiler. |
 | `features.languageTools.nodejs` | Node.js. |
 | `features.languageTools.nix` | nixd and nixfmt. |
 | `features.localAI` | Home Manager local-model CLI/runtime integration and Continue's loopback-only provider config. The system AI services use the same switch. |
+| `features.rea` | REA CLI/MCP with Ghidra and Java; Continue uses Ollama, with optional Ollaya decision tools. See [REA](REA.md). |
 | `features.extraBrowsers` | Brave and ungoogled Chromium. Firefox and Tor Browser remain installed. |
 | `features.extraEditors` | VSCodium and Sublime Text/Merge. Vim and Neovim remain available. |
 | `features.office.libreOffice` | LibreOffice Qt build. |
@@ -58,6 +60,22 @@ want it. The GUI defaults to loopback. The sync protocol can still make outbound
 connections while Syncthing is running; the system firewall stays closed to
 unsolicited inbound traffic. Do not open the sync/discovery ports unless you
 deliberately choose a network and sharing arrangement.
+
+## Guile / Scheme
+
+Guile 3 is enabled by default with `features.languageTools.guile = true`.
+Run `guile` for the REPL, `guile hello.scm` for a script, or
+`guile -c '(display (+ 20 22)) (newline)'` for a quick check. The pinned package
+also provides `guild compile -o hello.go hello.scm` for explicit bytecode
+compilation. Guile normally compiles source automatically; its JIT needs no
+global CPU flags in this configuration. See the GNU Guile documentation for
+[compilation](https://www.gnu.org/software/guile/manual/html_node/Compilation.html)
+and [native JIT compilation](https://www.gnu.org/software/guile/manual/html_node/Just_002dIn_002dTime-Native-Code.html).
+
+Set the global switch to `false` if Guile is only needed for individual
+projects. `nix develop .#guile` still provides it from this repository, and the
+project template supports `use flake .#guile` with direnv. This switch works
+independently of `features.devCore` and installs no editor-specific extension.
 
 ## Wine
 

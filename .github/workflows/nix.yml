@@ -49,6 +49,9 @@ jobs:
             min-free = 2147483648
             max-free = 5368709120
 
+      - name: Verify the bundled Firefox extension
+        run: nix build .#checks.x86_64-linux.bypass-paywalls-clean --no-link --print-build-logs
+
       - name: Test staged installer safety and command packaging
         run: |
           nix build .#checks.x86_64-linux.installer --no-link --print-build-logs
@@ -65,7 +68,32 @@ jobs:
         run: nix build .#checks.x86_64-linux.webui-bootstrap --no-link --print-build-logs
 
       - name: Test laptop power-management helpers
-        run: nix build .#checks.x86_64-linux.power-management --no-link --print-build-logs
+        run: |
+          nix build .#checks.x86_64-linux.power-management .#checks.x86_64-linux.power-report \
+            .#checks.x86_64-linux.power-settings --no-link --print-build-logs
+          nix run .#power-report -- --help
+
+      - name: Test touchpad configuration preservation
+        run: nix build .#checks.x86_64-linux.touchpad --no-link --print-build-logs
+
+      - name: Test built-in display SDR policy
+        run: nix build .#checks.x86_64-linux.display-sdr --no-link --print-build-logs
+
+      - name: Test REA analysis and optional Ollaya MCP
+        run: |
+          nix build .#checks.x86_64-linux.rea-configuration .#checks.x86_64-linux.rea \
+            --no-link --print-build-logs
+
+      - name: Smoke-test the Guile development shell
+        run: |
+          nix develop .#guile -c bash -euo pipefail <<'GUILE'
+          test "$(guile --no-auto-compile -c '(display (+ 20 22))')" = 42
+          work="$(mktemp -d)"
+          trap 'rm -rf -- "$work"' EXIT
+          printf '(display (+ 20 22))\n' > "$work/hello.scm"
+          guild compile -o "$work/hello.go" "$work/hello.scm"
+          test "$(guile --no-auto-compile -c "(load-compiled \"$work/hello.go\")")" = 42
+          GUILE
 
       - name: Test the production Git security hook
         run: nix build .#checks.x86_64-linux.git-security --no-link --print-build-logs
