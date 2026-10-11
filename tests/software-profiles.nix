@@ -7,6 +7,9 @@ let
   minimal = settings // {
     timeZone = "UTC";
     diskDevice = "/dev/disk/by-id/evaluation-only";
+    display = settings.display // {
+      disableHdr = true;
+    };
     rea = settings.rea // {
       ollayaMcp = false;
     };
@@ -45,6 +48,9 @@ let
     // {
       touchpad = settings.touchpad // {
         enable = false;
+      };
+      display = settings.display // {
+        disableHdr = false;
       };
       features = minimal.features // {
         languageTools = minimal.features.languageTools // {
@@ -91,6 +97,10 @@ assert !(pythonHome.home.file ? ".continue/config.yaml");
 assert !hasGuile home && !hasGuile pythonHome && hasGuile guileHome;
 assert !guileHome.programs.direnv.enable;
 assert !(guileHome.home.activation ? touchpadDefaults);
+assert home.systemd.user.services ? framework-display-sdr;
+assert home.systemd.user.paths ? framework-display-sdr;
+assert !(guileHome.systemd.user.services ? framework-display-sdr);
+assert !(guileHome.systemd.user.paths ? framework-display-sdr);
 assert !hasRea home && !hasRea pythonHome && hasRea reaHome;
 assert !hasGhidra home && hasGhidra reaHome;
 assert !reaOnly.services.ollama.enable;

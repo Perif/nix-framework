@@ -71,3 +71,9 @@ build and the laptop's first-boot checklist remain required.
 The `webui-bootstrap` check covers secret-file permissions, input validation,
 service startup guards and failure recovery with synthetic fixtures. It never
 creates real credentials or modifies a running service on the check host.
+
+The `display-sdr` check exercises the production helper against a stateful
+KScreen fixture: internal/external targeting, EDR on SDR-only panels, preserving
+ICC/layout/brightness settings, read-only repeated checks, and failed or ignored
+changes. Software-profile evaluation also checks both policy switch values.
+This does not replace the [physical display checks](../DISPLAY.md#hdr-disabled-on-the-built-in-panel).

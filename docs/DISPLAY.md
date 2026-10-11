@@ -1,4 +1,44 @@
-# Display color
+# Display color and SDR
+
+## HDR disabled on the built-in panel
+
+`display.disableHdr = true` is the default. At Plasma Wayland login and after
+saved display changes, the configuration turns off HDR, wide-color-gamut output
+mode and extended dynamic range (EDR) on enabled built-in `eDP-*` panels. EDR is
+Plasma's additional dynamic-range mode for laptop backlights; it is disabled
+even when the panel does not advertise conventional HDR support. Unsupported
+controls are skipped. This is an explicit SDR preference, not a claim about
+your particular panel's HDR certification.
+
+The policy uses `kscreen-doctor` from the pinned KDE 6.6.6 release. See KDE's
+[HDR/EDR controls](https://invent.kde.org/plasma/libkscreen/-/blob/v6.6.6/src/doctor/doctor.cpp)
+and [ICC handling](https://invent.kde.org/plasma/kwin/-/blob/v6.6.6/src/backends/drm/drm_output.cpp).
+It preserves resolution, refresh rate, scaling, brightness settings and the
+selected ICC profile. External monitors keep their own HDR/color settings.
+There is no periodic polling or replacement of KWin's monitor-layout file.
+
+After rebuilding, log out and back in. In a Plasma terminal, run:
+
+```bash
+kscreen-doctor -o
+```
+
+For the built-in output, expect **HDR: disabled** (or **incapable**), **Wide
+Color Gamut: disabled** (or **incapable**) and **Allow EDR: never** (or
+**unsupported**). To apply immediately in an existing session:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user start framework-display-sdr.path framework-display-sdr.service
+```
+
+Check failures with `journalctl --user -u framework-display-sdr.service`.
+Set `display.disableHdr = false`, rebuild, then log out/in to manage these
+controls manually again. This stops enforcement; it does not turn HDR back on.
+The policy does not manage the SDDM login screen. Display behavior after login,
+docking and suspend still needs verification on the actual laptop.
+
+## ICC calibration
 
 By default, Home Manager installs the Notebookcheck **Framework Laptop 13 Pro /
 MND508ZB1-1** ICC profile at `~/.local/share/color/icc/framework-13-pro.icm`. See
@@ -49,6 +89,7 @@ Change the existing `display` block in `settings.nix`, for example:
 
 ```nix
 display = {
+  disableHdr = true;
   profile = "custom";
   iccProfile = ./assets/color/my-panel.icc;
   extraIccProfiles = {

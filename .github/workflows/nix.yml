@@ -73,6 +73,9 @@ jobs:
       - name: Test touchpad configuration preservation
         run: nix build .#checks.x86_64-linux.touchpad --no-link --print-build-logs
 
+      - name: Test built-in display SDR policy
+        run: nix build .#checks.x86_64-linux.display-sdr --no-link --print-build-logs
+
       - name: Test REA analysis and optional Ollaya MCP
         run: |
           nix build .#checks.x86_64-linux.rea-configuration .#checks.x86_64-linux.rea \

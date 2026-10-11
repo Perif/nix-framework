@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   settings,
@@ -10,9 +11,23 @@ let
   notebookcheck = ../../assets/color/framework-13-pro-MND508ZB1-1.icm;
   selected = if cfg.profile == "custom" then cfg.iccProfile else notebookcheck;
   validName = name: builtins.match "[A-Za-z0-9_-]+" name != null;
+  sdrPolicy = pkgs.writeShellScript "framework-display-sdr" ''
+    exec ${pkgs.python3}/bin/python3 ${./display-sdr.py} \
+      --doctor ${pkgs.kdePackages.libkscreen}/bin/kscreen-doctor
+  '';
+  sessionUnit = {
+    After = [ "plasma-kwin_wayland.service" ];
+    Requisite = [ "plasma-kwin_wayland.service" ];
+    PartOf = [ "graphical-session.target" ];
+    ConditionEnvironment = "WAYLAND_DISPLAY";
+  };
 in
 {
   assertions = [
+    {
+      assertion = builtins.isBool cfg.disableHdr;
+      message = "display.disableHdr must be a boolean.";
+    }
     {
       assertion = builtins.elem cfg.profile [
         "notebookcheck"
@@ -44,5 +59,34 @@ in
   ) cfg.extraIccProfiles;
 
   # Read the internal panel EDID before applying a borrowed calibration.
-  home.packages = [ pkgs.edid-decode ];
+  home.packages = [
+    pkgs.edid-decode
+    pkgs.kdePackages.libkscreen
+  ];
+
+  # Use KWin's live API: never replace its monitor-layout/ICC state file.
+  # Only change enabled eDP outputs that need it. KWin persists the result.
+  systemd.user.services.framework-display-sdr = lib.mkIf cfg.disableHdr {
+    Unit = sessionUnit // {
+      Description = "Keep built-in displays in SDR";
+      # Brightness/monitor changes may write KWin's state several times.
+      StartLimitIntervalSec = 0;
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = sdrPolicy;
+      TimeoutStartSec = 60;
+    };
+    Install.WantedBy = [ "plasma-workspace-wayland.target" ];
+  };
+
+  # Recheck on saved display changes (including docking/lid transitions),
+  # without a polling daemon. A no-op check does not rewrite KWin's state.
+  systemd.user.paths.framework-display-sdr = lib.mkIf cfg.disableHdr {
+    Unit = sessionUnit // {
+      Description = "Reapply built-in SDR policy after display changes";
+    };
+    Path.PathChanged = "${config.xdg.configHome}/kwinoutputconfig.json";
+    Install.WantedBy = [ "plasma-workspace-wayland.target" ];
+  };
 }

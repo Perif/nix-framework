@@ -86,6 +86,15 @@
         in
         {
           rea = import ./tests/rea.nix { inherit pkgs; };
+          display-sdr =
+            pkgs.runCommand "display-sdr-tests"
+              {
+                nativeBuildInputs = [ pkgs.python3 ];
+              }
+              ''
+                python3 ${./tests/test_display_sdr.py} --script ${./home/modules/display-sdr.py}
+                touch "$out"
+              '';
           webui-bootstrap =
             pkgs.runCommand "webui-bootstrap-tests"
               {

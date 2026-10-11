@@ -213,6 +213,9 @@
   # Profile selection installs a stable alias; apply it in Plasma afterward.
   # "native" requires selecting the default/no-ICC mode in Plasma explicitly.
   display = {
+    # Keep built-in eDP panels in SDR, including Plasma's EDR emulation.
+    # External monitors retain their own settings. See docs/DISPLAY.md.
+    disableHdr = true;
     profile = "notebookcheck"; # "notebookcheck", "native", or "custom"
     iccProfile = null; # For "custom", e.g. ./assets/color/my-panel.icc
     # Additional measured profiles to install for comparison in Plasma.

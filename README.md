@@ -16,6 +16,7 @@ Target:
 - PipeWire desktop audio
 - EasyEffects with a pinned Framework 13 Pro speaker preset and Flat fallback
 - Notebookcheck MND508ZB1-1 ICC display profile, ready for selection in Plasma
+- SDR policy for the built-in panel, with HDR and Plasma EDR disabled
 - exclusive direct-ALSA Strawberry -> iBasso DC-Elite path
 - qobuz-player terminal streaming client and MusicBrainz Picard tag editor
 - Wine WoW64 / Winetricks, KeePassXC with Firefox integration, and mpv
@@ -141,6 +142,7 @@ needs editing when these change:
   Syncthing switches; network applications start manually
 - `features.secureBoot`: switch from unsigned systemd-boot to signed Lanzaboote
   only after local key setup
+- `display.disableHdr`: keep built-in eDP panels in SDR (default `true`)
 - `display.profile`: `notebookcheck`, `native`, or `custom`; reselect in Plasma
 - `display.iccProfile`, `display.extraIccProfiles`: your own calibration and
   optional additional ICCs for comparison; see [display options](docs/DISPLAY.md#profile-options)
