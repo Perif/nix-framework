@@ -75,5 +75,15 @@ creates real credentials or modifies a running service on the check host.
 The `display-sdr` check exercises the production helper against a stateful
 KScreen fixture: internal/external targeting, EDR on SDR-only panels, preserving
 ICC/layout/brightness settings, read-only repeated checks, and failed or ignored
-changes. Software-profile evaluation also checks both policy switch values.
+changes. It also checks AC/battery mode selection, fractional refresh matching,
+unchanged resolution, opt-in refresh without SDR enforcement, and SDR fallback
+when UPower fails. Software-profile evaluation covers disabled and enabled
+refresh policy independently of the HDR switch.
+
+The `power-settings` Linux check runs the production activation with real
+KConfig in a disposable directory. It verifies all three sleep modes, invalid
+setting rejection, preserved idle/brightness settings, and profile-hook backup
+and restoration. The `power-report` check validates sensor units, charging and
+missing-reading behavior, peripheral-battery exclusion and command errors.
+CI also builds and smoke-tests the packaged diagnostic CLI.
 This does not replace the [physical display checks](../DISPLAY.md#hdr-disabled-on-the-built-in-panel).
