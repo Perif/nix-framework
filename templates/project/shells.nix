@@ -21,6 +21,20 @@ in
       gdb
     ]
   );
+  llvm = shell (
+    (with pkgs; [
+      cmake
+      ninja
+      pkg-config
+    ])
+    ++ (with pkgs.llvmPackages; [
+      llvm
+      clang
+      clang-tools
+      lld
+      lldb
+    ])
+  );
   python = shell (
     with pkgs;
     [

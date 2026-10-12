@@ -1,5 +1,9 @@
 # Laptop speakers and iBasso DC-Elite audio
 
+1. Choose [speaker EQ](#easyeffects-speaker-preset), an [alternative preset](#choosing-another-preset), or [direct DAC playback](#first-boot).
+2. For settings edits, use [apply a change](install/customization.md).
+3. Verify the actual speaker/headphone/DAC route before saving the selection.
+
 ## EasyEffects speaker preset
 
 EasyEffects starts with the graphical session through Home Manager. The

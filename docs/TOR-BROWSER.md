@@ -62,13 +62,8 @@ bridge defeats its purpose.
 The package lives in the immutable Nix store, so update it through the reviewed
 flake workflow rather than relying on an in-browser application update:
 
-```bash
-cd /etc/nixos
-nix flake update
-nix flake check --no-build --all-systems
-sudo nixos-rebuild test --flake .#framework-pro
-sudo nixos-rebuild switch --flake .#framework-pro
-```
+Follow [update pinned dependencies](UPDATES.md), then complete the separate
+verification and promotion steps in the common change workflow.
 
 Tor Browser is security-sensitive. Do not defer a release that fixes a browser
 or Tor vulnerability; review the lock change and rebuild promptly.

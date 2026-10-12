@@ -64,6 +64,17 @@ def validate_source(source):
         raise Stop('Source symlinks are unsupported; copy reviewed files into the checkout instead.')
 
 
+def validate_index_flags(directory):
+    # These flags hide worktree edits from `git diff`, while a dirty Git flake
+    # can still archive those edits. Require every tracked file to be visible
+    # so the staged tree and the immutable source describe the same files.
+    entries = run('git', '-C', str(directory), 'ls-files', '-v', '-z', capture=True)
+    if any(entry and (entry[0] == 'S' or entry[0].islower())
+           for entry in entries.split('\0')):
+        raise Stop('Git assume-unchanged or skip-worktree flags can hide tracked edits. '
+                   'Clear those flags, review and stage the intended changes, then retry.')
+
+
 def snapshot(directory):
     directory = directory.resolve(strict=True)
     # Git's tracked working tree is the source boundary. Never copy .git or
@@ -74,6 +85,7 @@ def snapshot(directory):
     for name in ('flake.nix', 'flake.lock', 'settings.nix'):
         run('git', '-C', str(directory), 'ls-files', '--error-unmatch', name, capture=True)
     # A reviewed index, including deliberate settings edits, is authoritative.
+    validate_index_flags(directory)
     try:
         run('git', '-C', str(directory), 'diff', '--quiet', '--ignore-submodules=none')
     except subprocess.CalledProcessError as error:
@@ -85,6 +97,7 @@ def snapshot(directory):
     # Archive materializes the Git-filtered root and every locked input.
     metadata = query('nix', 'flake', 'archive', '--json', '--no-update-lock-file',
                      '--no-write-lock-file', '.', cwd=directory)
+    validate_index_flags(directory)
     run('git', '-C', str(directory), 'diff', '--quiet', '--ignore-submodules=none')
     if run('git', '-C', str(directory), 'write-tree', capture=True) != tree:
         raise Stop('The staged configuration changed while taking its snapshot; retry after review.')

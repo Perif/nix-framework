@@ -7,5 +7,7 @@ in
   addonId = "magnolia@12.34";
   inherit sha256;
   # Preserve the publisher's signed bytes; never unpack/repack this source.
-  src = assert builtins.hashFile "sha256" artifact == sha256; artifact;
+  src =
+    assert builtins.hashFile "sha256" artifact == sha256;
+    artifact;
 }

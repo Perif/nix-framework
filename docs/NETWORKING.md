@@ -1,5 +1,14 @@
 # Private filtered DNS and UniFi WireGuard
 
+Choose the task, then follow its procedure:
+
+- [Verify DNS](#verify-dns-after-a-rebuild) or [fix a blocked site](#recover-from-a-false-positive).
+- [Connect through a captive portal](#captive-portals-and-restrictive-networks).
+- [Import WireGuard](#unifi-create-and-import-a-wireguard-client) or [set split DNS](#unifi-private-dns-and-split-tunnels).
+- [Change Wi-Fi power saving](#optional-wi-fi-power-saving-override).
+
+For declarative edits, use [the common change workflow](install/customization.md).
+
 This build runs Blocky locally for system-wide tracker blocking, forwards
 allowed queries to an unfiltered provider over encrypted DNS, and includes
 WireGuard client support. Filtering has a one-file allowlist and off switch;

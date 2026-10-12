@@ -28,6 +28,7 @@ let
 
     btop
     htop
+    ncdu
     tmux
   ];
 
@@ -40,6 +41,19 @@ let
         cmake
         ninja
         pkg-config
+        gdb
+      ]
+    )
+    ++ lib.optionals languages.llvm (
+      with pkgs.llvmPackages;
+      [
+        llvm
+        # GCC keeps the generic cc/c++ commands when both toolchains are on.
+        # Nixpkgs assigns both compiler wrappers priority 10 by default.
+        (lib.setPrio 20 clang)
+        clang-tools
+        lld
+        lldb
       ]
     )
     ++ lib.optionals languages.python (

@@ -40,6 +40,23 @@ with tempfile.TemporaryDirectory(prefix='installer-source-test-') as temporary:
     assert (config.source / 'settings.nix').read_bytes() == settings.read_bytes()
     for excluded in ('.git', 'untracked-canary', 'ignored-canary'):
         assert not (config.source / excluded).exists(), excluded
+    reviewed_settings = settings.read_text()
+    for flag in ('assume-unchanged', 'skip-worktree'):
+        subprocess.run(['git', '-C', str(checkout), 'update-index', f'--{flag}',
+                        'settings.nix'], check=True)
+        settings.write_text(reviewed_settings + f'\n# Hidden local edit under {flag}\n')
+        assert settings.read_text() != reviewed_settings
+        # Ordinary diff cannot see this unstaged change, but the installer must.
+        subprocess.run(['git', '-C', str(checkout), 'diff', '--quiet'], check=True)
+        try:
+            common.snapshot(checkout)
+        except common.Stop as error:
+            assert 'flags can hide tracked edits' in str(error), str(error)
+        else:
+            raise AssertionError(f'{flag} must not hide worktree edits from the snapshot guard')
+        settings.write_text(reviewed_settings)
+        subprocess.run(['git', '-C', str(checkout), 'update-index', f'--no-{flag}',
+                        'settings.nix'], check=True)
     settings.write_text(settings.read_text() + '\n# Unreviewed edit\n')
     try:
         common.snapshot(checkout)
@@ -47,4 +64,4 @@ with tempfile.TemporaryDirectory(prefix='installer-source-test-') as temporary:
         assert 'Unstaged' in str(error), str(error)
     else:
         raise AssertionError('Unstaged tracked changes must be rejected')
-    print('Real Git/Nix snapshot, staged edits, excluded files, and dirty-tree refusal passed.')
+    print('Real Git/Nix snapshot, staged edits, excluded files, hidden-index flags, and dirty-tree refusal passed.')

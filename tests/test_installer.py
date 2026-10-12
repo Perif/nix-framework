@@ -149,6 +149,28 @@ class SettingsAndEvaluation(unittest.TestCase):
                 with self.assertRaisesRegex(common.Stop, 'positive fixed whole-GiB'):
                     layout.from_disko(changed, VALID_SETTINGS['diskDevice'])
 
+    def test_layout_rejects_noncanonical_paths_before_format(self):
+        for field in ('subvolume', 'mountpoint'):
+            invalid = (None, '', 'relative', '//log', '/var//log', '/var/./log', '/var/../log', '/log/', '/log\0')
+            if field == 'subvolume':
+                invalid += ('/',)
+            for value in invalid:
+                with self.subTest(field=field, value=value):
+                    changed = devices()
+                    subvolumes = changed['lvm_vg']['vg']['lvs']['root']['content']['subvolumes']
+                    if field == 'subvolume':
+                        subvolumes[value] = subvolumes.pop('/log')
+                    else:
+                        subvolumes['/log']['mountpoint'] = value
+                    with patch.object(cli, 'evaluate', side_effect=lambda _: layout.from_disko(
+                            changed, VALID_SETTINGS['diskDevice'])), \
+                         patch.object(cli, 'fresh_storage') as fresh, \
+                         patch.object(cli, 'disko') as format_run:
+                        with self.assertRaisesRegex(common.Stop, 'canonical absolute'):
+                            cli.format_disk(config())
+                        fresh.assert_not_called()
+                        format_run.assert_not_called()
+
     def test_live_environment_rejects_installed_system_or_non_uefi_boot(self):
         with patch.object(common.sys, "platform", "linux"), patch.object(common.os, "geteuid", return_value=0), \
              patch.object(common.Path, "is_dir", return_value=True):
@@ -192,6 +214,8 @@ class SettingsAndEvaluation(unittest.TestCase):
             def fake_run(*command, **_):
                 if command[-2:] == ("rev-parse", "--show-toplevel"):
                     return str(directory)
+                if command[-2:] == ('-v', '-z'):
+                    return 'H settings.nix\0'
                 if "diff" in command:
                     raise subprocess.CalledProcessError(1, command)
                 return None
@@ -202,6 +226,24 @@ class SettingsAndEvaluation(unittest.TestCase):
                     common.snapshot(directory)
                 metadata.assert_not_called()
 
+    def test_snapshot_rejects_hidden_index_flags_before_archive(self):
+        for flag in ('h', 'S', 's'):
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as path:
+                directory = Path(path)
+
+                def fake_run(*command, **_):
+                    if command[-2:] == ('rev-parse', '--show-toplevel'):
+                        return str(directory)
+                    if command[-2:] == ('-v', '-z'):
+                        return f'H flake.nix\0{flag} settings.nix\0'
+                    return None
+
+                with patch.object(common, 'run', side_effect=fake_run), \
+                     patch.object(common, 'query') as metadata:
+                    with self.assertRaisesRegex(common.Stop, 'flags can hide tracked edits'):
+                        common.snapshot(directory)
+                    metadata.assert_not_called()
+
     def test_snapshot_rejects_index_change_during_metadata_capture(self):
         with tempfile.TemporaryDirectory() as path:
             directory = Path(path)
@@ -210,6 +252,8 @@ class SettingsAndEvaluation(unittest.TestCase):
             def fake_run(*command, **_):
                 if command[-2:] == ("rev-parse", "--show-toplevel"):
                     return str(directory)
+                if command[-2:] == ('-v', '-z'):
+                    return 'H settings.nix\0'
                 if command[-1] == "write-tree":
                     return next(trees)
                 if command[-2:] == ("rev-parse", "HEAD"):
@@ -220,6 +264,30 @@ class SettingsAndEvaluation(unittest.TestCase):
                  patch.object(common, "query", return_value={"path": "/nix/store/source"}) as metadata, \
                  patch.object(common, "read_config") as read:
                 with self.assertRaisesRegex(common.Stop, "staged configuration changed"):
+                    common.snapshot(directory)
+                metadata.assert_called_once()
+                read.assert_not_called()
+
+    def test_snapshot_rejects_hidden_flags_added_during_archive(self):
+        with tempfile.TemporaryDirectory() as path:
+            directory = Path(path)
+            flags = iter(('H settings.nix\0', 'S settings.nix\0'))
+
+            def fake_run(*command, **_):
+                if command[-2:] == ('rev-parse', '--show-toplevel'):
+                    return str(directory)
+                if command[-2:] == ('-v', '-z'):
+                    return next(flags)
+                if command[-1] == 'write-tree':
+                    return 'reviewed-tree'
+                if command[-2:] == ('rev-parse', 'HEAD'):
+                    return 'base-commit'
+                return None
+
+            with patch.object(common, 'run', side_effect=fake_run), \
+                 patch.object(common, 'query', return_value={'path': '/nix/store/source'}) as metadata, \
+                 patch.object(common, 'read_config') as read:
+                with self.assertRaisesRegex(common.Stop, 'flags can hide tracked edits'):
                     common.snapshot(directory)
                 metadata.assert_called_once()
                 read.assert_not_called()

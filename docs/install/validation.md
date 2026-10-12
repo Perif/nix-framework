@@ -2,6 +2,44 @@
 
 This page covers repository and CI checks. It is not a substitute for the fresh-install, first-boot, or hardware verification paths.
 
+## 1. Prepare a validation copy
+
+Keep the real disk sentinel and timezone defaults unchanged in the repository.
+Copy the source to a disposable directory; in that copy only, set
+`diskDevice = "/dev/disk/by-id/evaluation-only"` and `timeZone = "UTC"`.
+Never run installer stages or Disko on the development host.
+
+## 2. Evaluate every output
+
+From that validation copy:
+
+```bash
+nix flake check --no-build --all-systems
+```
+
+**Expected:** all outputs evaluate, including full-system feature combinations.
+This command does not run the tests or build the Linux system.
+
+## 3. Run native tests
+
+```bash
+nix flake check --print-build-logs
+```
+
+This builds/runs checks supported by the current host. On x86_64 Linux it includes
+VM tests and needs working virtualization. Apple Silicon checks omit Linux-only
+runtime tests; use Linux CI for those. See individual checks below to isolate a
+failure. Do not bypass a failing required check.
+
+## 4. Check Linux CI and hardware
+
+Require both jobs in `.github/workflows/nix.yml` to pass on the exact revision:
+the full Linux system build with helper/runtime checks, and the disposable
+installer/recovery/boot VM. Then complete [first-boot verification](first-boot.md)
+on the laptop. CI cannot establish physical display, battery or resume behavior.
+
+## Check coverage and individual commands
+
 Run the packaged production-hook integration tests locally (this builds and
 runs tests, unlike `nix flake check --no-build`):
 
@@ -25,7 +63,8 @@ your repository host.
 `.github/workflows/nix.yml` runs several installer checks on x86_64 Linux.
 The packaged `installer` check executes unit tests with synthetic command
 results and devices, covering source/index guards, target safety, confirmation,
-mount verification, install ordering, and account status. The workflow also
+mount verification, install ordering, account status, hidden Git index flags,
+and rejection of noncanonical storage paths before formatting. The workflow also
 runs `nix run .#installer -- --help` as a packaging smoke check.
 
 Separately, `tests/test_installer_linux.py` runs directly on the GitHub runner,
@@ -36,7 +75,8 @@ Neither check validates this laptop's hardware or proves a physical install.
 
 `tests/test_installer_source.py` uses a disposable Git clone and real Nix
 archive operation to verify staged settings and exclusions from the immutable
-snapshot. It also checks that unstaged edits stop the operation. The clone
+snapshot. It also checks that unstaged edits and assume-unchanged/skip-worktree flags
+stop the operation, using real Git and Nix. The clone
 uses a non-device disk identifier; no installer stage is invoked.
 
 The timezone check covers detected and explicit zones, preserved settings, and
