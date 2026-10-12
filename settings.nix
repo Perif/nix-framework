@@ -112,6 +112,7 @@
     devCore = true;
     languageTools = {
       c = true;
+      llvm = true; # LLVM, Clang/clangd, LLD and LLDB; independent of GCC.
       python = true;
       go = true;
       rust = true;
@@ -130,6 +131,21 @@
       thunderbird = true;
       kdeConnect = true;
       syncthing = true;
+    };
+
+    # Optional applications; all start manually. NAPS2 also enables local
+    # scanner support and access for this user, without a sharing service.
+    utilities = {
+      filezilla = true;
+      filelight = true;
+      bruno = true;
+      rclone = true;
+      aria2 = true;
+      pdfarranger = true;
+      qpwgraph = true;
+      dbeaver = true;
+      audacity = true;
+      naps2 = true;
     };
   };
 

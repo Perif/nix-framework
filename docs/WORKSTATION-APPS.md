@@ -13,8 +13,9 @@ rebuild to remove groups or individual optional applications:
 | --- | --- |
 | `features.wine` | Wine WoW64 and Winetricks. |
 | `features.keepassxc` | KeePassXC and managed Firefox native integration. |
-| `features.devCore` | Common developer commands, Zsh fuzzy finder and directory-jump integrations, Git diff pager, and rootless Podman. |
-| `features.languageTools.c` | GCC, Make, CMake, Ninja, and pkg-config. |
+| `features.devCore` | Common developer commands, ncdu, Zsh fuzzy finder and directory-jump integrations, Git diff pager, and rootless Podman. |
+| `features.languageTools.c` | GCC, GDB, Make, CMake, Ninja, and pkg-config. |
+| `features.languageTools.llvm` | LLVM, Clang, clangd/Clang tools, LLD and LLDB. |
 | `features.languageTools.python` | Python, uv, BasedPyright, and Ruff. |
 | `features.languageTools.go` | Go, gopls, Delve, and golangci-lint. |
 | `features.languageTools.rust` | Rust, Cargo, rust-analyzer, rustfmt, and Clippy. |
@@ -29,10 +30,55 @@ rebuild to remove groups or individual optional applications:
 | `features.office.thunderbird` | Thunderbird. |
 | `features.office.kdeConnect` | KDE Connect package. |
 | `features.office.syncthing` | Syncthing package. |
+| `features.utilities.filezilla` | FileZilla SFTP/FTP client. |
+| `features.utilities.filelight` | Filelight graphical disk-usage viewer. |
+| `features.utilities.bruno` | Bruno API client with local request collections. |
+| `features.utilities.rclone` | rclone cloud and object-storage transfers. |
+| `features.utilities.aria2` | aria2 command-line downloader (`aria2c`). |
+| `features.utilities.pdfarranger` | PDF Arranger page merging, splitting and reordering. |
+| `features.utilities.qpwgraph` | PipeWire connection graph and patchbay. |
+| `features.utilities.dbeaver` | DBeaver Community database client. |
+| `features.utilities.audacity` | Audacity audio recording and editing. |
+| `features.utilities.naps2` | NAPS2 plus local SANE scanner drivers and user access. |
 
 All switches default to `true` to preserve the existing installation. Project
 versions and project-only tools belong in each repository's Nix `devShell`; see
 the [project template and language shells](../templates/project/README.md).
+
+## First use of the additional tools
+
+1. Keep the wanted switches above enabled, then [apply the change](install/customization.md).
+2. Open graphical tools from Plasma's application launcher. For transfers,
+   choose SFTP in FileZilla; run `rclone config` to add a cloud account. Keep
+   account credentials outside the repository.
+3. Run `ncdu ~` or open Filelight to inspect disk usage. Remove Nix generations
+   through the existing maintenance workflow, never by deleting `/nix/store` entries.
+4. Download a file with `aria2c --continue=true 'https://host/path/file'`, replacing
+   the example URL. No aria2 RPC server or download service is enabled.
+5. In Bruno, create a collection and send a GET request to
+   `http://127.0.0.1:11434/api/tags` after running `ollama-on`. In DBeaver, create
+   a connection to an existing database; its first connection may download a driver.
+6. For scanning, log out and back in after the first activation, connect the
+   scanner, then select **New Profile → SANE** in NAPS2 and scan one page.
+   Verify detection with `scanimage -L`. Network discovery and scanner sharing
+   are not enabled; configure a network scanner explicitly if needed. OCR may
+   require downloading language data in NAPS2.
+
+PDF Arranger edits PDF pages; Okular remains the viewer. Use qpwgraph for desktop
+PipeWire/EasyEffects routing and Audacity for recording/editing. Keep the existing
+[direct DC-Elite playback procedure](AUDIO.md) for exclusive DAC playback.
+
+## LLVM and native debugging
+
+1. Keep `features.languageTools.llvm = true` and [apply the change](install/customization.md).
+2. Verify `clang --version`, `llvm-config --version`, `ld.lld --version` and
+   `lldb --version`. The C switch also supplies `gdb`.
+3. Select Clang per project with `CC=clang CXX=clang++ cmake -S . -B build-clang`.
+   For an isolated toolchain, use `nix develop .#llvm` in this repository or
+   `use flake .#llvm` in the project template's `.envrc`.
+
+All LLVM components come from the same pinned `llvmPackages` set. GCC remains
+available; installing LLVM does not change the system compiler, linker or CPU flags.
 
 KDE Connect and Syncthing are installed as applications only. This configuration
 does not enable a Syncthing service or open firewall ports. KDE Connect uses

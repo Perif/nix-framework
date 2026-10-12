@@ -21,6 +21,7 @@ let
       extraBrowsers = false;
       extraEditors = false;
       office = lib.mapAttrs (_: _: false) settings.features.office;
+      utilities = lib.mapAttrs (_: _: false) settings.features.utilities;
     };
   };
   evaluate =
@@ -76,6 +77,19 @@ let
     }
   );
   reaHome = reaOnly.home-manager.users.${settings.user.name};
+  llvmOnly = evaluate (
+    minimal
+    // {
+      features = minimal.features // {
+        languageTools = minimal.features.languageTools // {
+          llvm = true;
+        };
+      };
+    }
+  );
+  llvmHome = llvmOnly.home-manager.users.${settings.user.name};
+  hasPackage =
+    name: homeConfig: builtins.any (package: (package.pname or "") == name) homeConfig.home.packages;
   hasRea =
     homeConfig:
     builtins.any (package: (package.meta.mainProgram or "") == "rea") homeConfig.home.packages;
@@ -126,6 +140,15 @@ assert !home.programs.zoxide.enable;
 assert !home.programs.delta.enable;
 assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
+assert !cfg.hardware.sane.enable;
+assert !(builtins.elem "scanner" cfg.users.users.${settings.user.name}.extraGroups);
+assert configuration.config.hardware.sane.enable == settings.features.utilities.naps2;
+assert !configuration.config.services.saned.enable;
+assert !configuration.config.hardware.sane.openFirewall;
+assert !hasPackage "naps2" home;
+assert !hasPackage "ncdu" home;
+assert !hasPackage "llvm" home && hasPackage "llvm" llvmHome;
+assert !llvmHome.programs.direnv.enable;
 assert pythonHome.programs.vscodium.enable;
 assert !pythonHome.programs.direnv.enable;
 assert !(pythonHome.home.file ? ".continue/config.yaml");
@@ -150,4 +173,5 @@ builtins.deepSeq [
   pythonOnly.system.build.toplevel.drvPath
   guileOnly.system.build.toplevel.drvPath
   reaOnly.system.build.toplevel.drvPath
+  llvmOnly.system.build.toplevel.drvPath
 ] true

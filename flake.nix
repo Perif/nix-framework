@@ -62,7 +62,7 @@
       );
       templates.project = {
         path = ./templates/project;
-        description = "Project-local dev shells for C, Python, Go, Rust, Guile, Node.js and Nix";
+        description = "Project-local dev shells for C, LLVM, Python, Go, Rust, Guile, Node.js and Nix";
       };
 
       # Run the same Disko revision used by this configuration with:

@@ -1,7 +1,15 @@
-{ ... }:
+{ lib, settings, ... }:
 
 {
   services.desktopManager.plasma6.enable = true;
+
+  # NAPS2 needs scanner drivers/udev rules as well as its GUI package.
+  # This enables local access only; saned and discovery firewall ports stay off.
+  hardware.sane.enable = settings.features.utilities.naps2;
+  users.users.${settings.user.name}.extraGroups = lib.optionals settings.features.utilities.naps2 [
+    "scanner"
+    "lp"
+  ];
 
   # Plasma enables GeoClue by default. This workstation uses the explicit IANA
   # zone from settings.nix, so automatic location, weather-location discovery,
