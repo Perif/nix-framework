@@ -1,13 +1,15 @@
 # Performance design and extended checks
 
-For a settings change, start with [the short performance guide](../PERFORMANCE.md).
+Guide 33 · [All guides](../README.md).
+
+For a settings change, start with [the short performance guide](../21-performance.md).
 This reference explains the implementation and measurement tradeoffs.
 
 # Performance and responsiveness
 
 1. Choose one policy below; edit its existing field in `/etc/nixos/settings.nix`.
-2. Follow [apply a change](../install/customization.md); log out/in for Plasma policy changes.
-3. Compare behavior using [power measurements](../POWER-MEASUREMENTS.md). Keep the change only if it helps your workload.
+2. Follow [apply a change](../install/06-customization.md); log out/in for Plasma policy changes.
+3. Compare behavior using [power measurements](../22-power-measurements.md). Keep the change only if it helps your workload.
 
 The configuration favors sustained laptop performance and desktop
 responsiveness rather than benchmark-only kernel tweaks. It keeps all CPU
@@ -142,7 +144,7 @@ sudo turbostat --quiet --interval 1 --num_iterations 60
 Use `hyperfine --runs 5 'YOUR_REPRESENTATIVE_COMMAND'` for command timing;
 substitute a real repeatable workload. Measure inference itself with
 `llama-bench` and Ollama's response timing fields, not HTTP startup alone.
-Follow the CPU/Vulkan comparison in [the AI guide](../LOCAL-AI-DEVELOPMENT.md).
+Follow the CPU/Vulkan comparison in [the AI guide](../18-local-ai-development.md).
 No measurements on the target laptop are available yet, so no global compiler
 flags, kernel scheduler replacements, or all-packages native-CPU rebuilds are
 enabled. Keeping cached packages and runtime CPU/GPU dispatch avoids a large
@@ -224,7 +226,7 @@ The shared `settings.ai` defaults give Continue an 8,192-token context and
 2,048 generated tokens. Automatic tab completion, next-edit prediction, and
 startup codebase indexing are disabled or paused, avoiding constant inference
 while editing. Chat, edit, apply, and agent requests remain available on
-demand. See `docs/LOCAL-AI-DEVELOPMENT.md` for setup and measured adjustment.
+demand. See `docs/18-local-ai-development.md` for setup and measured adjustment.
 
 Running several large local model runtimes simultaneously is not an optimization
 on a 32 GiB laptop unless measured resident memory leaves comfortable headroom
@@ -327,7 +329,7 @@ Log out/in after a rebuild so PowerDevil reloads these settings.
 
 The encrypted 40 GiB physical swap and resume-device setup remain in place.
 Check resume on the actual laptop before relying on unattended sleep. Follow
-[repeatable overnight and resume checks](../POWER-MEASUREMENTS.md#sleep-and-resume).
+[repeatable overnight and resume checks](../22-power-measurements.md#sleep-and-resume).
 No `mem_sleep_default=deep` workaround is added: only modes actually exposed by
 `/sys/power/mem_sleep` are available on the machine.
 
@@ -343,8 +345,8 @@ your sustained workloads; the previous NixOS generation remains the rollback.
 
 `framework-power-report` provides a read-only JSON report and optional battery
 sampling/GPU counters. It is installed even when local AI is disabled. See the
-[power, browser decoding and sleep measurement guide](../POWER-MEASUREMENTS.md).
-The optional [60 Hz battery preset](../DISPLAY.md#optional-battery-refresh-preset)
+[power, browser decoding and sleep measurement guide](../22-power-measurements.md).
+The optional [60 Hz battery preset](../09-display.md#optional-battery-refresh-preset)
 keeps the refresh/comfort tradeoff selectable.
 
 ## Xe graphics and modern video acceleration
@@ -424,7 +426,7 @@ With it enabled, use `boltctl list` and Plasma's device authorization controls.
 
 `network.wifiPowerSave` defaults to `null`. Set it to `false` only to disable
 Wi-Fi power saving as a reliability workaround, or `true` to request power
-saving. See [NETWORKING.md](../NETWORKING.md#optional-wi-fi-power-saving-override)
+saving. See [08-networking.md](../08-networking.md#optional-wi-fi-power-saving-override)
 for application, verification and rollback.
 
 ## Verify on the installed laptop

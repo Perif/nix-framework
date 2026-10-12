@@ -1,5 +1,7 @@
 # Firefox privacy and security profile
 
+Guide 15 · [All guides](README.md).
+
 The declarative Firefox profile lives in `home/modules/firefox.nix`. Browser
 updates, extension versions, policies, and preferences are pinned through the
 Nix flake rather than installed ad hoc.
@@ -31,7 +33,7 @@ metadata does not independently validate Mozilla's signature chain.
 
 KeePassXC native messaging is configured by Home Manager. Enable browser
 integration and pair the database interactively; see the
-[1Password migration guide](WORKSTATION-APPS.md#keepassxc-and-1password-migration).
+[1Password migration guide](12-workstation-apps.md#keepassxc-and-1password-migration).
 
 ## uMatrix replacement
 
@@ -86,7 +88,7 @@ endpoints are not used. Plaintext fallback is disabled, while the policy
 remains unlocked so a VPN or private network with split DNS can override it.
 `localhost`, `.local`, and `home.arpa` bypass browser DoH and use the system
 resolver. If other internal names fail while a VPN is active, configure a
-narrow routed DNS suffix as documented in `docs/NETWORKING.md` rather than
+narrow routed DNS suffix as documented in `docs/08-networking.md` rather than
 adding a broad permanent browser exception.
 
 ## Enforced browser policy

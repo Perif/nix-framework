@@ -1,5 +1,7 @@
 # 2. Configure the machine
 
+Guide 02 · [All guides](../README.md).
+
 Complete [preparation](01-prepare.md). Stay in the root shell at `/tmp/nixos-config`.
 Edit existing fields in `settings.nix`; do not replace whole blocks with excerpts.
 
@@ -31,7 +33,7 @@ nano settings.nix
 | `features.secureBoot`, `features.qbz` | Keep `false` for the recommended initial installation |
 
 Leave other defaults unless you need a specific change. Optional software
-switches are listed in [Applications](../WORKSTATION-APPS.md).
+switches are listed in [Applications](../12-workstation-apps.md).
 The LUKS passphrase is separate and is entered during formatting.
 
 3. Detect the timezone from the installer's public IP:

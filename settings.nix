@@ -5,7 +5,7 @@
 # argument.
 {
   # networking.hostName and the flake output name:
-  #   Follow docs/install/customization.md to build, test and apply.
+  #   Follow docs/install/06-customization.md to build, test and apply.
   hostname = "framework-pro";
 
   # Resolve once during installation: nix run .#detect-timezone
@@ -97,7 +97,7 @@
     qbz = false;
 
     # Leave false for the initial installation. After the first boot, create
-    # and verify local Secure Boot keys by following docs/INSTALL.md, then set
+    # and verify local Secure Boot keys by following docs/00-install.md, then set
     # this to true before enabling Secure Boot in firmware.
     secureBoot = false;
 
@@ -122,7 +122,7 @@
     };
 
     localAI = true;
-    rea = true; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/REA.md.
+    rea = true; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/19-rea.md.
     extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
     extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
 
@@ -170,7 +170,7 @@
   };
 
   # Plasma Wayland defaults; existing per-device GUI choices take precedence.
-  # See docs/TOUCHPAD.md for alternatives and optional haptic-click tuning.
+  # See docs/11-touchpad.md for alternatives and optional haptic-click tuning.
   touchpad = {
     enable = true;
     disableWhileTyping = true;
@@ -185,7 +185,7 @@
 
   # null retains NixOS defaults until measurements on the actual laptop.
   # maxJobs: positive integer or "auto"; cores: nonnegative integer (0 = all).
-  # See docs/PERFORMANCE.md before choosing limits for builds alongside AI.
+  # See docs/21-performance.md before choosing limits for builds alongside AI.
   builds = {
     maxJobs = null;
     cores = null;
@@ -195,7 +195,7 @@
 
   network = {
     # null: NetworkManager default; false: disable power saving as a Wi-Fi
-    # reliability workaround; true: enable power saving. See docs/NETWORKING.md.
+    # reliability workaround; true: enable power saving. See docs/08-networking.md.
     wifiPowerSave = null;
   };
 
@@ -225,7 +225,7 @@
     # Download explicitly with `ollama pull qwen3:8b`; rebuilds never pull models.
     ollamaModel = "qwen3:8b";
     # Optional decision tools alongside REA, not a replacement chat provider.
-    # Requires localAI, extraEditors and ai.ollaya.enable; see docs/REA.md.
+    # Requires localAI, extraEditors and ai.ollaya.enable; see docs/19-rea.md.
     ollayaMcp = false;
   };
 
@@ -233,7 +233,7 @@
   # "native" requires selecting the default/no-ICC mode in Plasma explicitly.
   display = {
     # Keep built-in eDP panels in SDR, including Plasma's EDR emulation.
-    # External monitors retain their own settings. See docs/DISPLAY.md.
+    # External monitors retain their own settings. See docs/09-display.md.
     disableHdr = true;
     # Optional AC/battery refresh switching at the current panel resolution.
     # null on AC selects the highest advertised rate. External displays stay as set.
@@ -250,7 +250,7 @@
   };
 
   # Optional declarative EasyEffects autoload binding. Copy both exact fields
-  # from a speaker-only rule made in EasyEffects (docs/AUDIO.md). Until then,
+  # from a speaker-only rule made in EasyEffects (docs/10-audio.md). Until then,
   # the preset is installed but must be selected/associated in the GUI.
   # Do not use a headphone route or a generic sound-card profile here.
   audio = {

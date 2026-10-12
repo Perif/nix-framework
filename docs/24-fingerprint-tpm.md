@@ -1,5 +1,7 @@
 # Fingerprint / LUKS2 / TPM2
 
+Guide 24 · [All guides](README.md).
+
 ## Fingerprint
 
 Enroll after boot:
@@ -62,7 +64,7 @@ LUKS2
 
 Do this only after confirming that passphrase boot, suspend, hibernate and
 hibernate-resume all work, completing signed Secure Boot step 13 in
-`docs/INSTALL.md`, and retaining a known-good recovery credential.
+`docs/00-install.md`, and retaining a known-good recovery credential.
 
 Verify that Secure Boot is actually enforced before enrolling a PCR-bound key:
 

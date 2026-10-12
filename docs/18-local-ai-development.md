@@ -1,14 +1,16 @@
 # Set up local AI
 
+Guide 18 · [All guides](README.md).
+
 Use **Ollama + Continue** for the default editor workflow. Use
-[Open WebUI](WORKSTATION-APPS.md#open-webui) for browser chat and
-[REA](REA.md) for Ghidra analysis. All configured APIs bind to loopback.
+[Open WebUI](12-workstation-apps.md#open-webui) for browser chat and
+[REA](19-rea.md) for Ghidra analysis. All configured APIs bind to loopback.
 
 ## 1. Enable and apply
 
 In `/etc/nixos/settings.nix`, keep `features.localAI = true` and
 `features.extraEditors = true`. If you change them, follow
-[apply a change](install/customization.md), then open a new terminal and restart
+[apply a change](install/06-customization.md), then open a new terminal and restart
 VSCodium. Extensions are Nix-managed; do not install them through the marketplace.
 
 ## 2. Start Ollama and download the configured REA model
@@ -31,7 +33,7 @@ recommendation for every task.
 2. Select **qwen3:8b** from the detected models. If it is missing, reload
    Continue after starting Ollama and completing the download.
 3. Send a short chat request. For tools, use the configured **REA via Ollama**
-   entry and follow [REA setup](REA.md).
+   entry and follow [REA setup](19-rea.md).
 4. Keep tool execution on **Ask First** and inspect proposed commands. Leave
    unknown repositories in restricted mode until their tooling is reviewed.
 
@@ -52,7 +54,7 @@ sudo intel_gpu_top
 **Expected:** the Intel Vulkan device is used, logs show offload, and GPU activity
 rises during inference. CPU fallback is not proof of acceleration. Ollama and
 llama.cpp use Vulkan; neither uses the NPU. Ollaya uses a separate CPU backend.
-Use [backend diagnostics and benchmarks](reference/ai-backends.md) if results
+Use [backend diagnostics and benchmarks](reference/32-ai-backends.md) if results
 are unclear. No maximum-performance claim is made without laptop measurements.
 
 ## 5. Stop when finished
@@ -84,7 +86,7 @@ Continue request. If Open WebUI is running, stop it with `webui-off` first.
    To change extensions, edit `home/modules/vscodium.nix`. Never edit generated
    `~/.continue/config.yaml`.
 3. Download any newly selected model explicitly with `ollama pull MODEL`.
-4. Follow [apply a change](install/customization.md); restart VSCodium and verify
+4. Follow [apply a change](install/06-customization.md); restart VSCodium and verify
    the selected model, response and memory use.
 
 These are defaults, not a memory quota: API requests/model metadata can override
@@ -142,7 +144,7 @@ selection uses upstream defaults and has not been tuned on this laptop.
 4. Stop with `ollaya-off`. If you previously let the CLI auto-start a daemon,
    run `ollaya stop` before using `ollaya-on`; `ollaya-off` stops only the managed
    service. The user service is not a filesystem sandbox.
-5. For optional Continue decision tools, follow [Ollaya MCP setup](REA.md#optional-ollaya-decision-tools).
+5. For optional Continue decision tools, follow [Ollaya MCP setup](19-rea.md#optional-ollaya-decision-tools).
 
 The service keeps one resident model, a queue of 16 and five-minute idle
 retention. Disabling `ai.ollaya.enable` removes integration, not model data.
@@ -155,9 +157,9 @@ retention. Disabling `ai.ollaya.enable` removes integration, not model data.
 | Ollaya | `~/.ollaya/models` | Home data; excluded from root snapshots |
 | Manual GGUF | Your selected model directory | Back up irreplaceable files separately |
 
-Old installations must complete [Ollama storage migration](install/ollama-migration.md)
+Old installations must complete [Ollama storage migration](install/25-ollama-migration.md)
 before activating the separate mount. Fresh installations already have it.
 
-For editor/language configuration, use [Editors](EDITORS.md) and the
+For editor/language configuration, use [Editors](13-editors.md) and the
 [project template](../templates/project/README.md). For upstream contracts and
-repeatable backend comparisons, use [backend reference](reference/ai-backends.md).
+repeatable backend comparisons, use [backend reference](reference/32-ai-backends.md).

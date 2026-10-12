@@ -1,6 +1,8 @@
 # AI backend verification
 
-Complete [local AI setup](../LOCAL-AI-DEVELOPMENT.md) first. Run these measurements
+Guide 32 · [All guides](../README.md).
+
+Complete [local AI setup](../18-local-ai-development.md) first. Run these measurements
 on the laptop; a successful build does not establish speed or GPU offload.
 
 ## Intel acceleration and measured tuning

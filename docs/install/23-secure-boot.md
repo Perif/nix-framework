@@ -1,5 +1,7 @@
 # Enable signed Secure Boot
 
+Guide 23 · [All guides](../README.md).
+
 Do this only after the normal unsigned installation, recovery-passphrase boot, hibernation, firmware updates, and first-boot checks work. Keep the NixOS installer USB available. If signed boot fails, disable Secure Boot enforcement in firmware and boot the previous working configuration.
 
 ## 1. Create and back up signing keys
@@ -72,7 +74,7 @@ sudo sbctl verify
 
 `bootctl status` must report Secure Boot enabled in user mode. Keep
 `features.secureBoot = true` for future rebuilds. Only after this is stable
-should TPM2 auto-unlock be considered; see [Fingerprint/TPM](../FINGERPRINT-TPM.md).
+should TPM2 auto-unlock be considered; see [Fingerprint/TPM](../24-fingerprint-tpm.md).
 
 ## 5. Protect firmware settings
 

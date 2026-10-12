@@ -1,9 +1,11 @@
 # Install NixOS
 
+Guide 00 · [All guides](README.md).
+
 For a **fresh installation** on the Framework Laptop 13 Pro. Back up the target
 disk first. Formatting erases it. For an installed system, use
-[upgrades](install/upgrade.md); for an interrupted install, use
-[recovery](install/recovery.md).
+[upgrades](install/26-upgrade.md); for an interrupted install, use
+[recovery](install/28-recovery.md).
 
 Read the numbered files in `docs/install/` from `01-prepare.md` through
 `05-first-boot.md`, in order. The other files are supporting guides for optional
@@ -26,9 +28,9 @@ TRIM/discard is enabled; it exposes which encrypted SSD blocks are unused.
 Review [`hosts/framework-pro/disk.nix`](../hosts/framework-pro/disk.nix) before
 installation if that tradeoff does not suit your requirements.
 
-After first boot, use [one change workflow](install/customization.md) for settings
-and packages. [Secure Boot](install/secure-boot.md) and
-[TPM unlock](FINGERPRINT-TPM.md) are later, separate steps.
+After first boot, use [one change workflow](install/06-customization.md) for settings
+and packages. [Secure Boot](install/23-secure-boot.md) and
+[TPM unlock](24-fingerprint-tpm.md) are later, separate steps.
 
 ## Existing links
 
@@ -39,14 +41,14 @@ Evaluation before erasure: [configure](install/02-configure.md) then [plan](inst
 Verification: [first boot](install/05-first-boot.md).
 
 <a id="12-customize-dns-shells-and-editors"></a>
-Customization: [apply a change](install/customization.md).
+Customization: [apply a change](install/06-customization.md).
 
 <a id="13-enable-signed-secure-boot"></a>
-Signed boot: [Secure Boot](install/secure-boot.md).
+Signed boot: [Secure Boot](install/23-secure-boot.md).
 
 <a id="14-routine-safe-rebuild-workflow"></a>
 <a id="normal-rebuilds"></a>
-Rebuilds: [apply a change](install/customization.md).
+Rebuilds: [apply a change](install/06-customization.md).
 
 <a id="one-time-model-storage-migration-for-an-existing-installation"></a>
-Older model storage: [one-time Ollama migration](install/ollama-migration.md).
+Older model storage: [one-time Ollama migration](install/25-ollama-migration.md).

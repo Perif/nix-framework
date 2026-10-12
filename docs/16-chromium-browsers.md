@@ -1,5 +1,7 @@
 # Brave and ungoogled Chromium privacy profiles
 
+Guide 16 · [All guides](README.md).
+
 Brave and ungoogled Chromium are installed as separate browser profiles. NixOS
 supplies shared managed privacy policy, while a second Brave-only policy keeps
 Google-backed security services and uBlock Origin Lite out of the ungoogled
@@ -97,7 +99,7 @@ resolvectl query example.com
 ```
 
 This avoids a browser DoH setting silently bypassing the filter or split-DNS
-routes in `docs/NETWORKING.md`. Firefox's direct unfiltered DoH remains the
+routes in `docs/08-networking.md`. Firefox's direct unfiltered DoH remains the
 documented false-positive recovery path, and Tor Browser remains separate.
 
 ## Site compatibility adjustment
@@ -119,7 +121,7 @@ BlockThirdPartyCookies = false;
 
 Test the next generation before making it permanent:
 
-Follow [apply a change](install/customization.md), including its temporary
+Follow [apply a change](install/06-customization.md), including its temporary
 activation and verification steps.
 
 Restore the privacy setting after the affected workflow is complete. Prefer a

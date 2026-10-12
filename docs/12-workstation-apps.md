@@ -1,7 +1,9 @@
 # Workstation applications
 
+Guide 12 · [All guides](README.md).
+
 1. Choose the feature below and edit only its existing field in `/etc/nixos/settings.nix`.
-2. Follow [apply a change](install/customization.md).
+2. Follow [apply a change](install/06-customization.md).
 3. Complete the app-specific first-use steps below and verify it opens.
 
 ## Selectable software groups
@@ -23,7 +25,7 @@ rebuild to remove groups or individual optional applications:
 | `features.languageTools.nodejs` | Node.js. |
 | `features.languageTools.nix` | nixd and nixfmt. |
 | `features.localAI` | Home Manager local-model CLI/runtime integration and Continue's loopback-only provider config. The system AI services use the same switch. |
-| `features.rea` | REA CLI/MCP with Ghidra and Java; Continue uses Ollama, with optional Ollaya decision tools. See [REA](REA.md). |
+| `features.rea` | REA CLI/MCP with Ghidra and Java; Continue uses Ollama, with optional Ollaya decision tools. See [REA](19-rea.md). |
 | `features.extraBrowsers` | Brave and ungoogled Chromium. Firefox and Tor Browser remain installed. |
 | `features.extraEditors` | VSCodium and Sublime Text/Merge. Vim and Neovim remain available. |
 | `features.office.libreOffice` | LibreOffice Qt build. |
@@ -47,7 +49,7 @@ the [project template and language shells](../templates/project/README.md).
 
 ## First use of the additional tools
 
-1. Keep the wanted switches above enabled, then [apply the change](install/customization.md).
+1. Keep the wanted switches above enabled, then [apply the change](install/06-customization.md).
 2. Open graphical tools from Plasma's application launcher. For transfers,
    choose SFTP in FileZilla; run `rclone config` to add a cloud account. Keep
    account credentials outside the repository.
@@ -66,11 +68,11 @@ the [project template and language shells](../templates/project/README.md).
 
 PDF Arranger edits PDF pages; Okular remains the viewer. Use qpwgraph for desktop
 PipeWire/EasyEffects routing and Audacity for recording/editing. Keep the existing
-[direct DC-Elite playback procedure](AUDIO.md) for exclusive DAC playback.
+[direct DC-Elite playback procedure](10-audio.md) for exclusive DAC playback.
 
 ## LLVM and native debugging
 
-1. Keep `features.languageTools.llvm = true` and [apply the change](install/customization.md).
+1. Keep `features.languageTools.llvm = true` and [apply the change](install/06-customization.md).
 2. Verify `clang --version`, `llvm-config --version`, `ld.lld --version` and
    `lldb --version`. The C switch also supplies `gdb`.
 3. Select Clang per project with `CC=clang CXX=clang++ cmake -S . -B build-clang`.
@@ -196,7 +198,7 @@ project's `devShell`; global tools remain available for ad-hoc use.
 
 NH uses `/etc/nixos` as its default OS flake:
 
-Follow [apply a change](install/customization.md). If using NH, run
+Follow [apply a change](install/06-customization.md). If using NH, run
 `nh os build`, then `nh os test`. **Stop and verify the changed behavior** before
 running `nh os switch` as a separate step.
 
@@ -223,7 +225,7 @@ sudo webui-bootstrap
 
 The helper asks for the administrator email, name and password without echoing
 the password or storing it in the Nix configuration. It refuses to replace an
-existing account. Signup is always disabled. See the [security guide](SECURITY-PRIVACY.md)
+existing account. Signup is always disabled. See the [security guide](07-security-privacy.md)
 for bootstrap failure recovery and the temporary credential file's lifecycle.
 After first setup, use:
 
@@ -242,7 +244,7 @@ generated locally and retained in its private state directory; no password or
 session secret is committed. Chats/accounts live under `/var/lib/open-webui`
 (backed by systemd's private state directory); include that data in future backups.
 Deleting chats or uploads does not remove their older copies in root snapshots;
-see [snapshot retention](SECURITY-PRIVACY.md#open-webui-state-and-first-admin-setup).
+see [snapshot retention](07-security-privacy.md#open-webui-state-and-first-admin-setup).
 
 Automatic model downloads and update checks are disabled, and the OpenAI
 provider is disabled. This is a local-chat starting configuration: document

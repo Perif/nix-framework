@@ -1,7 +1,9 @@
 # Historical update notes
 
+Guide 35 · [All guides](../README.md).
+
 These dated notes record earlier work. They are not current setup instructions
-or a statement that the present revision passed CI. Use [updating](../UPDATES.md)
+or a statement that the present revision passed CI. Use [updating](../27-updates.md)
 and the checks attached to the revision you intend to install.
 
 # Update review — 2026-09-28
@@ -53,7 +55,7 @@ same release with the unchanged source and Cargo hashes. A direct download
 from the new repository matched the locked hash, and the Linux player package
 was successfully retrieved from the Nix binary cache (not rebuilt or run on
 this macOS host). Full flake evaluation and the selected Home Manager package
-list passed. [Audio setup](../AUDIO.md#qobuz-player--qobine) documents explicit
+list passed. [Audio setup](../10-audio.md#qobuz-player--qobine) documents explicit
 DC-Elite selection and the player's format-fallback limitation; Qobuz login
 and physical DAC playback remain untested.
 
@@ -92,19 +94,19 @@ Lanzaboote remains at the deliberately selected v1.1.0 tag.
 ## Display and audio
 
 - Added the Notebookcheck MND508ZB1-1 ICC and an override path for a calibration
-  of the actual panel. [Selection and verification](../DISPLAY.md).
+  of the actual panel. [Selection and verification](../09-display.md).
 - Added EasyEffects 8.2.4, the Pro-specific FW13SpeakersV2-Loudness preset,
   speaker device/route autoload support, and an empty Flat fallback for
-  unmatched outputs. [First-use association](../AUDIO.md#easyeffects-speaker-preset).
+  unmatched outputs. [First-use association](../10-audio.md#easyeffects-speaker-preset).
 - Kept the DC-Elite outside PipeWire and EasyEffects through the existing
   WirePlumber exclusion. Microphone streams are not automatically processed.
 - Added `audio.speakerPreset` selection: original V2, local EQ/limiter variant,
   bit0fun alternative, Flat, or a custom output JSON. All bundled choices are
-  available in the GUI. [Preset comparison](../AUDIO.md#choosing-another-preset).
+  available in the GUI. [Preset comparison](../10-audio.md#choosing-another-preset).
 - Added `display.profile` selection: Notebookcheck, native/default mode, or
   custom calibration, plus additional named ICC files for comparison. The
   native choice is not an ICC. Applying or clearing the active profile still
-  requires Plasma. [ICC options](../DISPLAY.md#profile-options).
+  requires Plasma. [ICC options](../09-display.md#profile-options).
 
 ## Local AI and AC/battery policy
 
@@ -123,8 +125,8 @@ Lanzaboote remains at the deliberately selected v1.1.0 tag.
   below, preserving brightness and idle timeouts. Log out/in after activation;
   this policy applies in Plasma.
 - Added Intel GPU diagnostics, reproducible benchmark commands, and an Ollaya
-  decision API example to [LOCAL-AI-DEVELOPMENT.md](../LOCAL-AI-DEVELOPMENT.md).
-  [PERFORMANCE.md](../PERFORMANCE.md) explains Intel EPP/governor behavior and
+  decision API example to [18-local-ai-development.md](../18-local-ai-development.md).
+  [21-performance.md](../21-performance.md) explains Intel EPP/governor behavior and
   verification of charger transitions.
 - NixOS/Home Manager derivations and the full flake evaluation pass after these
   changes. Additional evaluation checks cover alternative AI/power settings,
@@ -189,12 +191,12 @@ Lanzaboote remains at the deliberately selected v1.1.0 tag.
 
 This macOS check did not build or activate the x86_64-linux system. It did not
 measure color accuracy or speaker response. Run the Linux build/activation
-checks in [INSTALL.md](../INSTALL.md#normal-rebuilds), then select the ICC
+checks in [00-install.md](../00-install.md#normal-rebuilds), then select the ICC
 and test speaker/headphone switching. Firmware availability must be checked
 on the laptop with `fwupdmgr refresh` and `fwupdmgr get-updates`; no firmware
 update was attempted here. Existing fwupd and Framework hardware integration
 remain enabled. Verify Xe, suspend/resume/hibernation, charge-limit readback and
-AC maintenance behavior on the laptop using [PERFORMANCE.md](../PERFORMANCE.md).
+AC maintenance behavior on the laptop using [21-performance.md](../21-performance.md).
 
 ## PR preparation — 2026-10-04
 

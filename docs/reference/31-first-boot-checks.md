@@ -1,5 +1,7 @@
 # Extended hardware and service checks
 
+Guide 31 · [All guides](../README.md).
+
 Use this reference after the [essential first-boot checks](../install/05-first-boot.md).
 Run only checks for enabled features. These commands require the installed laptop;
 Nix evaluation and CI do not establish physical hardware behavior.
@@ -48,7 +50,7 @@ when travelling. Update the one installation setting instead:
 timeZone = "Europe/Paris";
 ```
 
-Follow [apply and verify a change](../install/customization.md), then recheck
+Follow [apply and verify a change](../install/06-customization.md), then recheck
 `timedatectl status`.
 
 This changes the displayed local time and daylight-saving rules without
@@ -78,13 +80,13 @@ nix config show trusted-users
 ```
 
 Capture a first-boot baseline with `framework-power-report > power-baseline.json`.
-Follow [browser hardware-decoding verification and sleep checks](../POWER-MEASUREMENTS.md)
+Follow [browser hardware-decoding verification and sleep checks](../22-power-measurements.md)
 before treating driver installation as proof of acceleration or reliable resume.
 The report stays local and may include kernel-log device identifiers; review it
 before sharing. Missing permissions/sensors are reported, not treated as success.
 
 The expected performance values and safe use of the temporary performance
-profile are documented in `docs/PERFORMANCE.md`. Do not force thermald past a
+profile are documented in `docs/21-performance.md`. Do not force thermald past a
 CPU-identification or adaptive-table error.
 
 `allowed-users` must contain only `root` and the username configured under
@@ -138,7 +140,7 @@ and `/etc/resolv.conf` should resolve to the systemd-resolved stub. The local ho
 is plain DNS on loopback; Blocky sends allowed queries to the configured
 unfiltered provider through DoH on HTTPS port 443. Firefox uses that provider
 directly as the documented unfiltered recovery browser. See
-`docs/NETWORKING.md` before changing DNS, allowlisting a domain, or importing a
+`docs/08-networking.md` before changing DNS, allowlisting a domain, or importing a
 VPN profile with private DNS.
 
 Inspect the active randomized MAC address and the defaults applied to new
@@ -154,7 +156,7 @@ nmcli connection show "REPLACE_WITH_AN_ACTIVE_CONNECTION" | \
 Wi-Fi uses a different stable randomized address for each SSID; Ethernet uses
 a stable randomized address for each connection profile. The address remains
 stable on reconnect so DHCP leases and captive portals continue to work.
-`docs/SECURITY-PRIVACY.md` documents the per-network override for a network
+`docs/07-security-privacy.md` documents the per-network override for a network
 that requires the hardware address.
 
 Confirm that the configuration still evaluates before the first routine switch:
@@ -259,10 +261,10 @@ After hibernation resumes successfully, test `systemctl suspend-then-hibernate`
 separately and confirm both resume and the lock screen.
 
 Do not enable TPM2 auto-unlock until cold boot, hibernation, resume, and password
-recovery have all been tested. Continue with `docs/FINGERPRINT-TPM.md` afterward.
+recovery have all been tested. Continue with `docs/24-fingerprint-tpm.md` afterward.
 
-Select the matching panel ICC using [display setup](../DISPLAY.md), then follow
-[EasyEffects speaker setup](../AUDIO.md#easyeffects-speaker-preset) to associate
+Select the matching panel ICC using [display setup](../09-display.md), then follow
+[EasyEffects speaker setup](../10-audio.md#easyeffects-speaker-preset) to associate
 the bundled preset with the built-in speaker device and route. Verify that
 switching to headphones selects the Flat fallback. These profiles are
 installed declaratively; the panel and audio-route identities need checking
@@ -275,24 +277,24 @@ aplay -l
 dc-elite-alsa-config
 ```
 
-Follow `docs/AUDIO.md` before writing the generated ALSA configuration.
+Follow `docs/10-audio.md` before writing the generated ALSA configuration.
 
 Strawberry, qobuz-player and MusicBrainz Picard are installed for the login user.
-Use Strawberry for local playback, follow the [qobuz-player setup](../AUDIO.md#qobuz-player--qobine)
+Use Strawberry for local playback, follow the [qobuz-player setup](../10-audio.md#qobuz-player--qobine)
 for streaming and explicit DC-Elite device selection, and use Picard for tagging.
 Only one direct-ALSA player can use the DAC at a time.
 
 Keep QBZ disabled unless you have supplied an independently maintained Nix
-package through `qbz.packageFile`. See the optional package configuration in [audio setup](../AUDIO.md).
+package through `qbz.packageFile`. See the optional package configuration in [audio setup](../10-audio.md).
 
 Open Firefox and verify `about:policies`, `about:addons`, and
 `about:preferences#privacy`. The uBlock Origin advanced controls are enabled,
-but its per-site dynamic rules remain user-owned; follow `docs/FIREFOX.md` to
+but its per-site dynamic rules remain user-owned; follow `docs/15-firefox.md` to
 activate medium mode if that stricter uMatrix-like behavior is wanted.
 
-Follow [workstation application setup](../WORKSTATION-APPS.md) for Wine, KeePassXC
+Follow [workstation application setup](../12-workstation-apps.md) for Wine, KeePassXC
 and 1Password import, direnv, NH, mpv, and Open WebUI's first admin account.
-Check [build tuning](../PERFORMANCE.md#measuring-build-and-inference-contention)
+Check [build tuning](../21-performance.md#measuring-build-and-inference-contention)
 before selecting `builds.maxJobs` and `builds.cores` for this laptop.
 
 Confirm that VSCodium, both local model runtimes, and the Nix/Python/Go/Rust
@@ -321,7 +323,7 @@ systemctl show ollama.service -p ActiveState
 The extension list should contain twelve immutable extensions: Continue; Nix
 IDE; Python, Debugpy, BasedPyright, and Ruff; Go; rust-analyzer and CodeLLDB;
 YAML; TOML; and EditorConfig. The complete IDs and language-level checks are in
-`docs/LOCAL-AI-DEVELOPMENT.md`.
+`docs/18-local-ai-development.md`.
 
 Start it explicitly, verify the loopback-only endpoint, and stop it again:
 
@@ -337,7 +339,7 @@ The checks before the start and after the stop should both report
 `ActiveState=inactive`; the middle check should report `active`. The configured
 Zsh aliases are `ollama-on`, `ollama-off`, and `ollama-status`. No model is
 downloaded automatically. Follow
-`docs/LOCAL-AI-DEVELOPMENT.md` to choose a tool-capable Ollama model or serve a
+`docs/18-local-ai-development.md` to choose a tool-capable Ollama model or serve a
 GGUF model with llama.cpp, then select it in Continue.
 
 Confirm that Brave and ungoogled Chromium are installed:
@@ -358,7 +360,7 @@ Open `chrome://extensions` and confirm that ungoogled Chromium has no unexpected
 extension; uBOL is intentionally limited to Brave because its automatic update
 path uses the Chrome Web Store. The managed-browser message is expected because
 the policies come from this NixOS configuration. See
-`docs/CHROMIUM-BROWSERS.md` for the exact controls, Safe Browsing boundary, and
+`docs/16-chromium-browsers.md` for the exact controls, Safe Browsing boundary, and
 compatibility procedure.
 
 Confirm that Tor Browser and WireGuard's client tools are installed:
@@ -381,15 +383,15 @@ git config --global --get hooks.gitleaks
 git config --global --get hooks.piiCheck
 ```
 
-The last two commands should both print `true`. See `docs/GIT-SAFETY.md` for a
+The last two commands should both print `true`. See `docs/14-git-safety.md` for a
 manual staged scan, false-positive handling, and the limits of client-side
 hooks.
 
 Launch Tor Browser from Plasma or run `tor-browser`, complete its connection
 screen, and verify it at `https://check.torproject.org/`. Do not add extensions
 or copy the hardened Firefox profile into Tor Browser; see
-`docs/TOR-BROWSER.md`.
+`docs/17-tor-browser.md`.
 
-For a UniFi WireGuard client profile, follow `docs/NETWORKING.md`. The profile
+For a UniFi WireGuard client profile, follow `docs/08-networking.md`. The profile
 contains a private key, so never paste it into `settings.nix`, commit it, or
 store it in the Nix store.

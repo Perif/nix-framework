@@ -1,5 +1,7 @@
 # Validate repository changes
 
+Guide 30 · [All guides](../README.md).
+
 This page covers repository and CI checks. It is not a substitute for the fresh-install, first-boot, or hardware verification paths.
 
 ## 1. Prepare a validation copy
@@ -126,4 +128,4 @@ setting rejection, preserved idle/brightness settings, and profile-hook backup
 and restoration. The `power-report` check validates sensor units, charging and
 missing-reading behavior, peripheral-battery exclusion and command errors.
 CI also builds and smoke-tests the packaged diagnostic CLI.
-This does not replace the [physical display checks](../DISPLAY.md#hdr-disabled-on-the-built-in-panel).
+This does not replace the [physical display checks](../09-display.md#hdr-disabled-on-the-built-in-panel).

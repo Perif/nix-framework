@@ -1,5 +1,7 @@
 # 4. Install and set the password
 
+Guide 04 · [All guides](../README.md).
+
 Continue only after [mount verification](03-storage.md) succeeds. Stay in the root
 shell at `/tmp/nixos-config` with the same reviewed source.
 
@@ -15,7 +17,7 @@ to `/mnt/etc/nixos` without Git history. Preserve the trusted checkout for updat
 
 If the source changed, review the displayed old/new identities before accepting
 `REPLACE SOURCE <tree>`. Keep `/mnt/etc/nix-framework-installer.json`. On failure,
-use [recovery](recovery.md); do not rerun `format`.
+use [recovery](28-recovery.md); do not rerun `format`.
 
 ## 2. Set and verify the login password
 
