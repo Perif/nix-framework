@@ -1,7 +1,9 @@
 # REA with local models
 
+Guide 19 · [All guides](README.md).
+
 1. Keep `features.rea`, `features.localAI` and `features.extraEditors` enabled.
-2. Apply any change using [the common workflow](install/customization.md).
+2. Apply any change using [the common workflow](install/06-customization.md).
 3. Follow [Start with Ollama](#start-with-ollama), then verify one small binary.
 
 `features.rea = true` installs [Reverse Engineer Anything (REA)](https://github.com/morluto/rea)
@@ -97,7 +99,7 @@ Ollaya's MCP can start its daemon, and `decide` can pull a missing model on
 first use; it also exposes `pull_model`. Keep these tools on **Ask First** and
 exclude `pull_model` if downloads should stay manual. For offline work,
 explicitly pull the chosen model beforehand using the
-[Ollaya setup guide](LOCAL-AI-DEVELOPMENT.md#optional-ollaya-decision-models).
+[Ollaya setup guide](18-local-ai-development.md#optional-ollaya-decision-models).
 Disabling `rea.ollayaMcp` removes the client connection while preserving the
 separately selected Ollaya CLI/service.
 
@@ -110,7 +112,7 @@ separately selected Ollaya CLI/service.
 - `ai.contextLength` and `ai.maxOutputTokens` also apply to **REA via Ollama**.
   Ghidra analysis, model inference, and Nix builds share RAM. Begin with small
   binaries and focused tool results; measure memory before raising context or
-  running several analyses. The [performance guide](PERFORMANCE.md) describes
+  running several analyses. The [performance guide](21-performance.md) describes
   build limits and Intel runtime measurements.
 - `nix build .#checks.x86_64-linux.rea-configuration .#checks.x86_64-linux.rea`
   checks feature selection, real MCP discovery, Ghidra analysis of a compiled

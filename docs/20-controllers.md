@@ -1,5 +1,7 @@
 # Xbox Elite Series 2
 
+Guide 20 · [All guides](README.md).
+
 The build enables xpadneo for Bluetooth and the kernel xpad driver for a USB-C
 data cable. It also loads `uhid` for BlueZ/Bluetooth LE firmware and includes
 `evtest` for local input diagnostics. No Steam account or background gaming
@@ -10,7 +12,7 @@ different transport: its xone driver is **not enabled** by this configuration.
 
 On a fresh installation the drivers are included automatically. On an existing
 installation, complete any outstanding storage migration described in
-[INSTALL.md](INSTALL.md) before rebuilding. From `/etc/nixos`:
+[00-install.md](00-install.md) before rebuilding. From `/etc/nixos`:
 
 ```bash
 INSTALL_HOST="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"

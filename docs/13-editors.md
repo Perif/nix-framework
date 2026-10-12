@@ -1,7 +1,9 @@
 # Configure editors
 
+Guide 13 · [All guides](README.md).
+
 1. Edit the source file listed below in `/etc/nixos`.
-2. Follow [apply and verify a change](install/customization.md).
+2. Follow [apply and verify a change](install/06-customization.md).
 3. Fully quit and reopen the editor, then run its checks below.
 
 ## VSCodium and local agents
@@ -39,7 +41,7 @@ excluded from editor watching/search for responsiveness. Remove an exclusion in
 tree. Change Continue providers and model entries in `home/modules/continue-config.nix`.
 Set context/output limits with `ai.contextLength` and `ai.maxOutputTokens` in
 `settings.nix`; set the REA model with `rea.ollamaModel`. Do not edit the generated
-`~/.continue/config.yaml`. Follow [local AI setup](LOCAL-AI-DEVELOPMENT.md).
+`~/.continue/config.yaml`. Follow [local AI setup](18-local-ai-development.md).
 
 ## Vim and Neovim
 

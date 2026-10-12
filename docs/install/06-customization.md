@@ -1,5 +1,7 @@
 # Apply a configuration change
 
+Guide 06 · [All guides](../README.md).
+
 Use this procedure on the installed laptop. Work in `/etc/nixos`; it is a
 writable snapshot without Git history. Never run Disko or `installer format`
 for configuration changes.
@@ -17,16 +19,16 @@ Nix-managed links under `~/.config` or `~/.continue`.
 
 | Change | Source under `/etc/nixos` | Instructions |
 | --- | --- | --- |
-| Timezone, software groups, power, Wi-Fi, audio/display selections | `settings.nix` | [Applications](../WORKSTATION-APPS.md), [performance](../PERFORMANCE.md), [networking](../NETWORKING.md), [audio](../AUDIO.md), [display](../DISPLAY.md) |
-| Continue providers and model entries | `home/modules/continue-config.nix` | [Local AI](../LOCAL-AI-DEVELOPMENT.md) |
-| Context/output defaults and REA model | `settings.nix`: `ai.*`, `rea.ollamaModel` | [Local AI](../LOCAL-AI-DEVELOPMENT.md), [REA](../REA.md) |
-| VSCodium extensions and editor preferences | `home/modules/vscodium.nix` | [Editors](../EDITORS.md) |
-| Vim/Neovim, Sublime or shell preferences | `home/modules/vim.nix`, `sublime.nix`, `zsh.nix` | [Editors](../EDITORS.md) |
-| Browser policies | `home/modules/firefox.nix`, `modules/nixos/browsers.nix` | [Firefox](../FIREFOX.md), [Chromium](../CHROMIUM-BROWSERS.md) |
-| Add a configured application or system service | Its Home Manager or NixOS module | [Ownership rules](../MODULARITY.md) |
+| Timezone, software groups, power, Wi-Fi, audio/display selections | `settings.nix` | [Applications](../12-workstation-apps.md), [performance](../21-performance.md), [networking](../08-networking.md), [audio](../10-audio.md), [display](../09-display.md) |
+| Continue providers and model entries | `home/modules/continue-config.nix` | [Local AI](../18-local-ai-development.md) |
+| Context/output defaults and REA model | `settings.nix`: `ai.*`, `rea.ollamaModel` | [Local AI](../18-local-ai-development.md), [REA](../19-rea.md) |
+| VSCodium extensions and editor preferences | `home/modules/vscodium.nix` | [Editors](../13-editors.md) |
+| Vim/Neovim, Sublime or shell preferences | `home/modules/vim.nix`, `sublime.nix`, `zsh.nix` | [Editors](../13-editors.md) |
+| Browser policies | `home/modules/firefox.nix`, `modules/nixos/browsers.nix` | [Firefox](../15-firefox.md), [Chromium](../16-chromium-browsers.md) |
+| Add a configured application or system service | Its Home Manager or NixOS module | [Ownership rules](../29-modularity.md) |
 
 Keep secrets outside the source and Nix store. For dependency updates, first
-follow [update pinned inputs](../UPDATES.md).
+follow [update pinned inputs](../27-updates.md).
 
 ## 2. Evaluate and build
 
@@ -97,7 +99,7 @@ default. Keep the source backup until you have also completed a successful reboo
 1. Complete steps 1–2. Check free space with `df -h /boot`; retain a working boot
    entry and room for another kernel/initrd or signed image.
 2. Complete any prerequisite migration first. Older Ollama storage requires
-   [this migration](ollama-migration.md); Secure Boot uses [its own sequence](secure-boot.md).
+   [this migration](25-ollama-migration.md); Secure Boot uses [its own sequence](23-secure-boot.md).
 3. Install the next boot generation:
 
 ```bash

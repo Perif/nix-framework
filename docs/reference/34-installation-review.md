@@ -1,5 +1,7 @@
 # Installation adversarial review
 
+Guide 34 · [All guides](../README.md).
+
 Reviewed on 2026-10-04 and 2026-10-05. Scope: the fresh-install stages, their shared helpers,
 the existing-system upgrade route, packaging, CI, and installation documentation.
 This is a review record, not certification of a physical installation.
@@ -56,7 +58,7 @@ an untracked-file warning was resolved by staging the new files for the flake.
 - The `installer-vm` check exercises real partitioning, interruption recovery,
   installation, UEFI boot, LUKS unlock and login on a disposable virtual disk.
   It uses the production storage layout with a minimal test OS; see the precise
-  coverage and limits in [validation.md](validation.md). The offline fixture
+  coverage and limits in [30-validation.md](../install/30-validation.md). The offline fixture
   copies its prebuilt OS closure into the target store before invoking the real
   install stage, which still evaluates and activates the system and bootloader.
   CI status is the

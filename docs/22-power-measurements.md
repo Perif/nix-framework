@@ -1,5 +1,7 @@
 # Power, browser decoding and sleep measurements
 
+Guide 22 · [All guides](README.md).
+
 The installed `framework-power-report` command gathers local, read-only JSON:
 
 ```bash
@@ -84,7 +86,7 @@ failure. See the [kernel LPIT documentation](https://docs.kernel.org/firmware-gu
 
 The [matching Panther Lake suspend report](https://community.frame.work/t/fw13-pro-suspend-then-hibernate-system-crash-possible-firmware-issue-s2idle-resume-platform-resets-panther-lake-bios-3-02/84960)
 is a diagnostic lead, not a confirmed defect affecting every laptop. Use the
-selectable sleep policy in [PERFORMANCE.md](PERFORMANCE.md#selectable-sleep-policy)
+selectable sleep policy in [21-performance.md](21-performance.md#selectable-sleep-policy)
 if testing reveals a problem. Keep a known-working boot generation. Do not force
 S3/deep sleep unless firmware actually exposes it, or disable PSR based on an
 older/AMD model's workaround.

@@ -1,5 +1,7 @@
 # 1. Prepare the installer
 
+Guide 01 · [All guides](../README.md).
+
 1. Back up the target disk. Create a USB using the standard stable
    [NixOS graphical installer ISO](https://nixos.org/download/).
 2. Disable firmware Secure Boot for installation. Boot the USB's **UEFI** entry

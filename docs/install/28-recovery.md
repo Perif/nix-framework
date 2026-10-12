@@ -1,5 +1,7 @@
 # Resume an interrupted installation
 
+Guide 28 · [All guides](../README.md).
+
 Use this only from the standard NixOS UEFI installer USB, with the same reviewed
 Git checkout and personalized settings. **Do not rerun `format` or Disko.**
 If you rebooted the USB, recover your trusted checkout including `.git` and

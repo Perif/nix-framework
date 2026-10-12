@@ -1,5 +1,7 @@
 # Security and privacy operations
 
+Guide 07 · [All guides](README.md).
+
 This build favors controls that are useful on a daily laptop without disabling
 hibernation, rootless containers, browser compatibility, or ordinary VPNs.
 Security still depends on timely flake updates, strong recovery credentials,
@@ -106,7 +108,7 @@ censorship is the problem. DoH hides queries from the local network path, not
 from the resolver operator; Cloudflare's documented public-resolver privacy
 commitments remain part of this provider choice. Configuration, false-positive
 recovery, UniFi private-name handling, and verification are in
-`docs/NETWORKING.md`.
+`docs/08-networking.md`.
 
 ## Host hardening
 
@@ -175,7 +177,7 @@ The first two values must be `0` and the final two must be `-1`.
 The performance module does not disable CPU vulnerability mitigations, weaken
 the Nix sandbox, force unsupported hardware drivers, or override firmware
 thermal limits. Its settings and measurement boundaries are documented in
-`docs/PERFORMANCE.md`.
+`docs/21-performance.md`.
 
 ## Storage maintenance
 
@@ -253,7 +255,7 @@ uMatrix was replaced by uBlock Origin's maintained dynamic filtering. Mozilla
 Multi-Account Containers was added for explicit first-party identity separation.
 No canvas-spoofing, URL-cleaner, or additional script-blocking extension was
 added because those functions overlap existing controls and every privileged
-extension is another attack and fingerprinting surface. See `docs/FIREFOX.md`
+extension is another attack and fingerprinting surface. See `docs/15-firefox.md`
 for the complete policy and optional uBO medium-mode steps.
 
 Brave and ungoogled Chromium use shared NixOS-managed privacy policy and the
@@ -269,16 +271,16 @@ Chromium removes built-in Google service dependencies, including normal Chrome
 Web Store and Safe Browsing integration; it is not a substitute for Tor
 Browser and should be used cautiously for unknown links or downloads. The
 exact controls, expected managed-browser label, site-breakage procedure, and
-residual privacy boundary are in `docs/CHROMIUM-BROWSERS.md`.
+residual privacy boundary are in `docs/16-chromium-browsers.md`.
 
 Tor Browser is installed separately and is intentionally left at Tor Project's
 shared browser configuration. Ordinary Firefox is not pointed at a Tor proxy,
-and no extra Tor Browser extension is installed. See `docs/TOR-BROWSER.md`.
+and no extra Tor Browser extension is installed. See `docs/17-tor-browser.md`.
 
 NetworkManager already provides native WireGuard support, and `wireguard-tools`
 adds `wg` and `wg-quick`. No inbound firewall port is opened merely by
 installing the client. UniFi-exported client profiles can be imported through
-NetworkManager; see `docs/NETWORKING.md` for private-key and split-DNS handling.
+NetworkManager; see `docs/08-networking.md` for private-key and split-DNS handling.
 
 ## Git disclosure guard
 
@@ -293,14 +295,14 @@ allows hooks to be bypassed, a repository can override `core.hooksPath`, and a
 developer can push from an unmanaged machine. Important shared repositories
 should run an equivalent secret scan in protected CI. Configuration,
 verification, exceptions, and repository-hook compatibility are documented in
-`docs/GIT-SAFETY.md`.
+`docs/14-git-safety.md`.
 
 ## Update and verification routine
 
 Review upstream changes before updating the lock file:
 
-Follow [update pinned dependencies](UPDATES.md) and the
-[common change workflow](install/customization.md). Pause to verify the result
+Follow [update pinned dependencies](27-updates.md) and the
+[common change workflow](install/06-customization.md). Pause to verify the result
 before promotion; use the reboot path for boot-related updates.
 
 After security-relevant updates, reboot and check:
@@ -314,7 +316,7 @@ systemctl --failed
 ```
 
 The `sbctl` checks become authoritative only after completing the signed Secure
-Boot procedure in `docs/INSTALL.md`.
+Boot procedure in `docs/00-install.md`.
 
 ## Primary references
 

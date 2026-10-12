@@ -6,14 +6,16 @@ Set machine-specific values in [`settings.nix`](settings.nix).
 
 ## Start here
 
+See the [numbered guide index](docs/README.md) for the complete reading order.
+
 | Task | Follow this guide |
 | --- | --- |
-| Fresh installation; erases the selected disk | [Install in five stages](docs/INSTALL.md) |
-| Change a setting or add software | [Edit → test → verify → apply](docs/install/customization.md) |
-| Update an existing installation | [Upgrade](docs/install/upgrade.md) |
-| Resume an interrupted installation | [Recovery](docs/install/recovery.md) |
-| Understand or extend the modules | [Architecture and ownership](docs/MODULARITY.md) |
-| Run repository checks | [Validation](docs/install/validation.md) |
+| Fresh installation; erases the selected disk | [Install in five stages](docs/00-install.md) |
+| Change a setting or add software | [Edit → test → verify → apply](docs/install/06-customization.md) |
+| Update an existing installation | [Upgrade](docs/install/26-upgrade.md) |
+| Resume an interrupted installation | [Recovery](docs/install/28-recovery.md) |
+| Understand or extend the modules | [Architecture and ownership](docs/29-modularity.md) |
+| Run repository checks | [Validation](docs/install/30-validation.md) |
 
 For a fresh installation, use a reviewed Git checkout. The installer verifies the
 selected disk and requires an exact erase confirmation. The installed
@@ -24,21 +26,21 @@ installer's `format` stage to update an installed system.
 
 | Area | Guide |
 | --- | --- |
-| Software switches, Wine, KeePassXC, direnv, NH, mpv, Open WebUI | [Applications](docs/WORKSTATION-APPS.md) |
-| Ollama, Continue, llama.cpp, optional Ollaya | [Local AI](docs/LOCAL-AI-DEVELOPMENT.md) |
-| REA and configured Ghidra | [Reverse engineering](docs/REA.md) |
+| Software switches, Wine, KeePassXC, direnv, NH, mpv, Open WebUI | [Applications](docs/12-workstation-apps.md) |
+| Ollama, Continue, llama.cpp, optional Ollaya | [Local AI](docs/18-local-ai-development.md) |
+| REA and configured Ghidra | [Reverse engineering](docs/19-rea.md) |
 | Project environments and language tools | [Project template](templates/project/README.md) |
-| Editor preferences and extensions | [Editors](docs/EDITORS.md) |
-| ICC profiles, HDR, AC/battery refresh rates | [Display](docs/DISPLAY.md) |
-| EasyEffects, music players, DC-Elite | [Audio](docs/AUDIO.md) |
-| Touchpad preferences | [Touchpad](docs/TOUCHPAD.md) |
-| Power, build limits, sleep, charging | [Performance](docs/PERFORMANCE.md) |
-| Measure power, decoding and resume behavior | [Measurements](docs/POWER-MEASUREMENTS.md) |
-| DNS, Wi-Fi and WireGuard | [Networking](docs/NETWORKING.md) |
-| Firefox / Chromium / Tor | [Firefox](docs/FIREFOX.md), [Chromium](docs/CHROMIUM-BROWSERS.md), [Tor](docs/TOR-BROWSER.md) |
-| Signed boot and optional TPM unlock | [Secure Boot](docs/install/secure-boot.md), [Fingerprint/TPM](docs/FINGERPRINT-TPM.md) |
-| Security defaults and Git checks | [Security](docs/SECURITY-PRIVACY.md), [Git safety](docs/GIT-SAFETY.md) |
-| Controllers | [Controllers](docs/CONTROLLERS.md) |
+| Editor preferences and extensions | [Editors](docs/13-editors.md) |
+| ICC profiles, HDR, AC/battery refresh rates | [Display](docs/09-display.md) |
+| EasyEffects, music players, DC-Elite | [Audio](docs/10-audio.md) |
+| Touchpad preferences | [Touchpad](docs/11-touchpad.md) |
+| Power, build limits, sleep, charging | [Performance](docs/21-performance.md) |
+| Measure power, decoding and resume behavior | [Measurements](docs/22-power-measurements.md) |
+| DNS, Wi-Fi and WireGuard | [Networking](docs/08-networking.md) |
+| Firefox / Chromium / Tor | [Firefox](docs/15-firefox.md), [Chromium](docs/16-chromium-browsers.md), [Tor](docs/17-tor-browser.md) |
+| Signed boot and optional TPM unlock | [Secure Boot](docs/install/23-secure-boot.md), [Fingerprint/TPM](docs/24-fingerprint-tpm.md) |
+| Security defaults and Git checks | [Security](docs/07-security-privacy.md), [Git safety](docs/14-git-safety.md) |
+| Controllers | [Controllers](docs/20-controllers.md) |
 
 Default policy: built-in display HDR is disabled; refresh-rate switching is
 opt-in; Ollama, Open WebUI and Ollaya start on demand. Ollama and llama.cpp use

@@ -1,5 +1,7 @@
 # Tor Browser
 
+Guide 17 · [All guides](README.md).
+
 Tor Browser is installed declaratively from the pinned Nixpkgs package. It
 contains Tor Project's browser patches and its own Tor client. This build does
 not run a separate background Tor proxy and does not send ordinary Firefox
@@ -62,7 +64,7 @@ bridge defeats its purpose.
 The package lives in the immutable Nix store, so update it through the reviewed
 flake workflow rather than relying on an in-browser application update:
 
-Follow [update pinned dependencies](UPDATES.md), then complete the separate
+Follow [update pinned dependencies](27-updates.md), then complete the separate
 verification and promotion steps in the common change workflow.
 
 Tor Browser is security-sensitive. Do not defer a release that fixes a browser

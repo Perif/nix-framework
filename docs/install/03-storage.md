@@ -1,5 +1,7 @@
 # 3. Plan and format storage
 
+Guide 03 · [All guides](../README.md).
+
 **Fresh installation only.** Complete [configuration](02-configure.md). Stay in the
 root shell at `/tmp/nixos-config`. Never use `format` for recovery or upgrades.
 
@@ -29,7 +31,7 @@ tree with your plan. If either differs, stop and re-review. Enter exactly
 passphrase when prompted.
 
 If formatting fails or is interrupted, **do not repeat it**. Use
-[recovery](recovery.md) to inspect and resume the existing layout.
+[recovery](28-recovery.md) to inspect and resume the existing layout.
 
 ## 3. Verify the mounts
 
@@ -46,8 +48,8 @@ Keep the same reviewed source for installation.
 
 ## Recover an existing formatted target
 
-Moved to [the recovery procedure](recovery.md). Never rerun `format` to resume.
+Moved to [the recovery procedure](28-recovery.md). Never rerun `format` to resume.
 
 ## Inspect an interrupted format or mount
 
-Follow [recovery: inspect first](recovery.md#1-inspect-first).
+Follow [recovery: inspect first](28-recovery.md#1-inspect-first).

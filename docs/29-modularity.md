@@ -1,5 +1,7 @@
 # Architecture and ownership
 
+Guide 29 · [All guides](README.md).
+
 The configuration has one composition path:
 
 ```text
@@ -58,7 +60,7 @@ Model settings have distinct owners:
 
 Ollama state has its own `/ollama` Btrfs subvolume; Ollaya models live under
 `~/.ollaya/models`. Neither is included in root snapshots. The NPU is unused;
-Ollaya does not inherit Ollama's Vulkan backend. See [local AI setup](LOCAL-AI-DEVELOPMENT.md).
+Ollaya does not inherit Ollama's Vulkan backend. See [local AI setup](18-local-ai-development.md).
 
 ## Installer boundary
 
@@ -85,9 +87,9 @@ writable source snapshot without Git history; keep a separate trusted checkout.
 3. Add meaningful checks for new behavior and enabled/disabled combinations.
 4. Document one short procedure: prerequisite → edit → common rebuild workflow
    → expected result. Keep destructive recovery and advanced reference separate.
-5. Run [repository validation](install/validation.md), then verify the affected
+5. Run [repository validation](install/30-validation.md), then verify the affected
    behavior on the laptop.
 
-Entry points: [installation](INSTALL.md), [changes](install/customization.md),
-[recovery](install/recovery.md). Feature guides link to these procedures rather
+Entry points: [installation](00-install.md), [changes](install/06-customization.md),
+[recovery](install/28-recovery.md). Feature guides link to these procedures rather
 than maintaining their own activation sequences.

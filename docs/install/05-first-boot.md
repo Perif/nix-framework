@@ -1,5 +1,7 @@
 # 5. Verify first boot
 
+Guide 05 · [All guides](../README.md).
+
 Run these checks in the installed Plasma session. Stop and investigate any
 unexpected result before enabling Secure Boot or TPM unlock.
 
@@ -38,7 +40,7 @@ drivers alone do not prove that an application uses GPU acceleration.
 1. Open a new terminal. Confirm your username and that `sudo -v` accepts your
    account password.
 2. Verify brightness, touchpad and speakers. Confirm the built-in display has
-   HDR disabled. Select an ICC profile only after [matching the panel](../DISPLAY.md).
+   HDR disabled. Select an ICC profile only after [matching the panel](../09-display.md).
 3. Save your work. Run `loginctl lock-session` and unlock with your password.
 4. Run `systemctl suspend`; resume and verify the lock screen, Wi-Fi and audio.
 5. After suspend works, run `systemctl hibernate`; resume and repeat the checks.
@@ -49,15 +51,15 @@ drivers alone do not prove that an application uses GPU acceleration.
 
 | Feature | Next step |
 | --- | --- |
-| Speaker EQ and DC-Elite | [Audio setup](../AUDIO.md) |
-| Local models and Continue | [Local AI setup](../LOCAL-AI-DEVELOPMENT.md) |
-| REA/Ghidra | [REA setup](../REA.md) |
-| Open WebUI, KeePassXC, Wine and developer tools | [Applications](../WORKSTATION-APPS.md) |
-| AC/battery refresh rates | [Display policy](../DISPLAY.md) |
-| Battery and acceleration baseline | [Measurements](../POWER-MEASUREMENTS.md) |
-| Fingerprint reader and later TPM unlock | [Fingerprint/TPM](../FINGERPRINT-TPM.md) |
-| Signed boot, after normal boot and recovery work | [Secure Boot](secure-boot.md) |
+| Speaker EQ and DC-Elite | [Audio setup](../10-audio.md) |
+| Local models and Continue | [Local AI setup](../18-local-ai-development.md) |
+| REA/Ghidra | [REA setup](../19-rea.md) |
+| Open WebUI, KeePassXC, Wine and developer tools | [Applications](../12-workstation-apps.md) |
+| AC/battery refresh rates | [Display policy](../09-display.md) |
+| Battery and acceleration baseline | [Measurements](../22-power-measurements.md) |
+| Fingerprint reader and later TPM unlock | [Fingerprint/TPM](../24-fingerprint-tpm.md) |
+| Signed boot, after normal boot and recovery work | [Secure Boot](23-secure-boot.md) |
 
 For deeper checks of disk health, maintenance, browser policy and hardware,
-use [extended verification](../reference/first-boot-checks.md).
-For subsequent changes, use [edit → test → verify → apply](customization.md).
+use [extended verification](../reference/31-first-boot-checks.md).
+For subsequent changes, use [edit → test → verify → apply](06-customization.md).

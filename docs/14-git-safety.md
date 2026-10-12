@@ -1,5 +1,7 @@
 # Git commit safety
 
+Guide 14 · [All guides](README.md).
+
 Home Manager installs common Git review settings and a global pre-commit hook.
 The hook checks only added, staged content; it does not upload source files or
 send findings to a service.

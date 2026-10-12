@@ -48,7 +48,7 @@ in
     };
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "${pkgs.libnotify}/bin/notify-send --urgency=critical --app-name=Disk-health 'Disk health needs attention' 'Inspect sudo journalctl -u smartd. This warning repeats until acknowledged; see docs/INSTALL.md.'";
+      ExecStart = "${pkgs.libnotify}/bin/notify-send --urgency=critical --app-name=Disk-health 'Disk health needs attention' 'Inspect sudo journalctl -u smartd. This warning repeats until acknowledged; see docs/00-install.md.'";
       NoNewPrivileges = true;
     };
   };

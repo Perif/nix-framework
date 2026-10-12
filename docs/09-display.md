@@ -1,7 +1,9 @@
 # Display color and SDR
 
+Guide 09 · [All guides](README.md).
+
 1. Choose [HDR policy](#hdr-disabled-on-the-built-in-panel), [AC/battery refresh](#optional-battery-refresh-preset), or [ICC selection](#select-once-in-plasma).
-2. For settings edits, use [apply a change](install/customization.md), then log out/in.
+2. For settings edits, use [apply a change](install/06-customization.md), then log out/in.
 3. Verify the built-in display and any connected external monitor. ICC files still need selection in Plasma.
 
 ## HDR disabled on the built-in panel
@@ -86,7 +88,7 @@ the existing service continues to enforce SDR without changing refresh rates.
 The [Framework battery discussion](https://community.frame.work/t/can-i-improve-upon-10-hours-of-battery-on-13-pro-limited-batch/84519)
 motivates this selectable tradeoff; its combined-setting reports do not establish
 a universal saving. Compare comfort and whole-system power using the
-[measurement guide](POWER-MEASUREMENTS.md).
+[measurement guide](22-power-measurements.md).
 
 ## ICC calibration
 

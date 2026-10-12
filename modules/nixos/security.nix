@@ -68,5 +68,5 @@
   security.pam.services.sudo.fprintAuth = false;
 
   # TPM2 LUKS auto-unlock is deliberately not enabled on first install.
-  # See docs/FINGERPRINT-TPM.md after validating cold boot + hibernate.
+  # See docs/24-fingerprint-tpm.md after validating cold boot + hibernate.
 }

@@ -1,7 +1,9 @@
 # Touchpad settings
 
+Guide 11 · [All guides](README.md).
+
 1. Edit the desired existing `touchpad` field in `/etc/nixos/settings.nix`.
-2. Follow [apply a change](install/customization.md), then log out/in.
+2. Follow [apply a change](install/06-customization.md), then log out/in.
 3. Test clicking, dragging and scrolling. Existing per-device GUI settings take precedence; use the instructions below if a default does not apply.
 
 This laptop uses Plasma Wayland. `settings.touchpad` selects user-session

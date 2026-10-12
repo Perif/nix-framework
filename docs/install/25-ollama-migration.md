@@ -1,5 +1,7 @@
 # One-time Ollama storage migration
 
+Guide 25 · [All guides](../README.md).
+
 Fresh installations already create a dedicated `/ollama` Btrfs subvolume
 mounted at `/var/lib/private/ollama`; they do not need this migration. Older
 installations keep Ollama state under the root Btrfs subvolume. Create and

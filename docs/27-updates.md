@@ -1,7 +1,9 @@
 # Update pinned dependencies
 
+Guide 27 · [All guides](README.md).
+
 Run this on the installed laptop, or in the reviewed source you will deploy.
-For new repository code, first follow [repository upgrades](install/upgrade.md).
+For new repository code, first follow [repository upgrades](install/26-upgrade.md).
 Do not change `system.stateVersion` or `home.stateVersion` as a routine update.
 
 ## 1. Back up
@@ -36,7 +38,7 @@ their recipe updated and tested; a lock update alone does not update them.
 
 ## 4. Build, verify and apply
 
-Follow [the common change workflow](install/customization.md#2-evaluate-and-build)
+Follow [the common change workflow](install/06-customization.md#2-evaluate-and-build)
 from step 2. Keep its pause between temporary activation and promotion.
 Use the reboot procedure for kernel/boot changes. Verify affected applications,
 then keep the lock and source together in your trusted checkout.
@@ -45,4 +47,4 @@ then keep the lock and source together in your trusted checkout.
 If they fail, restore the saved source/lock before the next rebuild; use the
 previous boot generation if needed.
 
-Earlier release work is retained in [historical notes](reference/update-history.md).
+Earlier release work is retained in [historical notes](reference/35-update-history.md).

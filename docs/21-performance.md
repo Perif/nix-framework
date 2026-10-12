@@ -1,7 +1,9 @@
 # Configure power and performance
 
+Guide 21 · [All guides](README.md).
+
 Change one policy at a time. Edit existing fields in `/etc/nixos/settings.nix`,
-follow [apply a change](install/customization.md), then verify the result below.
+follow [apply a change](install/06-customization.md), then verify the result below.
 Log out/in after Plasma policy changes. Keep defaults until measurements justify
 an adjustment; no laptop throughput or battery-life improvement is assumed.
 
@@ -39,7 +41,7 @@ For a temporary comparison use `powerprofilesctl set balanced` or, if supported,
 2. Save work and disconnect external displays. Close the lid and resume, then
    test the configured power button separately.
 3. Verify resume, lock screen, Wi-Fi and audio; use the
-   [sleep measurement procedure](POWER-MEASUREMENTS.md#sleep-and-resume).
+   [sleep measurement procedure](22-power-measurements.md#sleep-and-resume).
 
 The mode manages lid and power-button actions; docked lid suspension remains
 inhibited. For automatic idle hibernation, also choose **Hibernate** as the idle
@@ -89,8 +91,8 @@ powerprofilesctl get
    responsiveness. Measure battery workloads separately from AC.
 
 For detailed counters and CPU/Vulkan comparisons, use
-[build measurements](reference/performance-design.md#measuring-build-and-inference-contention)
-and [AI benchmarks](reference/ai-backends.md).
+[build measurements](reference/33-performance-design.md#measuring-build-and-inference-contention)
+and [AI benchmarks](reference/32-ai-backends.md).
 
 ## Deferred maintenance on AC
 
@@ -126,9 +128,9 @@ subvolume blindly.
   Apply, then inspect `boltctl list` and authorize the intended device in Plasma.
   No automatic authorization is added.
 - `network.wifiPowerSave = null` keeps the default; `false` disables saving;
-  `true` requests saving. Follow [Wi-Fi apply/verify steps](NETWORKING.md#optional-wi-fi-power-saving-override).
+  `true` requests saving. Follow [Wi-Fi apply/verify steps](08-networking.md#optional-wi-fi-power-saving-override).
 - For independent AC and battery refresh rates, follow
-  [display policy](DISPLAY.md#optional-battery-refresh-preset).
+  [display policy](09-display.md#optional-battery-refresh-preset).
 
 ## Verify on the installed laptop
 
@@ -140,12 +142,12 @@ vainfo
 ```
 
 Review the local report before sharing it; device identifiers may be present.
-Missing sensors are reported as unavailable. Use [measurements](POWER-MEASUREMENTS.md)
+Missing sensors are reported as unavailable. Use [measurements](22-power-measurements.md)
 to verify browser decoding, power transitions and sleep on this machine.
 
 ## Implementation reference
 
 The existing defaults include adaptive thermald, Xe/modern Intel media support,
 zram and lower-priority Nix builds. Their rationale and extended checks are in
-[performance design](reference/performance-design.md). No blanket native-CPU
+[performance design](reference/33-performance-design.md). No blanket native-CPU
 rebuild, competing power daemon or unsupported deep-sleep override is enabled.

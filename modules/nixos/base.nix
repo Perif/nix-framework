@@ -25,7 +25,7 @@ in
       message = ''
         settings.nix: set at most one of user.hashedPassword or
         user.initialPassword. Prefer leaving both null and setting the password
-        with nixos-enter after installation, as documented in docs/INSTALL.md.
+        with nixos-enter after installation, as documented in docs/00-install.md.
       '';
     }
     {
