@@ -1,6 +1,6 @@
 # Extended hardware and service checks
 
-Use this reference after the [essential first-boot checks](../install/first-boot.md).
+Use this reference after the [essential first-boot checks](../install/05-first-boot.md).
 Run only checks for enabled features. These commands require the installed laptop;
 Nix evaluation and CI do not establish physical hardware behavior.
 

@@ -1,6 +1,6 @@
 # 4. Install and set the password
 
-Continue only after [mount verification](storage.md) succeeds. Stay in the root
+Continue only after [mount verification](03-storage.md) succeeds. Stay in the root
 shell at `/tmp/nixos-config` with the same reviewed source.
 
 ## 1. Install
@@ -40,4 +40,4 @@ reboot
 Remove the USB when firmware starts. Enter the LUKS passphrase at boot, then the
 account password at the login screen.
 
-**Next:** [5. Verify first boot](first-boot.md).
+**Next:** [5. Verify first boot](05-first-boot.md).

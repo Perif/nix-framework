@@ -110,7 +110,7 @@ sudo nixos-rebuild boot --flake ".#${INSTALL_HOST}"
 ```
 
 4. After the command succeeds, save work and reboot. Complete the
-   [first-boot checks](first-boot.md) and the feature-specific verification.
+   [first-boot checks](05-first-boot.md) and the feature-specific verification.
 5. If boot fails, select the previous generation from the systemd-boot menu.
    Restore the previous source before the next rebuild. A generation rollback
    does not undo disk-layout changes or application data migrations.

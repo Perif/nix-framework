@@ -1,6 +1,6 @@
 # 3. Plan and format storage
 
-**Fresh installation only.** Complete [configuration](configure.md). Stay in the
+**Fresh installation only.** Complete [configuration](02-configure.md). Stay in the
 root shell at `/tmp/nixos-config`. Never use `format` for recovery or upgrades.
 
 ## 1. Review the plan
@@ -42,7 +42,7 @@ nix run .#installer -- mounts
 `/mnt/var/lib/private/ollama`, with encrypted swap active. Default swap is 40 GiB.
 Keep the same reviewed source for installation.
 
-**Next:** [4. Install and set the password](system.md).
+**Next:** [4. Install and set the password](04-system.md).
 
 ## Recover an existing formatted target
 

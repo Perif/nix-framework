@@ -9,4 +9,4 @@ Choose one path:
 3. **Installation interrupted:** follow [recovery](docs/install/recovery.md).
    Do not rerun `format`.
 
-After installation, complete [first-boot verification](docs/install/first-boot.md).
+After installation, complete [first-boot verification](docs/install/05-first-boot.md).

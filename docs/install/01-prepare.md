@@ -57,4 +57,4 @@ are unsupported. Untracked/ignored files are excluded; deliberately stage any
 needed custom files later. Never put passwords, private keys or VPN secrets in
 this source: tracked files enter the world-readable Nix store.
 
-**Next:** [2. Configure](configure.md).
+**Next:** [2. Configure](02-configure.md).
