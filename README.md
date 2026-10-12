@@ -47,4 +47,4 @@ separate downloads. Enable Secure Boot only after a successful normal boot.
 
 CI covers evaluation, Linux builds and selected VM/runtime checks. Panel color,
 audio routing, GPU acceleration, touchpad behavior and sleep still need
-[verification on the laptop](docs/install/first-boot.md).
+[verification on the laptop](docs/install/05-first-boot.md).

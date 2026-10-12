@@ -57,7 +57,7 @@ layout without an existing installation/configuration.
 nix run .#installer -- mounts
 ```
 
-After that succeeds, follow [install and account setup](system.md). If the
+After that succeeds, follow [install and account setup](04-system.md). If the
 reviewed source changed to fix an installation failure, `install` shows the old
 and new identities and requires `REPLACE SOURCE <first 12 characters of the
 current tree>`. Review the change before accepting it; the disk/layout must

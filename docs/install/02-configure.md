@@ -1,6 +1,6 @@
 # 2. Configure the machine
 
-Complete [preparation](prepare.md). Stay in the root shell at `/tmp/nixos-config`.
+Complete [preparation](01-prepare.md). Stay in the root shell at `/tmp/nixos-config`.
 Edit existing fields in `settings.nix`; do not replace whole blocks with excerpts.
 
 1. Identify the whole target disk and its stable path:
@@ -83,4 +83,4 @@ nix run .#installer -- preflight
 **Expected:** successful evaluation and the intended disk identity. This stage
 does not format anything. Resolve errors before continuing.
 
-**Next:** [3. Plan and format](storage.md).
+**Next:** [3. Plan and format](03-storage.md).

@@ -196,7 +196,7 @@ def main():
             elif args.stage == 'install':
                 install_system(config)
     except (Stop, OSError, ValueError, KeyError, subprocess.CalledProcessError, EOFError) as error:
-        print(f'Installation stopped: {error}\nDo not rerun format to recover a failed install. See docs/install/storage.md.', file=sys.stderr)
+        print(f'Installation stopped: {error}\nDo not rerun format to recover a failed install. See docs/install/03-storage.md.', file=sys.stderr)
         return 1
     return 0
 

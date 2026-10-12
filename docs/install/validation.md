@@ -35,7 +35,7 @@ failure. Do not bypass a failing required check.
 
 Require both jobs in `.github/workflows/nix.yml` to pass on the exact revision:
 the full Linux system build with helper/runtime checks, and the disposable
-installer/recovery/boot VM. Then complete [first-boot verification](first-boot.md)
+installer/recovery/boot VM. Then complete [first-boot verification](05-first-boot.md)
 on the laptop. CI cannot establish physical display, battery or resume behavior.
 
 ## Check coverage and individual commands

@@ -30,7 +30,7 @@ git checkout --detach REVIEWED_COMMIT
 
 Stop if the checkout has uncommitted work. Confirm the repository and commit
 before proceeding. If you need a checkout, use the source-review steps in
-[preparation](prepare.md#1-prepare-the-installer), in a user-owned directory.
+[preparation](01-prepare.md#1-prepare-the-installer), in a user-owned directory.
 
 3. Compare the new source with `/etc/nixos`. Review upstream changes and merge
    new settings into your existing values. Preserve hostname, disk, username,
