@@ -126,6 +126,13 @@
     extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
     extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
 
+    # Native Linux game and optional nested compositor; see the gaming steps
+    # in docs/12-workstation-apps.md. Both start only when launched.
+    gaming = {
+      beyondAllReason = true;
+      gamescope = true;
+    };
+
     office = {
       libreOffice = true;
       thunderbird = true;

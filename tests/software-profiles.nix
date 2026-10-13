@@ -22,6 +22,7 @@ let
       extraEditors = false;
       office = lib.mapAttrs (_: _: false) settings.features.office;
       utilities = lib.mapAttrs (_: _: false) settings.features.utilities;
+      gaming = lib.mapAttrs (_: _: false) settings.features.gaming;
     };
   };
   evaluate =
@@ -88,6 +89,18 @@ let
     }
   );
   llvmHome = llvmOnly.home-manager.users.${settings.user.name};
+  gamingSelection =
+    beyondAllReason: gamescope:
+    evaluate (
+      minimal
+      // {
+        features = minimal.features // {
+          gaming = { inherit beyondAllReason gamescope; };
+        };
+      }
+    );
+  barOnly = gamingSelection true false;
+  gamescopeOnly = gamingSelection false true;
   hasPackage =
     name: homeConfig: builtins.any (package: (package.pname or "") == name) homeConfig.home.packages;
   hasRea =
@@ -140,6 +153,18 @@ assert !home.programs.zoxide.enable;
 assert !home.programs.delta.enable;
 assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
+assert !cfg.programs.gamescope.enable;
+assert !hasPackage "beyond-all-reason" home;
+assert hasPackage "beyond-all-reason" defaultHome == settings.features.gaming.beyondAllReason;
+assert configuration.config.programs.gamescope.enable == settings.features.gaming.gamescope;
+assert !configuration.config.programs.gamescope.capSysNice;
+assert !barOnly.programs.gamescope.enable;
+assert hasPackage "beyond-all-reason" barOnly.home-manager.users.${settings.user.name};
+assert gamescopeOnly.programs.gamescope.enable;
+assert !gamescopeOnly.programs.gamescope.capSysNice;
+assert !(gamescopeOnly.security.wrappers ? gamescope);
+assert gamescopeOnly.programs.gamescope.args == [ ];
+assert !hasPackage "beyond-all-reason" gamescopeOnly.home-manager.users.${settings.user.name};
 assert !cfg.hardware.sane.enable;
 assert !(builtins.elem "scanner" cfg.users.users.${settings.user.name}.extraGroups);
 assert configuration.config.hardware.sane.enable == settings.features.utilities.naps2;
@@ -174,4 +199,6 @@ builtins.deepSeq [
   guileOnly.system.build.toplevel.drvPath
   reaOnly.system.build.toplevel.drvPath
   llvmOnly.system.build.toplevel.drvPath
+  barOnly.system.build.toplevel.drvPath
+  gamescopeOnly.system.build.toplevel.drvPath
 ] true
