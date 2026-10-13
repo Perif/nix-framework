@@ -162,9 +162,15 @@ in
     };
   };
   testScript = ''
+    import importlib.util
     import shlex
     import shutil
     from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location("serial_console", "${./installer-vm/serial_console.py}")
+    assert spec is not None and spec.loader is not None
+    serial_console = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(serial_console)
 
     installer.start()
     installer.wait_for_unit("multi-user.target", timeout=180)
@@ -219,7 +225,8 @@ in
     efi_vars = Path(installer.state_dir) / "installed-efi-vars.fd"
     shutil.copyfile("${pkgs.OVMF.variables}", efi_vars)
     efi_vars.chmod(0o600)
-    boot_command = shlex.split("${qemu}") + [
+    raw_console = Path(installer.state_dir) / "installed-serial.log"
+    boot_command = ["${pkgs.python3}/bin/python", "${./installer-vm/serial_console.py}", str(raw_console)] + shlex.split("${qemu}") + [
         "-m", "2048", "-smp", "2",
         "-drive", f"file={installer.state_dir}/empty0.qcow2,if=none,id=installtarget",
         "-device", "nvme,drive=installtarget,serial=INSTALL_TEST",
@@ -230,11 +237,12 @@ in
     driver.machines_qemu.append(target)
     with subtest("boot installed system from its EFI partition and unlock LUKS"):
         target.start()
-        # The driver's queued-line helper drains one boot line per second.
-        # Poll its complete captured log so verbose initrd output cannot delay
-        # recognition of an already-visible interactive password request.
-        retry(lambda _: "Please enter passphrase for disk disk-main-cryptroot (cryptroot):"
-              in target.get_console_log(), timeout_seconds=180)
+        # The driver buffers serial stdout until a newline or EOF. A LUKS
+        # prompt has neither; read QEMU's raw log while the same stdio channel
+        # remains owned by the driver for send_console and ordinary logging.
+        retry(lambda _: serial_console.console_has_text(raw_console,
+              "Please enter passphrase for disk disk-main-cryptroot (cryptroot):"),
+              timeout_seconds=180)
         target.send_console("disposable-vm-luks-passphrase\n")
         target.wait_for_unit("multi-user.target", timeout=180)
         target.succeed("findmnt -n -o FSTYPE / | grep -x btrfs; grep -qx preserved /home/recovery-canary")

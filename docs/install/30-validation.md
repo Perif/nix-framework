@@ -68,6 +68,9 @@ results and devices, covering source/index guards, target safety, confirmation,
 mount verification, install ordering, account status, hidden Git index flags,
 and rejection of noncanonical storage paths before formatting. The workflow also
 runs `nix run .#installer -- --help` as a packaging smoke check.
+The native check also verifies recognition of an unterminated, fragmented LUKS
+prompt while its emitting process remains alive and waits for input. The boot
+VM reads QEMU's raw serial log because the driver's ordinary log buffers lines.
 
 Separately, `tests/test_installer_linux.py` runs directly on the GitHub runner,
 outside the Nix build sandbox. It calls the runner's actual read-only `lsblk`,

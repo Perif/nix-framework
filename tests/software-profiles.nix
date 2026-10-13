@@ -193,12 +193,13 @@ assert !reaHome.programs.vscodium.enable;
 assert !(reaHome.home.file ? ".continue/config.yaml");
 # Evaluate complete generations too: conditional package selection must not
 # hide missing option references or assertions in either smaller profile.
+# Gaming-only variants exercise package and wrapper selection above; the
+# default system build covers their closures. Expanding two more complete
+# generations here needlessly retains substantial additional evaluator state.
 builtins.deepSeq [
   cfg.system.build.toplevel.drvPath
   pythonOnly.system.build.toplevel.drvPath
   guileOnly.system.build.toplevel.drvPath
   reaOnly.system.build.toplevel.drvPath
   llvmOnly.system.build.toplevel.drvPath
-  barOnly.system.build.toplevel.drvPath
-  gamescopeOnly.system.build.toplevel.drvPath
 ] true

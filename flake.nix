@@ -123,6 +123,7 @@
               }
               ''
                 python3 ${./tests/test_installer.py} --helpers ${./scripts/installer}
+                python3 ${./tests/test_installer_console.py} --helper ${./tests/installer-vm/serial_console.py}
                 touch "$out"
               '';
           install-timezone =
