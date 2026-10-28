@@ -11,7 +11,8 @@ let
 in
 {
   home.packages =
-    lib.optionals office.libreOffice [ pkgs.libreoffice-qt ]
+    lib.optionals settings.features.gaming.beyondAllReason [ pkgs.beyond-all-reason ]
+    ++ lib.optionals office.libreOffice [ pkgs.libreoffice-qt ]
     ++ lib.optionals office.thunderbird [ pkgs.thunderbird ]
     ++ lib.optionals office.kdeConnect [ pkgs.kdePackages.kdeconnect-kde ]
     ++ lib.optionals office.syncthing [ pkgs.syncthing ]

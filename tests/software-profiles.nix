@@ -22,6 +22,7 @@ let
       extraEditors = false;
       office = lib.mapAttrs (_: _: false) settings.features.office;
       utilities = lib.mapAttrs (_: _: false) settings.features.utilities;
+      gaming = lib.mapAttrs (_: _: false) settings.features.gaming;
     };
   };
   evaluate =
@@ -88,6 +89,18 @@ let
     }
   );
   llvmHome = llvmOnly.home-manager.users.${settings.user.name};
+  gamingSelection =
+    beyondAllReason: gamescope:
+    evaluate (
+      minimal
+      // {
+        features = minimal.features // {
+          gaming = { inherit beyondAllReason gamescope; };
+        };
+      }
+    );
+  barOnly = gamingSelection true false;
+  gamescopeOnly = gamingSelection false true;
   hasPackage =
     name: homeConfig: builtins.any (package: (package.pname or "") == name) homeConfig.home.packages;
   hasRea =
@@ -140,6 +153,18 @@ assert !home.programs.zoxide.enable;
 assert !home.programs.delta.enable;
 assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
+assert !cfg.programs.gamescope.enable;
+assert !hasPackage "beyond-all-reason" home;
+assert hasPackage "beyond-all-reason" defaultHome == settings.features.gaming.beyondAllReason;
+assert configuration.config.programs.gamescope.enable == settings.features.gaming.gamescope;
+assert !configuration.config.programs.gamescope.capSysNice;
+assert !barOnly.programs.gamescope.enable;
+assert hasPackage "beyond-all-reason" barOnly.home-manager.users.${settings.user.name};
+assert gamescopeOnly.programs.gamescope.enable;
+assert !gamescopeOnly.programs.gamescope.capSysNice;
+assert !(gamescopeOnly.security.wrappers ? gamescope);
+assert gamescopeOnly.programs.gamescope.args == [ ];
+assert !hasPackage "beyond-all-reason" gamescopeOnly.home-manager.users.${settings.user.name};
 assert !cfg.hardware.sane.enable;
 assert !(builtins.elem "scanner" cfg.users.users.${settings.user.name}.extraGroups);
 assert configuration.config.hardware.sane.enable == settings.features.utilities.naps2;
@@ -168,6 +193,9 @@ assert !reaHome.programs.vscodium.enable;
 assert !(reaHome.home.file ? ".continue/config.yaml");
 # Evaluate complete generations too: conditional package selection must not
 # hide missing option references or assertions in either smaller profile.
+# Gaming-only variants exercise package and wrapper selection above; the
+# default system build covers their closures. Expanding two more complete
+# generations here needlessly retains substantial additional evaluator state.
 builtins.deepSeq [
   cfg.system.build.toplevel.drvPath
   pythonOnly.system.build.toplevel.drvPath

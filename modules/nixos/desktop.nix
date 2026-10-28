@@ -3,6 +3,13 @@
 {
   services.desktopManager.plasma6.enable = true;
 
+  # Run games in a nested compositor inside Plasma, without a privileged
+  # scheduling wrapper or a separate login session. HDR stays opt-in upstream.
+  programs.gamescope = {
+    enable = settings.features.gaming.gamescope;
+    capSysNice = false;
+  };
+
   # NAPS2 needs scanner drivers/udev rules as well as its GUI package.
   # This enables local access only; saned and discovery firewall ports stay off.
   hardware.sane.enable = settings.features.utilities.naps2;

@@ -27,6 +27,7 @@ installer's `format` stage to update an installed system.
 | Area | Guide |
 | --- | --- |
 | Software switches, Wine, KeePassXC, direnv, NH, mpv, Open WebUI | [Applications](docs/12-workstation-apps.md) |
+| Beyond All Reason and Gamescope | [Gaming](docs/12-workstation-apps.md#beyond-all-reason-and-gamescope) |
 | Ollama, Continue, llama.cpp, optional Ollaya | [Local AI](docs/18-local-ai-development.md) |
 | REA and configured Ghidra | [Reverse engineering](docs/19-rea.md) |
 | Project environments and language tools | [Project template](templates/project/README.md) |

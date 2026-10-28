@@ -28,6 +28,8 @@ rebuild to remove groups or individual optional applications:
 | `features.rea` | REA CLI/MCP with Ghidra and Java; Continue uses Ollama, with optional Ollaya decision tools. See [REA](19-rea.md). |
 | `features.extraBrowsers` | Brave and ungoogled Chromium. Firefox and Tor Browser remain installed. |
 | `features.extraEditors` | VSCodium and Sublime Text/Merge. Vim and Neovim remain available. |
+| `features.gaming.beyondAllReason` | Beyond All Reason native Linux launcher. |
+| `features.gaming.gamescope` | Gamescope nested compositor for manually launched games. |
 | `features.office.libreOffice` | LibreOffice Qt build. |
 | `features.office.thunderbird` | Thunderbird. |
 | `features.office.kdeConnect` | KDE Connect package. |
@@ -130,6 +132,36 @@ Set the global switch to `false` if Guile is only needed for individual
 projects. `nix develop .#guile` still provides it from this repository, and the
 project template supports `use flake .#guile` with direnv. This switch works
 independently of `features.devCore` and installs no editor-specific extension.
+
+## Beyond All Reason and Gamescope
+
+1. Keep `features.gaming.beyondAllReason = true` and
+   `features.gaming.gamescope = true`, then [apply the change](install/06-customization.md).
+   Each switch works independently; set either to `false` to remove that package.
+2. Open **Beyond All Reason** from the application menu, or run
+   `beyond-all-reason`. On first launch, select **Update** to download the engine
+   and game data, then **Start**. Allow roughly 20 GB for maps, replays and updates.
+3. Verify a skirmish launches directly before trying Gamescope. Exit the game
+   and launcher, then run:
+
+   ```bash
+   gamescope -f -w 1920 -h 1200 -r 60 -- beyond-all-reason
+   ```
+
+4. Select **Start** in the launcher. This starts with a 1920×1200 game surface
+   and a 60 FPS limit; adjust those values after checking performance on the laptop.
+   Use `Super+F` to toggle fullscreen. If nesting causes input or rendering issues,
+   exit both programs and launch `beyond-all-reason` directly again.
+
+The Gamescope limit applies to the nested game, not the physical panel refresh
+policy. These instructions use SDR; do not add `--hdr-enabled`. Built-in panel
+HDR remains disabled by `display.disableHdr`. Gamescope runs as a normal user
+inside Plasma with no login autostart. Game data updates belong to the BAR
+launcher; the packaged launcher and Gamescope follow this repository's pinned
+Nixpkgs revision. Removing the packages does not remove downloaded game data.
+
+References: [BAR first launch](https://www.beyondallreason.info/download),
+[Gamescope controls](https://github.com/ValveSoftware/gamescope#keyboard-shortcuts).
 
 ## Wine
 
