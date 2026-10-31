@@ -91,11 +91,69 @@
       bindkey '^[[1;5D' backward-word
       bindkey '^[[1;5C' forward-word
 
+      # Preserve the old `%h` prompt field while Starship renders the rest of
+      # the prompt. Starship custom modules inherit exported shell variables.
+      autoload -Uz add-zsh-hook
+      _starship_history_number() {
+        export STARSHIP_HISTORY_NUMBER=$HISTCMD
+      }
+      add-zsh-hook precmd _starship_history_number
     '';
   };
 
   programs.starship = {
     enable = true;
     enableZshIntegration = true;
+    settings = {
+      add_newline = false;
+      format = "$time$username$hostname$directory$git_branch$git_status$python$golang$rust$nodejs$terraform$nix_shell$line_break\${custom.history}$status$character";
+
+      time = {
+        disabled = false;
+        time_format = "%T";
+        format = "[$time](fg:155) - ";
+      };
+
+      username = {
+        show_always = true;
+        format = "[$user](fg:117)";
+      };
+
+      hostname = {
+        ssh_only = false;
+        format = "[@$hostname](fg:177):";
+      };
+
+      directory = {
+        truncation_length = 0;
+        format = " [$path](fg:147)";
+      };
+
+      git_branch.format = " [ $branch]($style)";
+      git_status.format = "[$all_status$ahead_behind ]($style)";
+
+      python.format = " [ $version]($style)";
+      golang.format = " [ $version]($style)";
+      rust.format = " [ $version]($style)";
+      nodejs.format = " [ $version]($style)";
+      terraform.format = " [󱁢 $version]($style)";
+      nix_shell.format = " [ $state]($style)";
+
+      custom.history = {
+        command = "printf '%s' \"$STARSHIP_HISTORY_NUMBER\"";
+        when = "test -n \"$STARSHIP_HISTORY_NUMBER\"";
+        format = "[$output ](fg:250)";
+      };
+
+      status = {
+        disabled = false;
+        format = "[$symbol$status ]($style)";
+      };
+
+      character = {
+        success_symbol = "[>](fg:220)";
+        error_symbol = "[>](fg:196)";
+      };
+    };
   };
 }
