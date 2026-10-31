@@ -41,7 +41,7 @@ def refresh_change(output, target):
     return [f"output.{name}.mode.{selected['id']}"]
 
 
-def changes(config, disable_hdr=True, refresh_hz=None):
+def changes(config, disable_hdr=True, refresh_hz=None, vrr=False):
     outputs = config.get("outputs")
     if not isinstance(outputs, list):
         raise ValueError("KScreen did not return an outputs list")
@@ -70,10 +70,12 @@ def changes(config, disable_hdr=True, refresh_hz=None):
                 arguments.append(f"output.{name}.edrPolicy.never")
         if refresh_hz is not None:
             arguments.extend(refresh_change(output, refresh_hz))
+        if vrr and output.get("vrrPolicy") != 2:
+            arguments.append(f"output.{name}.vrr.automatic")
     return arguments
 
 
-def enforce(doctor, disable_hdr=True, refresh_hz=None):
+def enforce(doctor, disable_hdr=True, refresh_hz=None, vrr=False):
     def read_config():
         result = subprocess.run(
             [doctor, "--json"], check=True, capture_output=True, text=True, timeout=15
@@ -83,11 +85,11 @@ def enforce(doctor, disable_hdr=True, refresh_hz=None):
             raise ValueError("KScreen returned an invalid configuration")
         return config
 
-    arguments = changes(read_config(), disable_hdr, refresh_hz)
+    arguments = changes(read_config(), disable_hdr, refresh_hz, vrr)
     if not arguments:
         return
     subprocess.run([doctor, *arguments], check=True, timeout=15)
-    if changes(read_config(), disable_hdr, refresh_hz):
+    if changes(read_config(), disable_hdr, refresh_hz, vrr):
         raise RuntimeError("KScreen did not apply the built-in display policy")
 
 
@@ -95,6 +97,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--doctor", required=True)
     parser.add_argument("--allow-hdr", action="store_true")
+    parser.add_argument("--vrr", action="store_true")
     parser.add_argument("--busctl")
     parser.add_argument("--battery-hz", type=int)
     parser.add_argument("--ac-hz", default="highest")
@@ -114,7 +117,7 @@ def main():
             target = args.battery_hz if state == "b true" else (
                 "highest" if args.ac_hz == "highest" else int(args.ac_hz)
             )
-        enforce(args.doctor, not args.allow_hdr, target)
+        enforce(args.doctor, not args.allow_hdr, target, args.vrr)
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         if args.battery_hz is not None and not args.allow_hdr:
             # A missing UPower service or malformed mode list must not prevent

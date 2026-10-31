@@ -1,30 +1,20 @@
 {
   lib,
   pkgs,
+  nixpkgs-sublime,
   settings,
   ...
 }:
 
 let
   languages = settings.features.languageTools;
-  # Build 4213 ships two plug-in hosts. Only the legacy Python 3.3 host links
-  # to OpenSSL 1.1; the Python 3.14 host uses OpenSSL 3. Replace the broad
-  # Nixpkgs rpath input and remove the legacy host so old plug-ins fail closed
-  # instead of restoring an end-of-life cryptographic library.
-  # Reuse the locked Nixpkgs recipe with a targeted stable release pin. Do not
-  # update the whole system lock just to advance this binary editor.
-  # Keep this a path so Nix can resolve it through the fetched source tree.
-  # String interpolation can copy a lazily fetched Nixpkgs tree into an
-  # unrealised store path on a fresh CI runner.
-  sublimeTextBase = pkgs.callPackage (import
-    (pkgs.path + "/pkgs/applications/editors/sublime/4/common.nix")
-    {
-      buildVersion = "4213";
-      dev = false;
-      x64sha256 = "sha256-lhlCckQvia4V0TpskRjXkDV4tXiauIdLhnVYqm6RRak=";
-      aarch64sha256 = "sha256-4V9H7xQ+CyLl3CnPrAamP5ZGZXp6+Y6Ovyl1prxT6PE=";
-    }
-  ) { openssl_1_1 = pkgs.openssl_3_5; };
+  # A separately locked Nixpkgs input keeps proprietary Sublime releases
+  # current without advancing the whole operating-system package set.
+  sublimePkgs = import nixpkgs-sublime {
+    system = pkgs.stdenv.hostPlatform.system;
+    config.allowUnfree = true;
+  };
+  sublimeTextBase = sublimePkgs.sublime4;
 
   sublimeTextUnwrapped = sublimeTextBase.unwrapped.overrideAttrs (oldAttrs: {
     postInstall = (oldAttrs.postInstall or "") + ''
@@ -55,7 +45,10 @@ let
       runHook preInstall
 
       mkdir -p "$out/bin" "$out/share/applications"
-      makeWrapper "${sublimeTextUnwrapped}/sublime_text" "$out/bin/sublime_text"
+      # Sublime's Linux menu bar is GTK-native rather than controlled by the
+      # .sublime-theme. Force KDE's dark GTK theme for the launcher and CLI.
+      makeWrapper "${sublimeTextUnwrapped}/sublime_text" "$out/bin/sublime_text" \
+        --set GTK_THEME "Breeze-Dark"
       ln -s sublime_text "$out/bin/subl"
       ln -s sublime_text "$out/bin/sublime"
       ln -s sublime_text "$out/bin/sublime4"
@@ -139,6 +132,14 @@ let
         };
       };
     }
+    // {
+      terraform-ls = {
+        enabled = true;
+        command = [ "${pkgs.terraform-ls}/bin/terraform-ls" "serve" ];
+        selector = "source.terraform";
+        diagnostics_mode = "workspace";
+      };
+    }
     // lib.optionalAttrs languages.nix {
       nixd = {
         enabled = true;
@@ -159,7 +160,7 @@ in
 
   home.packages = [
     sublimeTextSecure
-    pkgs.sublime-merge
+    sublimePkgs.sublime-merge
   ];
 
   xdg.configFile = {
@@ -168,6 +169,10 @@ in
         "font_face": "JetBrainsMono Nerd Font",
         "font_size": 10,
         "hardware_acceleration": "opengl",
+        "theme": "ayu-mirage.sublime-theme",
+        "color_scheme": "ayu/ayu-mirage.sublime-color-scheme",
+        "themed_title_bar": true,
+        "file_icons": true,
         "update_check": false,
         "disable_plugin_host_3.3": true,
 
@@ -226,7 +231,20 @@ in
           "EditorConfig",
           "LSP",
           "Nix",
-          "Package Control"
+          "Package Control",
+          "BracketHighlighter",
+          "SublimeLinter",
+          "SublimeCodeIntel",
+          "AutoFileName",
+          "All Autocomplete",
+          "AdvancedNewFile",
+          "MarkdownEditing",
+          "ayu",
+          "AlignTab",
+          "AutoPEP8",
+          "Formatter",
+          "Formatter",
+          "SideBarEnhancements"
         ]
       }
     '';
@@ -239,6 +257,9 @@ in
         "font_face": "JetBrainsMono Nerd Font",
         "font_size": 10,
         "hardware_acceleration": "opengl",
+        "theme": "Merge Dark.sublime-theme",
+        "color_scheme": "Mariana.sublime-color-scheme",
+        "themed_title_bar": true,
         "update_check": false
       }
     '';

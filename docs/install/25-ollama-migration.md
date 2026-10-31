@@ -41,8 +41,9 @@ sudo systemctl unmask --runtime ollama.service
 
 If you have never used Ollama and confirm there is no existing state to retain,
 you may follow the same process with an intentionally empty destination. Make
-that choice explicit before creating the subvolume. The service is on-demand,
-so an absent state directory can be normal on an unused installation.
+that choice explicit before creating the subvolume. The service starts at boot
+but does not load a model until requested, so an absent state directory can be
+normal on an unused installation.
 
 For an existing data directory, use one shell session for the complete copy and
 comparison. The top-level mount is temporary; the new subvolume name must not

@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   # Only wheel members may execute sudo, and authentication remains required.
@@ -59,13 +59,26 @@
   # because fingerprint authentication is part of this machine's policy.
   services.fprintd.enable = true;
 
-  # Keep fingerprints for login and Plasma unlock. Plasma installs its
-  # dedicated kde-fingerprint PAM service when fprintd is enabled. Sudo is
-  # deliberately password-only: its PAM default would otherwise inherit the
-  # globally enabled fprintd service.
+  # The Goodix reader needs a short interval to reappear on USB after resume.
+  # Restarting the D-Bus-activated daemon once systemd-suspend has returned
+  # drops any stale pre-suspend device handle before Plasma or PAM uses it.
+  systemd.services.fprintd-after-suspend = {
+    description = "Reinitialize fprintd after system resume";
+    wantedBy = [ "suspend.target" ];
+    after = [ "systemd-suspend.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStartPre = "${pkgs.coreutils}/bin/sleep 1";
+      ExecStart = "${pkgs.systemd}/bin/systemctl restart fprintd.service";
+    };
+  };
+
+  # Keep fingerprints available for login, Plasma unlock, and local sudo.
+  # Plasma installs its dedicated kde-fingerprint PAM service when fprintd is
+  # enabled; sudo retains its password fallback when the reader is unavailable.
   security.pam.services.login.fprintAuth = true;
   security.pam.services.sddm.fprintAuth = true;
-  security.pam.services.sudo.fprintAuth = false;
+  security.pam.services.sudo.fprintAuth = true;
 
   # TPM2 LUKS auto-unlock is deliberately not enabled on first install.
   # See docs/24-fingerprint-tpm.md after validating cold boot + hibernate.

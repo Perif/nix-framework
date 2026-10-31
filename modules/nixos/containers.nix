@@ -14,5 +14,15 @@
 
   # Keep the subordinate UID/GID allocation explicit for this rootless
   # container user, even though current NixOS normally defaults it on.
-  users.users.${settings.user.name}.autoSubUidGidRange = settings.features.devCore;
+  users.users.${settings.user.name} = {
+    autoSubUidGidRange = settings.features.devCore;
+    extraGroups = lib.optionals settings.features.devCore [ "libvirtd" ];
+  };
+
+  virtualisation.libvirtd = lib.mkIf settings.features.devCore {
+    enable = true;
+    qemu.swtpm.enable = true;
+  };
+
+  programs.virt-manager.enable = settings.features.devCore;
 }

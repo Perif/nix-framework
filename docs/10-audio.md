@@ -135,9 +135,14 @@ PipeWire is allowed to switch among:
 Strawberry -> ALSA hw: -> iBasso DC-Elite
 ```
 
-The NixOS WirePlumber module uses `device.disabled = true` for the DC-Elite.
-This prevents PipeWire/WirePlumber from owning the DAC and leaves direct ALSA
-hardware access available.
+WirePlumber exposes the DC-Elite to Plasma and gives it the highest output
+priority, so desktop audio switches to it when it is connected. Its PipeWire
+node suspends after one second of idle time, leaving the ALSA hardware endpoint
+available for a direct player.
+
+The desktop PipeWire path and a direct `hw:` ALSA stream are mutually
+exclusive while either is playing. Stop desktop playback before starting
+Strawberry; once the PipeWire node is idle, Strawberry can acquire the DAC.
 
 The direct `hw` ALSA path is the important part for avoiding a software
 resampler/mixer. Do not use ALSA `plug` for this strict path.
@@ -150,17 +155,9 @@ Connect the DC-Elite:
 aplay -l
 ```
 
-Generate a card-specific stanza:
-
-```bash
-dc-elite-alsa-config
-```
-
-Place the output in:
-
-```text
-~/.asoundrc
-```
+Home Manager creates `~/.asoundrc` with the direct `dc_elite` ALSA hardware
+device. Its `card "[iBasso"` identifier remains stable across boot-dependent
+ALSA card-index changes.
 
 Then configure Strawberry to use ALSA and the `dc_elite` device.
 
@@ -266,9 +263,10 @@ QBZ supports direct ALSA hardware access and per-track sample-rate switching.
 Qobuz streaming itself tops out at 24-bit / 192 kHz, so QBZ should switch the
 DAC among the source rates delivered by Qobuz without resampling.
 
-The WirePlumber rule in `modules/nixos/audio.nix` keeps the DC-Elite out of
-PipeWire ownership. That allows either Strawberry or QBZ to acquire the DAC
-directly, but only one direct-ALSA player can own the hardware device at a time.
+The WirePlumber rule in `modules/nixos/audio.nix` makes the DC-Elite Plasma's
+preferred output while idle suspension keeps direct ALSA available. Either
+Strawberry or QBZ can acquire the DAC directly once other desktop playback has
+stopped; only one direct-ALSA player can own the hardware device at a time.
 
 Direct-ALSA paths (QBZ only when separately supplied):
 

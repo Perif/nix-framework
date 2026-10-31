@@ -25,6 +25,8 @@ let
     shfmt
 
     podman-compose
+    terraform-ls
+    prettier
 
     btop
     htop

@@ -40,22 +40,25 @@ class Config:
 
 def read_config(source):
     data = query('nix', 'eval', '--json', '--file', str(source / 'settings.nix'),
-                 '--apply', '''s: { inherit (s) hostname diskDevice timeZone;
+                 '--apply', '''s: { inherit (s) hostKey timeZone;
                    username = s.user.name; secureBoot = s.features.secureBoot;
                    declarativePassword = s.user.hashedPassword != null || s.user.initialPassword != null; }''')
-    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9-]{0,62}', data['hostname']):
-        raise Stop('Invalid hostname.')
+    host_key = data['hostKey']
+    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9-]{0,62}', host_key):
+        raise Stop('Invalid host key.')
     if not re.fullmatch(r'[a-z_][a-z0-9_-]{0,31}', data['username']) or data['username'] == 'root':
         raise Stop('A valid non-root installation username is required.')
-    disk = data['diskDevice']
-    if (not re.fullmatch(r'/dev/disk/by-id/[A-Za-z0-9_.:+-]+', disk)
-            or 'REPLACE' in disk.upper() or re.search(r'-part\d+$', disk)):
-        raise Stop('Select a real whole-disk /dev/disk/by-id/ path in settings.nix.')
     if not data['timeZone']:
         raise Stop('Resolve timeZone first: nix run .#detect-timezone.')
     if data['secureBoot']:
         raise Stop('Fresh installation requires features.secureBoot = false; enroll keys after first boot.')
-    return Config(source, data['hostname'], data['username'], disk, data['declarativePassword'])
+    disk = run('nix', 'eval', '--raw',
+               f'{source}#nixosConfigurations.{host_key}.config.disko.devices.disk.main.device',
+               '--no-update-lock-file', '--no-write-lock-file', capture=True)
+    if (not re.fullmatch(r'/dev/disk/by-id/[A-Za-z0-9_.:+-]+', disk)
+            or 'REPLACE' in disk.upper() or re.search(r'-part\d+$', disk)):
+        raise Stop('Select a real whole-disk /dev/disk/by-id/ path in the selected host configuration.')
+    return Config(source, host_key, data['username'], disk, data['declarativePassword'])
 
 
 def validate_source(source):
@@ -118,7 +121,7 @@ def evaluate(config):
     actual = run('nix', 'eval', '--raw', f'{config.source}#nixosConfigurations.{config.hostname}.config.disko.devices.disk.main.device',
                  '--no-update-lock-file', '--no-write-lock-file', capture=True)
     if actual != config.disk:
-        raise Stop('The evaluated Disko target differs from settings.diskDevice.')
+        raise Stop('The evaluated Disko target differs from the reviewed host configuration.')
     return evaluate_layout(config)
 
 

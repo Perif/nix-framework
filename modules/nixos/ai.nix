@@ -49,6 +49,9 @@ in
       # Vulkan discovery is enabled by the package wrapper.
       OLLAMA_IGPU_ENABLE = "1";
       OLLAMA_NO_CLOUD = "1";
+      # Enables the q8_0 KV cache used for the 16 KiB coding context below,
+      # substantially reducing its shared-memory footprint.
+      OLLAMA_FLASH_ATTENTION = "1";
       OLLAMA_CONTEXT_LENGTH = toString settings.ai.contextLength;
       OLLAMA_MAX_LOADED_MODELS = toString settings.ai.maxLoadedModels;
       OLLAMA_NUM_PARALLEL = toString settings.ai.parallelRequests;
@@ -57,12 +60,11 @@ in
     };
   };
 
-  # Keep the hardened service definition and persistent model store, but do not
-  # start the daemon at boot. The configured user starts and stops it explicitly
-  # with the documented systemctl commands or Zsh aliases when local inference
-  # is needed.
+  # Start the loopback-only API at boot.  No model is loaded until a client
+  # requests one, so this makes OpenCode immediately usable without reserving
+  # model memory while idle.
   systemd.services.ollama = lib.mkIf aiEnabled {
-    wantedBy = lib.mkForce [ ];
+    wantedBy = lib.mkForce [ "multi-user.target" ];
     unitConfig.RequiresMountsFor = [ "/var/lib/private/ollama" ];
   };
   # Preserve DynamicUser's private ancestor even before the first service run.

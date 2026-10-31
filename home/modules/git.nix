@@ -1,7 +1,6 @@
 {
   lib,
   pkgs,
-  settings,
   ...
 }:
 
@@ -28,10 +27,10 @@ in
     hooks.pre-commit = "${securityPreCommit}/bin/git-security-pre-commit";
 
     settings = {
-      user = {
-        name = settings.git.userName;
-        email = settings.git.userEmail;
-      };
+      # Personal identity belongs in this untracked local include, not in the
+      # declarative repository. Create it once with `git config --file
+      # ~/.config/git/local user.name "..."` and the equivalent user.email.
+      include.path = "~/.config/git/local";
 
       init.defaultBranch = "main";
       commit.verbose = true;

@@ -52,16 +52,16 @@
       # Common NixOS workflow. The explicit names make the activation behavior
       # visible before a command is run: dry-build previews builds, test is
       # temporary, boot activates after reboot, and switch activates now.
-      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
+      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostKey}";
       ncheck = "nix flake check --no-build --all-systems /etc/nixos";
       nix-check = "nix flake check --no-build --all-systems /etc/nixos";
       nix-show = "nix flake show /etc/nixos";
       nix-metadata = "nix flake metadata /etc/nixos";
       nix-update = "sudo nix flake update --flake /etc/nixos";
-      nix-dry = "sudo nixos-rebuild dry-build --flake /etc/nixos#${settings.hostname}";
-      nix-test = "sudo nixos-rebuild test --flake /etc/nixos#${settings.hostname}";
-      nix-boot = "sudo nixos-rebuild boot --flake /etc/nixos#${settings.hostname}";
-      nix-switch = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
+      nix-dry = "sudo nixos-rebuild dry-build --flake /etc/nixos#${settings.hostKey}";
+      nix-test = "sudo nixos-rebuild test --flake /etc/nixos#${settings.hostKey}";
+      nix-boot = "sudo nixos-rebuild boot --flake /etc/nixos#${settings.hostKey}";
+      nix-switch = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostKey}";
       nix-generations = "sudo nix-env --profile /nix/var/nix/profiles/system --list-generations";
       nix-search = "nix search nixpkgs";
       nix-why = "nix why-depends /run/current-system";
@@ -83,11 +83,82 @@
       # Inherit LANG and category-specific locale settings from the system.
       # In particular, do not override settings.defaultLocale with LC_ALL.
 
-      NEWLINE=$'\n'
-      PROMPT="[%F{155}%*%f] - %F{117}%n%f@%F{177}%m%f: %F{147}%d%f ''${NEWLINE}%h %F{220}>%f "
+      # Keep CLI editing in the shell rather than imposing it on every
+      # application running in Ghostty.
+      bindkey -e
+      bindkey '^A' beginning-of-line
+      bindkey '^W' backward-kill-word
+      bindkey '^[[1;5D' backward-word
+      bindkey '^[[1;5C' forward-word
+
+      # Preserve the old `%h` prompt field while Starship renders the rest of
+      # the prompt. Starship custom modules inherit exported shell variables.
+      autoload -Uz add-zsh-hook
+      _starship_history_number() {
+        export STARSHIP_HISTORY_NUMBER=$HISTCMD
+      }
+      add-zsh-hook precmd _starship_history_number
     '';
   };
 
-  # Deliberately disabled: the custom PROMPT above is authoritative.
-  programs.starship.enable = false;
+  programs.starship = {
+    enable = true;
+    enableZshIntegration = true;
+    settings = {
+      add_newline = false;
+      format = "$time$username$hostname$directory$git_branch$git_status$python$golang$rust$nodejs$terraform$nix_shell$line_break\${custom.history}$status$character";
+
+      time = {
+        disabled = false;
+        time_format = "%T";
+        format = "[$time](fg:155) - ";
+      };
+
+      username = {
+        show_always = true;
+        format = "[$user](fg:117)";
+      };
+
+      hostname = {
+        ssh_only = false;
+        format = "[@$hostname](fg:177):";
+      };
+
+      directory = {
+        truncation_length = 0;
+        format = " [$path](fg:147)";
+      };
+
+      git_branch = {
+        # Starship defaults this module to bold purple; retain the color but
+        # let the branch name use the same normal weight as the old prompt.
+        style = "purple";
+        format = " [ $branch]($style)";
+      };
+      git_status.format = "[$all_status$ahead_behind ]($style)";
+
+      python.format = " [ $version]($style)";
+      golang.format = " [ $version]($style)";
+      rust.format = " [ $version]($style)";
+      nodejs.format = " [ $version]($style)";
+      terraform.format = " [󱁢 $version]($style)";
+      nix_shell.format = " [ $state]($style)";
+
+      custom.history = {
+        command = "printf '%s' \"$STARSHIP_HISTORY_NUMBER\"";
+        when = "test -n \"$STARSHIP_HISTORY_NUMBER\"";
+        format = "[$output ](fg:250)";
+      };
+
+      status = {
+        disabled = false;
+        format = "[$symbol$status ]($style)";
+      };
+
+      character = {
+        success_symbol = "[>](fg:220)";
+        error_symbol = "[>](fg:196)";
+      };
+    };
+  };
 }

@@ -25,7 +25,7 @@ import record  # noqa: E402
 
 
 VALID_SETTINGS = {
-    "hostname": "framework-pro",
+    "hostKey": "framework-pro",
     "username": "owner",
     "diskDevice": "/dev/disk/by-id/nvme-Samsung_990_SERIAL",
     "timeZone": "America/Chicago",
@@ -96,15 +96,17 @@ class SettingsAndEvaluation(unittest.TestCase):
                     storage.active_swaps()
 
     def test_valid_settings_and_unsafe_selections(self):
-        with patch.object(common, "query", return_value=VALID_SETTINGS):
+        with patch.object(common, "query", return_value=VALID_SETTINGS), \
+             patch.object(common, "run", return_value=VALID_SETTINGS["diskDevice"]):
             self.assertEqual(common.read_config(Path("/reviewed")), config(Path("/reviewed")))
-        with patch.object(common, "query", return_value={**VALID_SETTINGS, "declarativePassword": True}):
+        with patch.object(common, "query", return_value={**VALID_SETTINGS, "declarativePassword": True}), \
+             patch.object(common, "run", return_value=VALID_SETTINGS["diskDevice"]):
             self.assertTrue(common.read_config(Path("/reviewed")).declarative_password)
 
         cases = (
-            ("diskDevice", "/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID"),
-            ("diskDevice", "/dev/disk/by-id/nvme-SERIAL-part2"),
-            ("diskDevice", "/dev/nvme0n1"),
+            ("disk", "/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID"),
+            ("disk", "/dev/disk/by-id/nvme-SERIAL-part2"),
+            ("disk", "/dev/nvme0n1"),
             ("username", "root"),
             ("username", "bad user"),
             ("timeZone", None),
@@ -112,8 +114,10 @@ class SettingsAndEvaluation(unittest.TestCase):
         )
         for field, value in cases:
             with self.subTest(field=field, value=value):
-                settings = {**VALID_SETTINGS, field: value}
-                with patch.object(common, "query", return_value=settings):
+                settings = {**VALID_SETTINGS, **({} if field == "disk" else {field: value})}
+                disk = value if field == "disk" else VALID_SETTINGS["diskDevice"]
+                with patch.object(common, "query", return_value=settings), \
+                     patch.object(common, "run", return_value=disk):
                     with self.assertRaises(common.Stop):
                         common.read_config(Path("/reviewed"))
 

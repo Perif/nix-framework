@@ -8,16 +8,16 @@ let
     set encoding=utf-8
     set termguicolors
     set number
-    set relativenumber
+    set norelativenumber
     set cursorline
     set signcolumn=yes
     set mouse=a
     set clipboard=unnamedplus
 
     set expandtab
-    set tabstop=4
-    set shiftwidth=4
-    set softtabstop=4
+    set tabstop=2
+    set shiftwidth=2
+    set softtabstop=2
     set shiftround
 
     set ignorecase

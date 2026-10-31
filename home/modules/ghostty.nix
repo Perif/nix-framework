@@ -10,10 +10,9 @@
       "font-family" = "JetBrainsMono Nerd Font";
       "font-size" = 11;
 
-      "clipboard-paste-protection" = true;
-      "clipboard-paste-bracketed-safe" = false;
-      "clipboard-read" = "ask";
-      "clipboard-write" = "ask";
+      "clipboard-paste-protection" = false;
+      "clipboard-read" = "allow";
+      "clipboard-write" = "allow";
       "title-report" = false;
 
       "background-opacity" = 1.0;
@@ -57,7 +56,12 @@
         "15=#ffffff"
       ];
 
-      "window-decoration" = true;
+      # On Plasma, use Ghostty's client-side titlebar so KWin does not add a
+      # second titlebar above Ghostty's integrated tabs and window controls.
+      "window-decoration" = "client";
+      # Integrate tabs into the GTK titlebar rather than reserving a second
+      # row for them. This trims the window chrome while retaining tabs.
+      "gtk-titlebar-style" = "tabs";
       "window-padding-x" = 8;
       "window-padding-y" = 6;
 

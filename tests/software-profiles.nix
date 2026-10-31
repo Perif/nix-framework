@@ -2,6 +2,7 @@
   configuration,
   settings,
   lib,
+  nixpkgs-sublime,
 }:
 let
   minimal = settings // {
@@ -29,7 +30,14 @@ let
     selection:
     (configuration.extendModules {
       specialArgs.settings = selection;
-      modules = [ { home-manager.extraSpecialArgs = lib.mkForce { settings = selection; }; } ];
+      modules = [
+        {
+          home-manager.extraSpecialArgs = lib.mkForce {
+            inherit nixpkgs-sublime;
+            settings = selection;
+          };
+        }
+      ];
     }).config;
   defaultHome = configuration.config.home-manager.users.${settings.user.name};
   cfg = evaluate minimal;
@@ -60,6 +68,7 @@ let
       };
       display = settings.display // {
         disableHdr = false;
+        vrr = false;
       };
       features = minimal.features // {
         languageTools = minimal.features.languageTools // {
@@ -142,6 +151,7 @@ assert builtins.all
     guileHome
     reaHome
   ];
+assert configuration.config.systemd.services.ollama.wantedBy == [ "multi-user.target" ];
 assert !cfg.services.ollama.enable;
 assert !cfg.services.open-webui.enable;
 assert !cfg.virtualisation.podman.enable;

@@ -2,6 +2,9 @@
 { pkgs, lib, ... }:
 let
   fixtureSettings = {
+    # The installer selects the flake output by its stable key; the target's
+    # local networking hostname remains an independent host configuration.
+    hostKey = "installer-target";
     hostname = "installer-target";
     diskDevice = "/dev/disk/by-id/nvme-QEMU_NVMe_Ctrl_INSTALL_TEST";
     timeZone = "UTC";

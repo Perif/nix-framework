@@ -5,9 +5,12 @@
     ../modules/firefox.nix
     ../modules/privacy.nix
     ../modules/plasma-security.nix
+    ../modules/plasma-panels.nix
     ../modules/power.nix
     ../modules/touchpad.nix
     ../modules/ghostty.nix
+    ../modules/codex.nix
+    ../modules/opencode.nix   # Add this
     ../modules/vim.nix
     ../modules/git.nix
     ../modules/zsh.nix
@@ -15,8 +18,6 @@
     ../modules/personal-apps.nix
     ../modules/strawberry.nix
     ../modules/music-tools.nix
-    ../modules/dc-elite.nix
-    ../modules/display-color.nix
     ../modules/easyeffects.nix
   ]
   ++ lib.optional settings.features.qbz ../modules/qbz.nix

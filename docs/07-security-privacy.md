@@ -148,9 +148,9 @@ The build additionally:
 - keeps the proprietary-package exception to the exact Sublime, Brave, OneTab,
   and Enhancer for YouTube derivation names instead of globally allowing
   unfree software;
-- keeps terminal paste protection enabled, treats bracketed paste as subject to
-  checks, asks before terminal programs read or write the desktop clipboard,
-  disables automatic copy-on-select, and confirms before closing a surface;
+- disables terminal paste protection and permits terminal programs to read and
+  write the desktop clipboard without prompts, disables automatic copy-on-select,
+  and confirms before closing a surface;
 - seeds Sublime's external plug-in installation list with Package Control, EditorConfig,
   LSP, and syntax-only Nix support while keeping language-server executables in
   the pinned Nix closure;
