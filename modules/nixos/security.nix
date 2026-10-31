@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   # Only wheel members may execute sudo, and authentication remains required.
@@ -58,6 +58,20 @@
   # Framework's nixos-hardware module enables this as well; explicit here
   # because fingerprint authentication is part of this machine's policy.
   services.fprintd.enable = true;
+
+  # The Goodix reader needs a short interval to reappear on USB after resume.
+  # Restarting the D-Bus-activated daemon once systemd-suspend has returned
+  # drops any stale pre-suspend device handle before Plasma or PAM uses it.
+  systemd.services.fprintd-after-suspend = {
+    description = "Reinitialize fprintd after system resume";
+    wantedBy = [ "suspend.target" ];
+    after = [ "systemd-suspend.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStartPre = "${pkgs.coreutils}/bin/sleep 1";
+      ExecStart = "${pkgs.systemd}/bin/systemctl restart fprintd.service";
+    };
+  };
 
   # Keep fingerprints available for login, Plasma unlock, and local sudo.
   # Plasma installs its dedicated kde-fingerprint PAM service when fprintd is
