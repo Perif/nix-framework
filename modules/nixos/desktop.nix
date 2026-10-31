@@ -10,6 +10,14 @@
     capSysNice = false;
   };
 
+  # Steam needs the system-level launcher and its 32-bit runtime support;
+  # keep network-facing helpers disabled unless explicitly needed.
+  programs.steam = {
+    enable = settings.features.gaming.steam;
+    remotePlay.openFirewall = false;
+    dedicatedServer.openFirewall = false;
+  };
+
   # NAPS2 needs scanner drivers/udev rules as well as its GUI package.
   # This enables local access only; saned and discovery firewall ports stay off.
   hardware.sane.enable = settings.features.utilities.naps2;

@@ -93,6 +93,8 @@ in
     "sublime-merge"
     "sublime-merge-bin"
     "brave"
+    "steam"
+    "steam-unwrapped"
     "onetab"
     "enhancer-for-youtube"
   ];
