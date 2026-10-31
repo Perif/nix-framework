@@ -22,8 +22,9 @@ with tempfile.TemporaryDirectory(prefix='installer-source-test-') as temporary:
                     str(args.config.resolve()), str(checkout)], check=True)
     settings = checkout / 'settings.nix'
     settings.write_text(settings.read_text().replace(
-        '/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID', '/dev/disk/by-id/ci-validation-disk'
-    ).replace('timeZone = null;', 'timeZone = "UTC";'))
+        'hostKey = "framework-pro";',
+        'hostKey = "framework-pro";\n\n  diskDevice = "/dev/disk/by-id/ci-validation-disk";'
+    ))
     subprocess.run(['git', '-C', str(checkout), 'add', 'settings.nix'], check=True)
     (checkout / 'untracked-canary').write_text('must not enter source snapshot')
     (checkout / 'ignored-canary').write_text('must not enter source snapshot')
