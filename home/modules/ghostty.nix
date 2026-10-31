@@ -57,6 +57,9 @@
       ];
 
       "window-decoration" = true;
+      # Integrate tabs into the GTK titlebar rather than reserving a second
+      # row for them. This trims the window chrome while retaining tabs.
+      "gtk-titlebar-style" = "tabs";
       "window-padding-x" = 8;
       "window-padding-y" = 6;
 
