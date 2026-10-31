@@ -31,10 +31,6 @@ check:
 update:
     nix flake update
 
-# Update only the Nixpkgs input used by Sublime Text and Sublime Merge.
-update-sublime:
-    nix flake update nixpkgs-sublime
-
 # Format Nix files through the flake formatter.
 fmt:
     nix fmt

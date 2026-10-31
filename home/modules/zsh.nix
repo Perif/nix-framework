@@ -129,7 +129,12 @@
         format = " [$path](fg:147)";
       };
 
-      git_branch.format = " [ $branch]($style)";
+      git_branch = {
+        # Starship defaults this module to bold purple; retain the color but
+        # let the branch name use the same normal weight as the old prompt.
+        style = "purple";
+        format = " [ $branch]($style)";
+      };
       git_status.format = "[$all_status$ahead_behind ]($style)";
 
       python.format = " [ $version]($style)";
