@@ -142,6 +142,7 @@ assert builtins.all
     guileHome
     reaHome
   ];
+assert configuration.config.systemd.services.ollama.wantedBy == [ "multi-user.target" ];
 assert !cfg.services.ollama.enable;
 assert !cfg.services.open-webui.enable;
 assert !cfg.virtualisation.podman.enable;

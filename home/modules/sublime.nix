@@ -55,7 +55,10 @@ let
       runHook preInstall
 
       mkdir -p "$out/bin" "$out/share/applications"
-      makeWrapper "${sublimeTextUnwrapped}/sublime_text" "$out/bin/sublime_text"
+      # Sublime's Linux menu bar is GTK-native rather than controlled by the
+      # .sublime-theme. Force KDE's dark GTK theme for the launcher and CLI.
+      makeWrapper "${sublimeTextUnwrapped}/sublime_text" "$out/bin/sublime_text" \
+        --set GTK_THEME "Breeze-Dark"
       ln -s sublime_text "$out/bin/subl"
       ln -s sublime_text "$out/bin/sublime"
       ln -s sublime_text "$out/bin/sublime4"
@@ -139,6 +142,14 @@ let
         };
       };
     }
+    // {
+      terraform-ls = {
+        enabled = true;
+        command = [ "${pkgs.terraform-ls}/bin/terraform-ls" "serve" ];
+        selector = "source.terraform";
+        diagnostics_mode = "workspace";
+      };
+    }
     // lib.optionalAttrs languages.nix {
       nixd = {
         enabled = true;
@@ -168,6 +179,10 @@ in
         "font_face": "JetBrainsMono Nerd Font",
         "font_size": 10,
         "hardware_acceleration": "opengl",
+        "theme": "ayu-mirage.sublime-theme",
+        "color_scheme": "ayu/ayu-mirage.sublime-color-scheme",
+        "themed_title_bar": true,
+        "file_icons": true,
         "update_check": false,
         "disable_plugin_host_3.3": true,
 
@@ -226,7 +241,20 @@ in
           "EditorConfig",
           "LSP",
           "Nix",
-          "Package Control"
+          "Package Control",
+          "BracketHighlighter",
+          "SublimeLinter",
+          "SublimeCodeIntel",
+          "AutoFileName",
+          "All Autocomplete",
+          "AdvancedNewFile",
+          "MarkdownEditing",
+          "ayu",
+          "AlignTab",
+          "AutoPEP8",
+          "Formatter",
+          "Formatter",
+          "SideBarEnhancements"
         ]
       }
     '';
@@ -239,6 +267,9 @@ in
         "font_face": "JetBrainsMono Nerd Font",
         "font_size": 10,
         "hardware_acceleration": "opengl",
+        "theme": "Merge Dark.sublime-theme",
+        "color_scheme": "Mariana.sublime-color-scheme",
+        "themed_title_bar": true,
         "update_check": false
       }
     '';

@@ -20,7 +20,9 @@
     ../../modules/nixos/containers.nix
   ];
 
-  networking.hostName = settings.hostname;
+  # Local machine identity; keep the stable flake output name `framework-pro`
+  # separate so this can be renamed without changing build targets.
+  networking.hostName = "difool";
 
   # Keep this at the release used for the initial installation.
   system.stateVersion = "26.05";

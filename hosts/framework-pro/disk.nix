@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  settings,
   ...
 }:
 
@@ -13,8 +12,8 @@
         && !(lib.hasInfix "REPLACE" config.disko.devices.disk.main.device)
         && builtins.match ".*-part[0-9]+" config.disko.devices.disk.main.device == null;
       message = ''
-        settings.nix: replace diskDevice with the verified /dev/disk/by-id/...
-        whole-disk path (not a partition) for the installation target before running Disko.
+        hosts/framework-pro/disk.nix must use a verified whole-disk
+        /dev/disk/by-id path, not a partition, before running Disko.
       '';
     }
   ];
@@ -24,7 +23,7 @@
       type = "disk";
 
       # The assertion above rejects the checked-in destructive-install sentinel.
-      device = settings.diskDevice;
+      device = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_2TB_S7U7NU0YB37482T";
 
       content = {
         type = "gpt";

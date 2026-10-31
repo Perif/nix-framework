@@ -150,17 +150,9 @@ Connect the DC-Elite:
 aplay -l
 ```
 
-Generate a card-specific stanza:
-
-```bash
-dc-elite-alsa-config
-```
-
-Place the output in:
-
-```text
-~/.asoundrc
-```
+Home Manager creates `~/.asoundrc` with the direct `dc_elite` ALSA hardware
+device. Its `card "[iBasso"` identifier remains stable across boot-dependent
+ALSA card-index changes.
 
 Then configure Strawberry to use ALSA and the `dc_elite` device.
 

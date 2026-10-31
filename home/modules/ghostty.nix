@@ -10,10 +10,9 @@
       "font-family" = "JetBrainsMono Nerd Font";
       "font-size" = 11;
 
-      "clipboard-paste-protection" = true;
-      "clipboard-paste-bracketed-safe" = false;
-      "clipboard-read" = "ask";
-      "clipboard-write" = "ask";
+      "clipboard-paste-protection" = false;
+      "clipboard-read" = "allow";
+      "clipboard-write" = "allow";
       "title-report" = false;
 
       "background-opacity" = 1.0;

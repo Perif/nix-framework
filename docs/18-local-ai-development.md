@@ -13,24 +13,24 @@ In `/etc/nixos/settings.nix`, keep `features.localAI = true` and
 [apply a change](install/06-customization.md), then open a new terminal and restart
 VSCodium. Extensions are Nix-managed; do not install them through the marketplace.
 
-## 2. Start Ollama and download the configured REA model
+## 2. Verify Ollama and download the default coding model
 
 ```bash
-ollama-on
+systemctl is-active ollama.service
 curl --fail http://127.0.0.1:11434/api/tags
-ollama pull qwen3:8b
-ollama run qwen3:8b
+ollama pull qwen2.5-coder:7b
+ollama run qwen2.5-coder:7b
 ```
 
-**Expected:** the API returns JSON, the download completes and the model answers.
-Exit the interactive prompt with `/bye`. Model downloads are deliberate and are
-not part of a Nix rebuild. This is a starting model, not a measured performance
-recommendation for every task.
+**Expected:** the service is `active`, the API returns JSON, the download
+completes and the model answers. Exit the interactive prompt with `/bye`. Model
+downloads are deliberate and are not part of a Nix rebuild. The service starts
+at boot but no model occupies memory until a request loads it.
 
 ## 3. Use Continue
 
 1. Run `codium` and open the Continue panel.
-2. Select **qwen3:8b** from the detected models. If it is missing, reload
+2. Select **Qwen2.5-Coder 7B (default)**. If it is missing, reload
    Continue after starting Ollama and completing the download.
 3. Send a short chat request. For tools, use the configured **REA via Ollama**
    entry and follow [REA setup](19-rea.md).
@@ -57,15 +57,15 @@ llama.cpp use Vulkan; neither uses the NPU. Ollaya uses a separate CPU backend.
 Use [backend diagnostics and benchmarks](reference/32-ai-backends.md) if results
 are unclear. No maximum-performance claim is made without laptop measurements.
 
-## 5. Stop when finished
+## 5. Optional: unload the model
 
 ```bash
-ollama-off
-systemctl show ollama.service -p ActiveState
+ollama stop qwen2.5-coder:7b
+ollama ps
 ```
 
-**Expected:** `ActiveState=inactive`. Start with `ollama-on` before the next
-Continue request. If Open WebUI is running, stop it with `webui-off` first.
+**Expected:** no model is listed. The service remains active for OpenCode and
+other local clients; stopping a model releases its memory immediately.
 
 ## Change models or memory defaults
 
@@ -74,25 +74,27 @@ Continue request. If Open WebUI is running, stop it with `webui-off` first.
 
 | Field | Default / purpose |
 | --- | --- |
-| `ai.contextLength` | `8192`; Ollama and Continue context default |
-| `ai.maxOutputTokens` | `2048`; Continue output default |
+| `ai.contextLength` | `16384`; Ollama and Continue context default |
+| `ai.maxOutputTokens` | `4096`; Continue output default |
 | `ai.maxLoadedModels` | `1`; bounds resident Ollama model count |
 | `ai.parallelRequests` | `1`; concurrent Ollama requests |
-| `ai.keepAlive` | `"5m"`; idle retention |
-| `ai.kvCacheType` | `"f16"`; baseline KV precision |
-| `rea.ollamaModel` | `"qwen3:8b"`; explicit tool-capable model for REA |
+| `ai.keepAlive` | `"10m"`; idle retention |
+| `ai.kvCacheType` | `"q8_0"`; halves KV-cache memory with Flash Attention |
+| `rea.ollamaModel` | `"qwen3:8b"`; REA's separate tool-capable model |
 
 2. To change provider entries, edit `home/modules/continue-config.nix`.
    To change extensions, edit `home/modules/vscodium.nix`. Never edit generated
    `~/.continue/config.yaml`.
-3. Download any newly selected model explicitly with `ollama pull MODEL`.
+3. Download any newly selected model explicitly with `ollama pull MODEL`. For
+   harder, less latency-sensitive work, `qwen3-coder:30b` is available as an
+   opt-in model; do not keep it loaded alongside another model.
 4. Follow [apply a change](install/06-customization.md); restart VSCodium and verify
    the selected model, response and memory use.
 
 These are defaults, not a memory quota: API requests/model metadata can override
 context or retention, and one model can exhaust RAM. Larger context is not
-always faster or better. Keep `f16` unless measured memory pressure justifies
-comparing a lower precision; `q8_0` needs active Flash Attention support.
+always faster or better. `q8_0` needs active Flash Attention support; compare
+it with `f16` if a model's output quality is unexpectedly affected.
 
 ## Optional: serve a GGUF with llama.cpp
 

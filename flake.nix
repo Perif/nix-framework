@@ -34,6 +34,13 @@
       url = "github:nix-community/lanzaboote/v1.1.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixpkgs-strawberry.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -45,6 +52,8 @@
       disko,
       nur,
       lanzaboote,
+      nixpkgs-strawberry,
+      plasma-manager,
       ...
     }:
     let
@@ -64,6 +73,7 @@
         path = ./templates/project;
         description = "Project-local dev shells for C, LLVM, Python, Go, Rust, Guile, Node.js and Nix";
       };
+      formatter.x86_64-linux = linuxPkgs.nixfmt;
 
       # Run the same Disko revision used by this configuration with:
       #   nix run .#disko -- ...
@@ -178,7 +188,7 @@
           power-settings = import ./tests/power-settings.nix { inherit pkgs; };
           software-profiles =
             assert import ./tests/software-profiles.nix {
-              configuration = self.nixosConfigurations.${settings.hostname};
+              configuration = self.nixosConfigurations.${settings.hostKey};
               inherit settings;
               inherit (nixpkgs) lib;
             };
@@ -192,7 +202,7 @@
         }
       );
 
-      nixosConfigurations.${settings.hostname} = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.${settings.hostKey} = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
 
         # Every NixOS module receives `settings` as an argument.
@@ -221,10 +231,16 @@
 
               # Expose installation settings to Home Manager modules.
               extraSpecialArgs = {
-                inherit settings;
+                inherit settings nixpkgs-strawberry;
               };
 
-              users.${settings.user.name} = import ./home/user;
+              users.${settings.user.name} = {
+                imports = [
+                  plasma-manager.homeModules.plasma-manager
+                  ./home/user
+                  ./hosts/framework-pro/home.nix
+                ];
+              };
             };
           }
         ];

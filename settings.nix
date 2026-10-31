@@ -4,14 +4,13 @@
 # flake.nix passes it to every NixOS and Home Manager module as the `settings`
 # argument.
 {
-  # networking.hostName and the flake output name:
-  #   Follow docs/install/06-customization.md to build, test and apply.
-  hostname = "framework-pro";
+  # Stable flake output name. Keep this distinct from the local network name.
+  hostKey = "framework-pro";
 
   # Resolve once during installation: nix run .#detect-timezone
   # null requires detection (or an explicit IANA zone) before system evaluation.
   # The saved zone stays fixed after installation; GeoClue remains disabled.
-  timeZone = null;
+  timeZone = "America/Chicago";
   defaultLocale = "en_US.UTF-8";
   consoleKeyMap = "us";
 
@@ -59,13 +58,9 @@
     };
   };
 
-  # Destructive Disko target. Replace this sentinel with the verified stable
-  # path for the target drive; evaluation deliberately fails until then.
-  diskDevice = "/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID";
-
   user = {
-    name = "py";
-    description = "PY";
+    name = "perif";
+    description = "perif";
 
     # Leave both null for the safest installation path, then set the password
     # with `nixos-enter --root /mnt -c 'passwd <username>'` after nixos-install
@@ -122,7 +117,7 @@
     };
 
     localAI = true;
-    rea = true; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/19-rea.md.
+    rea = false; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/19-rea.md.
     extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
     extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
 
@@ -131,6 +126,7 @@
     gaming = {
       beyondAllReason = true;
       gamescope = true;
+      steam = true;
     };
 
     office = {
@@ -182,7 +178,7 @@
     enable = true;
     disableWhileTyping = true;
     tapToClick = true;
-    tapAndDrag = false; # Use a physical press to drag; reduces accidental drags.
+    tapAndDrag = true; # Use a physical press to drag; reduces accidental drags.
     tapDragLock = false;
     clickMethod = "clickfinger"; # Or "button-areas" for bottom-right clicks.
     naturalScrolling = false; # Set true if you prefer content to follow fingers.
@@ -213,15 +209,17 @@
       # Signup stays disabled. Run `sudo webui-bootstrap` once to create the
       # administrator interactively without placing credentials in this file.
     };
-    # A bounded starting point for 32 GiB shared CPU/GPU memory, not a RAM cap.
-    contextLength = 8192;
-    maxOutputTokens = 2048;
+    # Qwen3-Coder 30B needs room for its ~19 GiB model plus the desktop on this
+    # 32 GiB shared-memory laptop.  A 16 KiB context is large enough for normal
+    # agent loops without trying to retain several repositories at once.
+    contextLength = 16384;
+    maxOutputTokens = 4096;
     maxLoadedModels = 1;
     parallelRequests = 1;
-    keepAlive = "5m";
-    # f16 preserves quality. q8_0 halves KV storage where Flash Attention works;
-    # benchmark model quality/latency before changing it. FA stays auto-detected.
-    kvCacheType = "f16";
+    keepAlive = "10m";
+    # q8_0 halves KV-cache memory with normally negligible quality loss.  The
+    # Ollama service forces Flash Attention, which is required for this setting.
+    kvCacheType = "q8_0";
     ollaya = {
       enable = true;
     };
@@ -242,6 +240,8 @@
     # Keep built-in eDP panels in SDR, including Plasma's EDR emulation.
     # External monitors retain their own settings. See docs/09-display.md.
     disableHdr = true;
+    # Use Adaptive Sync automatically when the connected display supports it.
+    vrr = true;
     # Optional AC/battery refresh switching at the current panel resolution.
     # null on AC selects the highest advertised rate. External displays stay as set.
     refreshRate = {
@@ -271,8 +271,4 @@
     speakerRoute = null;
   };
 
-  git = {
-    userName = "PY";
-    userEmail = "py@example.invalid";
-  };
 }

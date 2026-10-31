@@ -11,12 +11,13 @@ let
   notebookcheck = ../../assets/color/framework-13-pro-MND508ZB1-1.icm;
   selected = if cfg.profile == "custom" then cfg.iccProfile else notebookcheck;
   validName = name: builtins.match "[A-Za-z0-9_-]+" name != null;
-  policyEnabled = cfg.disableHdr || cfg.refreshRate.enable;
+  policyEnabled = cfg.disableHdr || cfg.vrr || cfg.refreshRate.enable;
   validHz = value: builtins.isInt value && value >= 30 && value <= 240;
   sdrPolicy = pkgs.writeShellScript "framework-display-sdr" ''
     exec ${pkgs.python3}/bin/python3 ${./display-sdr.py} \
       --doctor ${pkgs.kdePackages.libkscreen}/bin/kscreen-doctor \
       ${lib.optionalString (!cfg.disableHdr) "--allow-hdr"} \
+      ${lib.optionalString cfg.vrr "--vrr"} \
       ${lib.optionalString cfg.refreshRate.enable ''
         --busctl ${pkgs.systemd}/bin/busctl \
         --battery-hz ${toString cfg.refreshRate.batteryHz} \
@@ -42,6 +43,10 @@ in
     {
       assertion = builtins.isBool cfg.disableHdr;
       message = "display.disableHdr must be a boolean.";
+    }
+    {
+      assertion = builtins.isBool cfg.vrr;
+      message = "display.vrr must be a boolean.";
     }
     {
       assertion = builtins.elem cfg.profile [

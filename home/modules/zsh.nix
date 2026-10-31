@@ -52,16 +52,16 @@
       # Common NixOS workflow. The explicit names make the activation behavior
       # visible before a command is run: dry-build previews builds, test is
       # temporary, boot activates after reboot, and switch activates now.
-      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
+      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostKey}";
       ncheck = "nix flake check --no-build --all-systems /etc/nixos";
       nix-check = "nix flake check --no-build --all-systems /etc/nixos";
       nix-show = "nix flake show /etc/nixos";
       nix-metadata = "nix flake metadata /etc/nixos";
       nix-update = "sudo nix flake update --flake /etc/nixos";
-      nix-dry = "sudo nixos-rebuild dry-build --flake /etc/nixos#${settings.hostname}";
-      nix-test = "sudo nixos-rebuild test --flake /etc/nixos#${settings.hostname}";
-      nix-boot = "sudo nixos-rebuild boot --flake /etc/nixos#${settings.hostname}";
-      nix-switch = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostname}";
+      nix-dry = "sudo nixos-rebuild dry-build --flake /etc/nixos#${settings.hostKey}";
+      nix-test = "sudo nixos-rebuild test --flake /etc/nixos#${settings.hostKey}";
+      nix-boot = "sudo nixos-rebuild boot --flake /etc/nixos#${settings.hostKey}";
+      nix-switch = "sudo nixos-rebuild switch --flake /etc/nixos#${settings.hostKey}";
       nix-generations = "sudo nix-env --profile /nix/var/nix/profiles/system --list-generations";
       nix-search = "nix search nixpkgs";
       nix-why = "nix why-depends /run/current-system";
@@ -83,11 +83,19 @@
       # Inherit LANG and category-specific locale settings from the system.
       # In particular, do not override settings.defaultLocale with LC_ALL.
 
-      NEWLINE=$'\n'
-      PROMPT="[%F{155}%*%f] - %F{117}%n%f@%F{177}%m%f: %F{147}%d%f ''${NEWLINE}%h %F{220}>%f "
+      # Keep CLI editing in the shell rather than imposing it on every
+      # application running in Ghostty.
+      bindkey -e
+      bindkey '^A' beginning-of-line
+      bindkey '^W' backward-kill-word
+      bindkey '^[[1;5D' backward-word
+      bindkey '^[[1;5C' forward-word
+
     '';
   };
 
-  # Deliberately disabled: the custom PROMPT above is authoritative.
-  programs.starship.enable = false;
+  programs.starship = {
+    enable = true;
+    enableZshIntegration = true;
+  };
 }
