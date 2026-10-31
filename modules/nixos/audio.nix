@@ -47,23 +47,35 @@
       "resample.quality" = 10;
     };
 
-    # Exclude the DC-Elite from WirePlumber/PipeWire ownership so that
-    # Strawberry can open the ALSA hardware endpoint directly.
+    # Prefer the DC-Elite whenever it is connected. Its node must remain in
+    # PipeWire for Plasma to see it and route desktop streams to it; hiding it
+    # entirely made desktop playback fall back to the internal speakers.
     #
-    # WirePlumber documents device.disabled as preventing creation of
-    # that ALSA device in WirePlumber.
-    wireplumber.extraConfig."51-dc-elite-exclusive" = {
+    # Strawberry keeps its separate `hw:DCElite,0` ALSA path. Suspending this
+    # PipeWire node promptly while idle releases the hardware for Strawberry's
+    # direct stream. A direct ALSA stream and a desktop PipeWire stream cannot
+    # use the physical DAC concurrently.
+    wireplumber.extraConfig."51-dc-elite-routing" = {
+      "wireplumber.settings" = {
+        # Do not let a previously clicked Plasma default override the priority
+        # policy when the DC-Elite is connected or removed.
+        "node.restore-default-targets" = false;
+      };
+
       "monitor.alsa.rules" = [
         {
           matches = [
             {
-              "device.product.name" = "~.*DC[- ]?Elite.*";
+              "node.name" = "~alsa_output.usb-iBasso.*";
             }
           ];
 
           actions = {
             update-props = {
-              "device.disabled" = true;
+              # Higher than the internal analog sink (1009) and common USB
+              # defaults, so WirePlumber selects it on hot-plug.
+              "priority.session" = 2000;
+              "session.suspend-timeout-seconds" = 1;
             };
           };
         }
