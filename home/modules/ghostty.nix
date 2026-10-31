@@ -56,7 +56,9 @@
         "15=#ffffff"
       ];
 
-      "window-decoration" = true;
+      # On Plasma, use Ghostty's client-side titlebar so KWin does not add a
+      # second titlebar above Ghostty's integrated tabs and window controls.
+      "window-decoration" = "client";
       # Integrate tabs into the GTK titlebar rather than reserving a second
       # row for them. This trims the window chrome while retaining tabs.
       "gtk-titlebar-style" = "tabs";
