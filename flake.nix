@@ -35,7 +35,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixpkgs-strawberry.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-sublime.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     plasma-manager = {
       url = "github:nix-community/plasma-manager";
@@ -52,7 +52,7 @@
       disko,
       nur,
       lanzaboote,
-      nixpkgs-strawberry,
+      nixpkgs-sublime,
       plasma-manager,
       ...
     }:
@@ -231,7 +231,7 @@
 
               # Expose installation settings to Home Manager modules.
               extraSpecialArgs = {
-                inherit settings nixpkgs-strawberry;
+                inherit settings nixpkgs-sublime;
               };
 
               users.${settings.user.name} = {

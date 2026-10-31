@@ -1,30 +1,20 @@
 {
   lib,
   pkgs,
+  nixpkgs-sublime,
   settings,
   ...
 }:
 
 let
   languages = settings.features.languageTools;
-  # Build 4213 ships two plug-in hosts. Only the legacy Python 3.3 host links
-  # to OpenSSL 1.1; the Python 3.14 host uses OpenSSL 3. Replace the broad
-  # Nixpkgs rpath input and remove the legacy host so old plug-ins fail closed
-  # instead of restoring an end-of-life cryptographic library.
-  # Reuse the locked Nixpkgs recipe with a targeted stable release pin. Do not
-  # update the whole system lock just to advance this binary editor.
-  # Keep this a path so Nix can resolve it through the fetched source tree.
-  # String interpolation can copy a lazily fetched Nixpkgs tree into an
-  # unrealised store path on a fresh CI runner.
-  sublimeTextBase = pkgs.callPackage (import
-    (pkgs.path + "/pkgs/applications/editors/sublime/4/common.nix")
-    {
-      buildVersion = "4213";
-      dev = false;
-      x64sha256 = "sha256-lhlCckQvia4V0TpskRjXkDV4tXiauIdLhnVYqm6RRak=";
-      aarch64sha256 = "sha256-4V9H7xQ+CyLl3CnPrAamP5ZGZXp6+Y6Ovyl1prxT6PE=";
-    }
-  ) { openssl_1_1 = pkgs.openssl_3_5; };
+  # A separately locked Nixpkgs input keeps proprietary Sublime releases
+  # current without advancing the whole operating-system package set.
+  sublimePkgs = import nixpkgs-sublime {
+    system = pkgs.stdenv.hostPlatform.system;
+    config.allowUnfree = true;
+  };
+  sublimeTextBase = sublimePkgs.sublime4;
 
   sublimeTextUnwrapped = sublimeTextBase.unwrapped.overrideAttrs (oldAttrs: {
     postInstall = (oldAttrs.postInstall or "") + ''
@@ -170,7 +160,7 @@ in
 
   home.packages = [
     sublimeTextSecure
-    pkgs.sublime-merge
+    sublimePkgs.sublime-merge
   ];
 
   xdg.configFile = {
