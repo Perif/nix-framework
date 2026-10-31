@@ -59,13 +59,12 @@
   # because fingerprint authentication is part of this machine's policy.
   services.fprintd.enable = true;
 
-  # Keep fingerprints for login and Plasma unlock. Plasma installs its
-  # dedicated kde-fingerprint PAM service when fprintd is enabled. Sudo is
-  # deliberately password-only: its PAM default would otherwise inherit the
-  # globally enabled fprintd service.
+  # Keep fingerprints available for login, Plasma unlock, and local sudo.
+  # Plasma installs its dedicated kde-fingerprint PAM service when fprintd is
+  # enabled; sudo retains its password fallback when the reader is unavailable.
   security.pam.services.login.fprintAuth = true;
   security.pam.services.sddm.fprintAuth = true;
-  security.pam.services.sudo.fprintAuth = false;
+  security.pam.services.sudo.fprintAuth = true;
 
   # TPM2 LUKS auto-unlock is deliberately not enabled on first install.
   # See docs/24-fingerprint-tpm.md after validating cold boot + hibernate.
