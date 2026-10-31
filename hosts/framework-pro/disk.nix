@@ -1,9 +1,19 @@
 {
   config,
   lib,
+  settings,
   ...
 }:
 
+let
+  # The installer VM supplies its disposable QEMU drive through settings. The
+  # actual Framework host keeps its physical identifier in this host module.
+  device =
+    if settings ? diskDevice then
+      settings.diskDevice
+    else
+      "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_2TB_S7U7NU0YB37482T";
+in
 {
   assertions = [
     {
@@ -23,7 +33,7 @@
       type = "disk";
 
       # The assertion above rejects the checked-in destructive-install sentinel.
-      device = "/dev/disk/by-id/nvme-Samsung_SSD_990_EVO_Plus_2TB_S7U7NU0YB37482T";
+      inherit device;
 
       content = {
         type = "gpt";

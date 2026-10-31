@@ -60,6 +60,7 @@ let
       };
       display = settings.display // {
         disableHdr = false;
+        vrr = false;
       };
       features = minimal.features // {
         languageTools = minimal.features.languageTools // {

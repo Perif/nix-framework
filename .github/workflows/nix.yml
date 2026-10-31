@@ -114,7 +114,6 @@ jobs:
 
       - name: Select non-destructive CI settings
         run: |
-          sed -i 's|/dev/disk/by-id/REPLACE-WITH-YOUR-NVME-ID|/dev/disk/by-id/ci-validation-disk|' settings.nix
           nix run .#detect-timezone -- --timezone UTC
 
       - name: Evaluate every flake output with default application selections
@@ -125,7 +124,7 @@ jobs:
 
       - name: Build the NixOS system with default application selections
         run: |
-          host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostname')"
+          host="$(nix eval --raw --impure --expr '(import ./settings.nix).hostKey')"
           nix build ".#nixosConfigurations.${host}.config.system.build.toplevel" \
             --no-link \
             --print-build-logs
