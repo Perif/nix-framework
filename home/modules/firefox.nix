@@ -259,6 +259,7 @@ in
           bypassPaywallsClean
           skip-redirect
           multi-account-containers
+          torrent-control
         ];
 
       };
