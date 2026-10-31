@@ -189,7 +189,7 @@
           software-profiles =
             assert import ./tests/software-profiles.nix {
               configuration = self.nixosConfigurations.${settings.hostKey};
-              inherit settings;
+              inherit settings nixpkgs-sublime;
               inherit (nixpkgs) lib;
             };
             pkgs.runCommand "software-profile-selection-tests" { } ''

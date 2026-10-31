@@ -2,6 +2,7 @@
   configuration,
   settings,
   lib,
+  nixpkgs-sublime,
 }:
 let
   minimal = settings // {
@@ -29,7 +30,14 @@ let
     selection:
     (configuration.extendModules {
       specialArgs.settings = selection;
-      modules = [ { home-manager.extraSpecialArgs = lib.mkForce { settings = selection; }; } ];
+      modules = [
+        {
+          home-manager.extraSpecialArgs = lib.mkForce {
+            inherit nixpkgs-sublime;
+            settings = selection;
+          };
+        }
+      ];
     }).config;
   defaultHome = configuration.config.home-manager.users.${settings.user.name};
   cfg = evaluate minimal;
