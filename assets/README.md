@@ -38,7 +38,7 @@ proven consensus winner. Keep upstream updates deliberate and compare by ear.
 ### Local variants
 
 `home/modules/easyeffects-presets.nix` generates `FW13Pro-EQ-Limiter` from the
-first source's EQ and limiter, and generates the empty `Flat` preset. The local
+first source's EQ and limiter, and generates the neutral stereo `Flat` preset. The local
 variant removes loudness/compression, sets EQ output gain and balance to zero,
 and sets the limiter threshold to -1 dB with gain boost disabled. It retains
 the original -19 dB EQ input gain. These changes are not upstream recommendations
