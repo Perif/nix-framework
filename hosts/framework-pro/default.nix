@@ -24,6 +24,18 @@
   # separate so this can be renamed without changing build targets.
   networking.hostName = "difool";
 
+  # The encrypted volume remains the boot-time authentication boundary. Once
+  # it is unlocked, enter this single-user laptop's Plasma session directly.
+  services.displayManager.autoLogin = {
+    enable = true;
+    user = settings.user.name;
+  };
+
   # Keep this at the release used for the initial installation.
   system.stateVersion = "26.05";
+
+  # Panther Lake graphics, Wi-Fi, and Bluetooth require firmware distributed
+  # separately from the kernel. Keep this hardware-specific requirement here
+  # so a portable host configuration does not silently omit those devices.
+  hardware.enableRedistributableFirmware = true;
 }

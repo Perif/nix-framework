@@ -59,6 +59,14 @@
   # because fingerprint authentication is part of this machine's policy.
   services.fprintd.enable = true;
 
+  # fprintd is normally D-Bus activated on the first PAM request. Start it
+  # before SDDM instead, so the Goodix reader is initialized when the greeter
+  # first offers fingerprint authentication after boot.
+  systemd.services.fprintd = {
+    wantedBy = [ "display-manager.service" ];
+    before = [ "display-manager.service" ];
+  };
+
   # The Goodix reader needs a short interval to reappear on USB after resume.
   # Restarting the D-Bus-activated daemon once systemd-suspend has returned
   # drops any stale pre-suspend device handle before Plasma or PAM uses it.
@@ -73,9 +81,10 @@
     };
   };
 
-  # Keep fingerprints available for login, Plasma unlock, and local sudo.
-  # Plasma installs its dedicated kde-fingerprint PAM service when fprintd is
-  # enabled; sudo retains its password fallback when the reader is unavailable.
+  # Keep fingerprints available for console login, the SDDM greeter, Plasma
+  # unlock, and local sudo. Plasma installs its dedicated kde-fingerprint PAM
+  # service when fprintd is enabled; sudo retains its password fallback when
+  # the reader is unavailable.
   security.pam.services.login.fprintAuth = true;
   security.pam.services.sddm.fprintAuth = true;
   security.pam.services.sudo.fprintAuth = true;
