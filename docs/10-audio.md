@@ -30,7 +30,7 @@ systemctl --user restart easyeffects
 3. In Presets → Autoload, associate it with the built-in speaker device **and
    speaker route**. Do not associate it with the whole sound card regardless of
    route: the same card can also drive the headphone jack.
-4. The service sets the output fallback to **Flat**, an empty effects chain,
+4. The service sets the output fallback to **Flat**, a neutral stereo pass-through,
    and leaves microphone stream processing disabled. Confirm the fallback in
    the GUI. Unmatched outputs/routes should load Flat.
 5. Test speaker → wired headphones → speakers, then Bluetooth/HDMI if used.
@@ -69,7 +69,7 @@ better simply because it is louder.
 | `FW13SpeakersV2-Loudness` | Current default. Original Pro-specific EQ, loudness, compressor and limiter; useful starting point for everyday playback. |
 | `FW13Pro-EQ-Limiter` | Local variant using the same EQ curve, without loudness or compressor. Keeps -19 dB EQ input gain, removes +11 dB output gain, centers balance, and uses a -1 dB limiter threshold with gain boost off. Intentionally quieter; try if you dislike dynamic processing. Not independently measured. |
 | `FW13Pro-bit0fun` | Alternative Pro EQ based on the author's Zoom H4n recordings. Original maximizer, EQ, compressor and limiter retained. Experimental comparison: pumping has been reported. |
-| `Flat` | Empty effects chain for comparison or no speaker EQ. Also the fallback for unmatched devices/routes. |
+| `Flat` | Neutral left/right stereo pass-through for comparison or no speaker EQ. Also the fallback for unmatched devices/routes. |
 | `Custom` | Your own exported EasyEffects output preset, installed only when `audio.customPreset` is set. |
 
 For a declarative speaker association, change **one value** in `settings.nix`:

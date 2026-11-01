@@ -13,4 +13,10 @@
     RequirePassword=true
     Timeout=5
   '';
+
+  # Do not reopen applications that were running when Plasma last exited.
+  # Use Plasma Manager's native option: it owns ksmserverrc already, whereas
+  # a second xdg.configFile writer makes activation try to edit its read-only
+  # store symlink.
+  programs.plasma.session.sessionRestore.restoreOpenApplicationsOnLogin = "startWithEmptySession";
 }
