@@ -23,7 +23,9 @@ let
       extraEditors = false;
       office = lib.mapAttrs (_: _: false) settings.features.office;
       utilities = lib.mapAttrs (_: _: false) settings.features.utilities;
-      gaming = lib.mapAttrs (_: _: false) settings.features.gaming;
+      gaming = (lib.mapAttrs (_: _: false) settings.features.gaming) // {
+        steam = true;
+      };
     };
   };
   evaluate =
@@ -104,7 +106,7 @@ let
       minimal
       // {
         features = minimal.features // {
-          gaming = { inherit beyondAllReason gamescope; };
+          gaming = minimal.features.gaming // { inherit beyondAllReason gamescope; };
         };
       }
     );
@@ -164,6 +166,9 @@ assert !home.programs.delta.enable;
 assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
 assert !cfg.programs.gamescope.enable;
+assert cfg.programs.steam.enable;
+assert !cfg.programs.steam.remotePlay.openFirewall;
+assert !cfg.programs.steam.dedicatedServer.openFirewall;
 assert !hasPackage "beyond-all-reason" home;
 assert hasPackage "beyond-all-reason" defaultHome == settings.features.gaming.beyondAllReason;
 assert configuration.config.programs.gamescope.enable == settings.features.gaming.gamescope;
