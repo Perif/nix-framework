@@ -57,5 +57,10 @@
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";
     QT_QPA_PLATFORM = "wayland;xcb";
+
+    # xpadneo exposes the Elite Series 2 correctly through evdev, but Steam's
+    # Xbox HIDAPI backend detects the compatibility PID and receives no input.
+    # Keep Steam on SDL's evdev backend for this Bluetooth controller.
+    SDL_JOYSTICK_HIDAPI_XBOX = "0";
   };
 }
