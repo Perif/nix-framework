@@ -88,6 +88,10 @@
   security.pam.services.login.fprintAuth = true;
   security.pam.services.sddm.fprintAuth = true;
   security.pam.services.sudo.fprintAuth = true;
+  # Plasma's Polkit agent authenticates system-service actions such as the
+  # captive-portal tray control. Keep the password fallback if no reader is
+  # available or no fingerprint is enrolled.
+  security.pam.services.polkit-1.fprintAuth = true;
 
   # TPM2 LUKS auto-unlock is deliberately not enabled on first install.
   # See docs/24-fingerprint-tpm.md after validating cold boot + hibernate.
