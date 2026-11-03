@@ -9,6 +9,71 @@ let
   user = settings.user;
   hasHashedPassword = user.hashedPassword != null;
   hasInitialPassword = user.initialPassword != null;
+  captivePortalScript = pkgs.writeShellApplication {
+    name = "captive-portal-mode";
+    runtimeInputs = [ pkgs.coreutils pkgs.gawk pkgs.networkmanager pkgs.systemd ];
+    text = ''
+      set -euo pipefail
+
+      state_dir=/run/captive-portal-mode
+      state_file="$state_dir/state"
+
+      active_wifi_device() {
+        nmcli -t -f DEVICE,TYPE,STATE device status | awk -F: \
+          '$2 == "wifi" && $3 == "connected" { print $1; exit }'
+      }
+
+      reconnect() {
+        local device="$1"
+        local connection="$2"
+        nmcli connection down "$connection" ifname "$device" || true
+        nmcli connection up "$connection" ifname "$device"
+      }
+
+      case "''${1:-}" in
+        activate)
+          device="$(active_wifi_device)"
+          if [ -z "$device" ]; then
+            echo "Connect to Wi-Fi first, then start captive-portal-mode." >&2
+            exit 1
+          fi
+
+          connection="$(nmcli -g GENERAL.CONNECTION device show "$device")"
+          if [ -z "$connection" ] || [ "$connection" = "--" ]; then
+            echo "No active Wi-Fi connection profile found for $device." >&2
+            exit 1
+          fi
+
+          ipv4_auto_dns="$(nmcli -g ipv4.ignore-auto-dns connection show "$connection")"
+          ipv6_auto_dns="$(nmcli -g ipv6.ignore-auto-dns connection show "$connection")"
+          install -d -m 700 "$state_dir"
+          printf '%s\n%s\n%s\n%s\n' "$device" "$connection" "$ipv4_auto_dns" "$ipv6_auto_dns" >"$state_file"
+
+          nmcli connection modify "$connection" \
+            ipv4.ignore-auto-dns no ipv6.ignore-auto-dns no
+          reconnect "$device" "$connection"
+          # Prefer this link's DHCP DNS while the declarative resolver policy
+          # is still loaded. The service stop action removes this runtime route.
+          resolvectl domain "$device" '~.' || true
+          ;;
+        deactivate)
+          [ -f "$state_file" ] || exit 0
+          mapfile -t saved <"$state_file"
+          device="''${saved[0]}"
+          connection="''${saved[1]}"
+          nmcli connection modify "$connection" \
+            ipv4.ignore-auto-dns "''${saved[2]}" ipv6.ignore-auto-dns "''${saved[3]}"
+          reconnect "$device" "$connection" || true
+          resolvectl revert "$device" || true
+          rm -rf "$state_dir"
+          ;;
+        *)
+          echo "usage: captive-portal-mode activate|deactivate" >&2
+          exit 64
+          ;;
+      esac
+    '';
+  };
 in
 {
   assertions = [
@@ -68,10 +133,11 @@ in
         "ipv4.dhcp-send-hostname" = false;
         "ipv6.dhcp-send-hostname" = false;
 
-        # Ignore DNS learned automatically from each LAN. Manual DNS attached
-        # to an imported VPN profile is still usable for its routed domains.
-        "ipv4.ignore-auto-dns" = true;
-        "ipv6.ignore-auto-dns" = true;
+        # Captive portals require their DHCP resolver before authentication.
+        # Otherwise keep LAN-provided DNS out of the normal resolver policy;
+        # manual DNS on imported VPN profiles remains usable for routed domains.
+        "ipv4.ignore-auto-dns" = !settings.network.captivePortalMode;
+        "ipv6.ignore-auto-dns" = !settings.network.captivePortalMode;
       };
     };
 
@@ -82,6 +148,38 @@ in
     # This is normally enabled by NixOS, but declaring it makes the laptop's
     # closed-by-default inbound policy explicit and reviewable.
     firewall.enable = true;
+  };
+
+  # A short-lived travel mode for captive Wi-Fi. It changes only the active
+  # connection profile and restores its previous DNS settings on stop/timeout.
+  systemd.services.captive-portal-mode = {
+    description = "Temporarily enable captive-portal DNS on the active Wi-Fi";
+    wantedBy = [ ];
+    wants = [ "captive-portal-mode.timer" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${captivePortalScript}/bin/captive-portal-mode activate";
+      ExecStop = "${captivePortalScript}/bin/captive-portal-mode deactivate";
+    };
+  };
+
+  systemd.services.captive-portal-mode-stop = {
+    description = "End temporary captive-portal mode";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.systemd}/bin/systemctl stop captive-portal-mode.service";
+    };
+  };
+
+  systemd.timers.captive-portal-mode = {
+    description = "Automatically end temporary captive-portal mode";
+    partOf = [ "captive-portal-mode.service" ];
+    timerConfig = {
+      OnActiveSec = settings.network.captivePortalTimeout;
+      AccuracySec = "1s";
+      Unit = "captive-portal-mode-stop.service";
+    };
   };
 
   # Permit only the proprietary packages deliberately retained by this build.

@@ -189,16 +189,61 @@ Firefox and Tor Browser do not need this toggle.
 
 ## Captive portals and restrictive networks
 
-Blocky's upstream uses HTTPS port 443, which is more commonly permitted than
-DoT port 853, but a captive portal may prevent all outside traffic until login.
-Use Plasma's portal notification first. Firefox's direct DoH is also on port
-443, so it is a useful second check after the portal accepts the connection.
+The normal policy deliberately resists captive-portal interception: it ignores
+DHCP DNS, routes names through the encrypted resolver, and makes Firefox
+HTTPS-only. Enable the temporary travel switch *before* joining a hotel,
+airport, or conference Wi-Fi that needs a sign-in page:
 
-If both fail, the network—not the privacy list—is probably blocking outside
-traffic. Do not permanently weaken encrypted DNS for one network. Use the
-portal's documented login address or a trusted mobile hotspot, then reconnect.
-The `dns.filtering.enable = false` diagnostic above falls back to strict DoT,
-not plaintext DNS, so it does not silently disclose queries.
+```nix
+network.captivePortalMode = true;
+```
+
+Rebuild, join the Wi-Fi, and visit any ordinary HTTP URL (or use the portal
+address shown by `curl -i http://GATEWAY_IP`). The switch makes
+systemd-resolved accept the active connection's DHCP DNS and disables Firefox
+HTTPS-only and DoH. Chromium-family browsers in this configuration already use
+the system resolver, so they receive the same DHCP-DNS change without a
+browser-specific policy. It does not disable the firewall, Blocky service, or
+MAC randomization, but DNS queries made during the login can be visible to the
+network.
+
+After authentication, immediately return the value to `false` and rebuild to
+restore the encrypted DNS and browser protections. NetworkManager defaults
+apply when a profile is created; an existing profile with an explicit
+`ignore-auto-dns` setting may need that value removed or the profile recreated.
+
+### No-rebuild travel command
+
+After one rebuild that installs this configuration, use the temporary service
+instead of editing Nix for each trip. First connect to the Wi-Fi, then run:
+
+```bash
+sudo systemctl start captive-portal-mode
+```
+
+It changes only the active Wi-Fi profile to accept DHCP DNS, reconnects it,
+and prefers that link's resolver. KDE should then show the portal notification;
+otherwise open a plain HTTP URL. The service automatically restores the
+previous per-profile DNS settings after `network.captivePortalTimeout` (20
+minutes by default). End it sooner with:
+
+```bash
+sudo systemctl stop captive-portal-mode
+```
+
+This runtime command cannot rewrite an already-running Firefox enterprise
+policy. Use the KDE portal notification or the HTTPS portal URL it reports;
+for a portal that requires HTTP in Firefox, set `network.captivePortalMode =
+true` and rebuild instead.
+
+### Plasma system-tray control
+
+The system tray contains a wireless-icon menu named **Captive portal mode**.
+Choose **Start captive portal mode** after joining the Wi-Fi or **Stop** to
+restore the normal DNS policy early. Plasma's Polkit dialog authenticates the
+action; the configured fingerprint reader is offered through fprintd, with the
+usual password fallback. The menu also shows whether the timed service is
+active.
 
 ## UniFi: create and import a WireGuard client
 

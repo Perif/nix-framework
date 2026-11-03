@@ -6,6 +6,7 @@
     ../modules/privacy.nix
     ../modules/plasma-security.nix
     ../modules/plasma-panels.nix
+    ../modules/captive-portal-tray.nix
     ../modules/power.nix
     ../modules/touchpad.nix
     ../modules/ghostty.nix

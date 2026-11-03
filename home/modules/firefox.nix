@@ -2,6 +2,7 @@
 
 let
   addons = pkgs.nur.repos.rycee.firefox-addons;
+  captivePortalMode = settings.network.captivePortalMode;
   # Preserve the publisher's signed artifact locally: its rolling upload list
   # prunes old releases. Shared metadata verifies the exact source bytes.
   bypassPaywallsSource = import ../../pkgs/bypass-paywalls-clean/source.nix;
@@ -51,14 +52,15 @@ in
         EmailTracking = true;
       };
 
-      # HTTPS-first / HTTPS-only behavior.
-      HttpsOnlyMode = "enabled";
+      # HTTPS-only and DoH prevent the HTTP/DNS interception that captive
+      # portals use. Travel mode temporarily restores browser defaults.
+      HttpsOnlyMode = if captivePortalMode then "disabled" else "enabled";
 
       # Use Blocky's explicitly unfiltered upstream directly over HTTPS/443.
       # Bypassing the local list gives Firefox a recovery path for DNS false
       # positives. This remains unlocked for VPN/private-DNS overrides.
       DNSOverHTTPS = {
-        Enabled = true;
+        Enabled = !captivePortalMode;
         ProviderURL = settings.dns.dohUrl;
         Locked = false;
         Fallback = false;
@@ -223,8 +225,8 @@ in
         # Security
         ##############################################################
 
-        "dom.security.https_only_mode" = true;
-        "dom.security.https_only_mode_pbm" = true;
+        "dom.security.https_only_mode" = !captivePortalMode;
+        "dom.security.https_only_mode_pbm" = !captivePortalMode;
 
         # Keep Safe Browsing enabled. Disabling it is not a privacy win
         # sufficient to justify the security regression.

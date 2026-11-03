@@ -200,6 +200,15 @@
     # null: NetworkManager default; false: disable power saving as a Wi-Fi
     # reliability workaround; true: enable power saving. See docs/08-networking.md.
     wifiPowerSave = null;
+
+    # Set true only while signing in to hotel, airport, or other captive Wi-Fi.
+    # This permits DHCP DNS and turns off Firefox HTTPS-only/DoH so the portal
+    # can redirect requests. Restore false after authenticating.
+    captivePortalMode = false;
+
+    # Runtime `captive-portal-mode` sessions stop automatically after this
+    # interval. They do not require a rebuild for each trip.
+    captivePortalTimeout = "20min";
   };
 
   ai = {

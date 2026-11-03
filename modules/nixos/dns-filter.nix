@@ -6,6 +6,7 @@
 
 let
   cfg = settings.dns.filtering;
+  captivePortalMode = settings.network.captivePortalMode;
   allowlistSource = lib.concatStringsSep "\n" cfg.allowlist + "\n";
 in
 {
@@ -34,7 +35,9 @@ in
     enable = true;
     settings.Resolve = {
       DNS =
-        if cfg.enable then
+        if captivePortalMode then
+          [ ]
+        else if cfg.enable then
           [
             "127.0.0.1:5335"
             "[::1]:5335"
@@ -42,8 +45,10 @@ in
         else
           settings.dns.servers;
       FallbackDNS = [ ];
-      Domains = [ "~." ];
-      DNSOverTLS = if cfg.enable then false else true;
+      # Let the active network's DHCP DNS handle all names during a portal
+      # login. Outside that temporary mode, force the selected private path.
+      Domains = lib.optionals (!captivePortalMode) [ "~." ];
+      DNSOverTLS = if captivePortalMode || cfg.enable then false else true;
 
       # Cloudflare validates DNSSEC upstream. Local validation is disabled for
       # compatibility with incorrectly signed domains, which otherwise fail to
