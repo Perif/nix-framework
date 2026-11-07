@@ -8,6 +8,7 @@
 let
   features = settings.features;
   languages = features.languageTools;
+  herdrApp = pkgs.callPackage ../../pkgs/herdr-app.nix { };
 
   corePackages = with pkgs; [
     gh
@@ -27,6 +28,10 @@ let
     podman-compose
     terraform-ls
     prettier
+
+    # Persistent terminal workspace for long-running coding-agent sessions.
+    herdr
+    herdrApp
 
     btop
     htop

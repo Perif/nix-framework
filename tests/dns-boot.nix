@@ -101,6 +101,7 @@ in
         allowlist = [ "allowlisted.example.com" ];
       };
     };
+    _module.args.settings.network.captivePortalMode = false;
 
     virtualisation.memorySize = 512;
     networking.hosts."127.0.0.1" = [ "dns-fixture.example.com" ];

@@ -118,7 +118,7 @@
 
     localAI = true;
     rea = false; # Reverse Engineer Anything CLI/MCP with Ghidra; see docs/19-rea.md.
-    extraBrowsers = true; # Brave and ungoogled Chromium; Firefox stays installed.
+    extraBrowsers = true; # Ungoogled Chromium; Firefox stays installed.
     extraEditors = true; # VSCodium and Sublime Text/Merge; Vim stays installed.
 
     # Native Linux game and optional nested compositor; see the gaming steps

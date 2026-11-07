@@ -266,7 +266,7 @@ recovery have all been tested. Continue with `docs/24-fingerprint-tpm.md` afterw
 Select the matching panel ICC using [display setup](../09-display.md), then follow
 [EasyEffects speaker setup](../10-audio.md#easyeffects-speaker-preset) to associate
 the bundled preset with the built-in speaker device and route. Verify that
-switching to headphones selects the Flat fallback. These profiles are
+switching to headphones preserves the selected default preset. These profiles are
 installed declaratively; the panel and audio-route identities need checking
 on this laptop before use.
 
@@ -342,10 +342,9 @@ downloaded automatically. Follow
 `docs/18-local-ai-development.md` to choose a tool-capable Ollama model or serve a
 GGUF model with llama.cpp, then select it in Continue.
 
-Confirm that Brave and ungoogled Chromium are installed:
+Confirm that ungoogled Chromium is installed:
 
 ```bash
-command -v brave
 command -v chromium
 chromium --version
 readlink -f "$(command -v chromium)"
@@ -354,14 +353,11 @@ readlink -f "$(command -v chromium)"
 The resolved Chromium path should contain `ungoogled-chromium`. The executable
 remains named `chromium`.
 
-Open `brave://policy` and `chrome://policy`, reload policy, and verify the
-managed privacy controls. Check `brave://extensions` for uBlock Origin Lite.
+Open `chrome://policy`, reload policy, and verify the managed privacy controls.
 Open `chrome://extensions` and confirm that ungoogled Chromium has no unexpected
-extension; uBOL is intentionally limited to Brave because its automatic update
-path uses the Chrome Web Store. The managed-browser message is expected because
-the policies come from this NixOS configuration. See
-`docs/16-chromium-browsers.md` for the exact controls, Safe Browsing boundary, and
-compatibility procedure.
+extension. The managed-browser message is expected because the policies come
+from this NixOS configuration. See `docs/16-chromium-browsers.md` for the exact
+controls, Safe Browsing boundary, and compatibility procedure.
 
 Confirm that Tor Browser and WireGuard's client tools are installed:
 
