@@ -8,6 +8,7 @@
   libxcb,
   libxkbcommon,
   vulkan-loader,
+  wayland,
 }:
 
 stdenvNoCC.mkDerivation (finalAttrs: {
@@ -29,6 +30,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     libxkbcommon
     vulkan-loader
     libxcb
+    wayland
   ];
 
   installPhase = ''
@@ -57,7 +59,15 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   postFixup = ''
     wrapProgram "$out/bin/herdr-app" \
-      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ vulkan-loader ]}
+      --prefix LD_LIBRARY_PATH : ${
+        lib.makeLibraryPath [
+          libxcb
+          libxkbcommon
+          stdenv.cc.cc.lib
+          vulkan-loader
+          wayland
+        ]
+      }
   '';
 
   meta = {
