@@ -28,6 +28,9 @@ let
     terraform-ls
     prettier
 
+    # Persistent terminal workspace for long-running coding-agent sessions.
+    herdr
+
     btop
     htop
     ncdu
