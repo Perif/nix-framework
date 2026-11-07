@@ -22,6 +22,14 @@ let
   monitorOptions = "-a -m <nomailer> -M exec ${diskAlert}/bin/disk-health-record-alert";
 in
 {
+  # Support common removable-media filesystems. FAT32 uses the kernel's
+  # `vfat` filesystem name; NTFS and exFAT remain available for USB drives.
+  boot.supportedFilesystems = [
+    "ntfs"
+    "exfat"
+    "vfat"
+  ];
+
   # Monitor every locally discovered SMART-capable drive, including NVMe.
   # Health failures go to the journal, terminals and the Plasma user; routine
   # checks do not generate notifications or require a network/mail account.

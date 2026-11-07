@@ -145,7 +145,7 @@ The build additionally:
   not stream each command into all concurrent shells;
 - scans added, staged Git content locally for credentials and high-confidence
   PII before a commit, while redacting credential findings;
-- keeps the proprietary-package exception to the exact Sublime, Brave, OneTab,
+- keeps the proprietary-package exception to the exact Sublime, OneTab,
   and Enhancer for YouTube derivation names instead of globally allowing
   unfree software;
 - disables terminal paste protection and permits terminal programs to read and
@@ -258,20 +258,14 @@ added because those functions overlap existing controls and every privileged
 extension is another attack and fingerprinting surface. See `docs/15-firefox.md`
 for the complete policy and optional uBO medium-mode steps.
 
-Brave and ungoogled Chromium use shared NixOS-managed privacy policy and the
-locally filtered system resolver:
-third-party cookies, telemetry, prediction, ad-personalization surfaces,
-browser AI, and unnecessary background services are disabled. Both browsers
-use the system resolver so UniFi/WireGuard split-DNS routes remain effective.
-
-Brave alone force-installs uBlock Origin Lite in Optimal mode and keeps Safe
-Browsing Standard Protection. It also disables P3A, usage ping, Web Discovery,
-Leo, Rewards, Wallet, VPN promotion, News, and Talk promotion. Ungoogled
-Chromium removes built-in Google service dependencies, including normal Chrome
-Web Store and Safe Browsing integration; it is not a substitute for Tor
-Browser and should be used cautiously for unknown links or downloads. The
-exact controls, expected managed-browser label, site-breakage procedure, and
-residual privacy boundary are in `docs/16-chromium-browsers.md`.
+Ungoogled Chromium uses NixOS-managed privacy policy and the locally filtered
+system resolver: third-party cookies, telemetry, prediction,
+ad-personalization surfaces, browser AI, and unnecessary background services
+are disabled. It removes built-in Google service dependencies, including normal
+Chrome Web Store and Safe Browsing integration; it is not a substitute for Tor
+Browser and should be used cautiously for unknown links or downloads. The exact
+controls, expected managed-browser label, site-breakage procedure, and residual
+privacy boundary are in `docs/16-chromium-browsers.md`.
 
 Tor Browser is installed separately and is intentionally left at Tor Project's
 shared browser configuration. Ordinary Firefox is not pointed at a Tor proxy,
