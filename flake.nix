@@ -41,6 +41,13 @@
       url = "github:nix-community/plasma-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Herdr's upstream flake supplies the packaged terminal runtime and its
+    # Rust toolchain overlay. Pin the exact revision in flake.lock.
+    herdr = {
+      url = "github:herdrdev/herdr/v0.9.5";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -54,6 +61,7 @@
       lanzaboote,
       nixpkgs-sublime,
       plasma-manager,
+      herdr,
       ...
     }:
     let
@@ -218,7 +226,10 @@
 
           # Make NUR packages available as pkgs.nur....
           {
-            nixpkgs.overlays = [ nur.overlays.default ];
+            nixpkgs.overlays = [
+              nur.overlays.default
+              herdr.overlays.default
+            ];
           }
 
           ./hosts/framework-pro

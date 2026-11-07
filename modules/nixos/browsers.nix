@@ -1,56 +1,8 @@
 { lib, settings, ... }:
 
-let
-  uBlockOriginLiteId = "ddkjiahejlhfcafbddmgiahcphecmpfh";
-
-  # Brave policies are isolated from the shared Chromium policy file so
-  # ungoogled Chromium does not report Brave-only or Google-service keys as
-  # unknown. Keep the Chrome Web Store extension and Safe Browsing controls
-  # here: ungoogled Chromium deliberately removes those Google integrations.
-  bravePrivacyPolicies = {
-    BraveAIChatEnabled = false;
-    BraveNewsDisabled = true;
-    BraveP3AEnabled = false;
-    BraveRewardsDisabled = true;
-    BraveStatsPingEnabled = false;
-    BraveTalkDisabled = true;
-    BraveVPNDisabled = true;
-    BraveWalletDisabled = true;
-    BraveWebDiscoveryEnabled = false;
-    ChromeVariations = 1;
-
-    ExtensionInstallForcelist = [ uBlockOriginLiteId ];
-
-    DisableSafeBrowsingProceedAnyway = true;
-    SafeBrowsingEnabled = true;
-    SafeBrowsingExtendedReportingEnabled = false;
-    SafeBrowsingProtectionLevel = 1;
-    SafeBrowsingSurveysEnabled = false;
-
-    # Managed uBOL settings retain the maintained default lists, add URL
-    # tracking-parameter protection, and use the current Optimal mode.
-    "3rdparty".extensions.${uBlockOriginLiteId} = {
-      defaultFiltering = "optimal";
-      disableFirstRunPage = true;
-      popupBlockMode = true;
-      rulesets = [
-        "+default"
-        "+adguard-spyware-url"
-      ];
-      showBlockedCount = true;
-      strictBlockMode = true;
-    };
-
-    # The upstream Tor Browser is installed separately. Brave's private Tor
-    # window has a different fingerprint and should not be treated as a
-    # substitute for it.
-    TorDisabled = true;
-  };
-in
 lib.mkIf settings.features.extraBrowsers {
-  # NixOS writes these shared managed policies for ungoogled Chromium and
-  # Brave. The browser UI will therefore truthfully say that it is managed by
-  # an organization.
+  # NixOS writes these managed policies for ungoogled Chromium. The browser UI
+  # will therefore truthfully say that it is managed by an organization.
   programs.chromium = {
     enable = true;
     homepageLocation = "about:blank";
@@ -103,7 +55,4 @@ lib.mkIf settings.features.extraBrowsers {
       WebRtcIPHandling = "default_public_interface_only";
     };
   };
-
-  environment.etc."brave/policies/managed/brave-privacy.json".text =
-    builtins.toJSON bravePrivacyPolicies;
 }

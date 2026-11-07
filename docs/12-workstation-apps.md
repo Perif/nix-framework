@@ -26,7 +26,7 @@ rebuild to remove groups or individual optional applications:
 | `features.languageTools.nix` | nixd and nixfmt. |
 | `features.localAI` | Home Manager local-model CLI/runtime integration and Continue's loopback-only provider config. The system AI services use the same switch. |
 | `features.rea` | REA CLI/MCP with Ghidra and Java; Continue uses Ollama, with optional Ollaya decision tools. See [REA](19-rea.md). |
-| `features.extraBrowsers` | Brave and ungoogled Chromium. Firefox and Tor Browser remain installed. |
+| `features.extraBrowsers` | Ungoogled Chromium. Firefox and Tor Browser remain installed. |
 | `features.extraEditors` | VSCodium and Sublime Text/Merge. Vim and Neovim remain available. |
 | `features.gaming.beyondAllReason` | Beyond All Reason native Linux launcher. |
 | `features.gaming.gamescope` | Gamescope nested compositor for manually launched games. |
@@ -187,7 +187,7 @@ Use native Strawberry/qobuz-player for the documented direct DC-Elite path.
 ## KeePassXC and 1Password migration
 
 `features.keepassxc = true` installs KeePassXC, the Firefox KeePassXC-Browser
-extension and native messaging manifests for Firefox, Brave and Chromium.
+extension and native messaging manifests for Firefox and Chromium.
 KeePassXC is a local encrypted database application, not a hosted vault service.
 
 Use **1Password Export (.1pux)** in 1Password 8 and import it with KeePassXC's
@@ -214,7 +214,7 @@ material; local filesystem snapshots do not protect against disk loss.
 
 Enable Browser Integration in KeePassXC, then pair Firefox using the extension.
 Under Browser Integration / Advanced, turn off **Update native messaging manifest
-files at startup**: Home Manager owns those files. Brave/Chromium users can
+files at startup**: Home Manager owns those files. Chromium users can
 install the official KeePassXC-Browser extension and pair it the same way.
 Application preferences remain writable so pairing and database history work.
 

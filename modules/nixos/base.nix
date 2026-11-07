@@ -190,7 +190,6 @@ in
     "sublimetext4-bin"
     "sublime-merge"
     "sublime-merge-bin"
-    "brave"
     "steam"
     "steam-unwrapped"
     "onetab"

@@ -31,6 +31,10 @@ in
       # user CLI so the closure does not also carry a second, CPU-only
       # ollama build.
       osConfig.services.ollama.package
+
+      # Terminal coding agent; its package also supplies ripgrep and fd to
+      # the agent's runtime PATH.
+      pkgs.pi-coding-agent
     ]
     ++ lib.optional ollayaEnabled ollaya;
 
