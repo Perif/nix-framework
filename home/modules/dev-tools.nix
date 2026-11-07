@@ -8,6 +8,7 @@
 let
   features = settings.features;
   languages = features.languageTools;
+  herdrApp = pkgs.callPackage ../../pkgs/herdr-app.nix { };
 
   corePackages = with pkgs; [
     gh
@@ -30,6 +31,7 @@ let
 
     # Persistent terminal workspace for long-running coding-agent sessions.
     herdr
+    herdrApp
 
     btop
     htop
