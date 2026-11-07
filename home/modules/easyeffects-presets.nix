@@ -4,7 +4,15 @@ let
   original = upstream.output;
 in
 {
-  FW13SpeakersV2-Loudness = upstream;
+  # The downloaded preset uses a slight left bias.  Keep the source JSON
+  # unchanged, but center the stereo balance in the installed profile.
+  FW13SpeakersV2-Loudness = upstream // {
+    output = original // {
+      "equalizer#0" = original."equalizer#0" // {
+        balance = 0.0;
+      };
+    };
+  };
   FW13Pro-bit0fun = builtins.fromJSON (builtins.readFile ../../assets/audio/FW13Pro-bit0fun.json);
 
   # Keep the original EQ curve and -19 dB input gain; remove its +11 dB
