@@ -34,6 +34,7 @@ rebuild to remove groups or individual optional applications:
 | `features.office.thunderbird` | Thunderbird. |
 | `features.office.kdeConnect` | KDE Connect package. |
 | `features.office.syncthing` | Syncthing package. |
+| `features.office.dropbox` | Dropbox desktop client. |
 | `features.utilities.filezilla` | FileZilla SFTP/FTP client. |
 | `features.utilities.filelight` | Filelight graphical disk-usage viewer. |
 | `features.utilities.bruno` | Bruno API client with local request collections. |
@@ -116,6 +117,10 @@ want it. The GUI defaults to loopback. The sync protocol can still make outbound
 connections while Syncthing is running; the system firewall stays closed to
 unsolicited inbound traffic. Do not open the sync/discovery ports unless you
 deliberately choose a network and sharing arrangement.
+
+Dropbox is installed as the desktop client only. Sign in and choose its local
+folder from the Dropbox application; account credentials and synced files are
+not managed by this repository.
 
 ## Guile / Scheme
 

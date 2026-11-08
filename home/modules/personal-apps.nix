@@ -16,6 +16,7 @@ in
     ++ lib.optionals office.thunderbird [ pkgs.thunderbird ]
     ++ lib.optionals office.kdeConnect [ pkgs.kdePackages.kdeconnect-kde ]
     ++ lib.optionals office.syncthing [ pkgs.syncthing ]
+    ++ lib.optionals office.dropbox [ pkgs.dropbox ]
     ++ lib.optionals utilities.filezilla [ pkgs.filezilla ]
     ++ lib.optionals utilities.filelight [ pkgs.kdePackages.filelight ]
     ++ lib.optionals utilities.bruno [ pkgs.bruno ]

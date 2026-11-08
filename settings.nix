@@ -134,6 +134,7 @@
       thunderbird = true;
       kdeConnect = true;
       syncthing = true;
+      dropbox = true;
     };
 
     # Optional applications; all start manually. NAPS2 also enables local

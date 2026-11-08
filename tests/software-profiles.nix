@@ -165,6 +165,8 @@ assert !home.programs.zoxide.enable;
 assert !home.programs.delta.enable;
 assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
+assert !hasPackage "dropbox" home;
+assert hasPackage "dropbox" defaultHome == settings.features.office.dropbox;
 assert !cfg.programs.gamescope.enable;
 assert cfg.programs.steam.enable;
 assert !cfg.programs.steam.remotePlay.openFirewall;
