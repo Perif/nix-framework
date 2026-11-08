@@ -3,6 +3,15 @@
 {
   services.desktopManager.plasma6.enable = true;
 
+  # CUPS provides the print backend used by KDE applications and dialogs.
+  # Avahi discovers driverless IPP/AirPrint printers on trusted local networks.
+  # Plasma automatically includes Print Manager when CUPS is enabled.
+  services.printing.enable = true;
+  services.avahi = {
+    enable = true;
+    nssmdns4 = true;
+    openFirewall = true;
+  };
   # Run games in a nested compositor inside Plasma, without a privileged
   # scheduling wrapper or a separate login session. HDR stays opt-in upstream.
   programs.gamescope = {

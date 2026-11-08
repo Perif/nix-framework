@@ -98,7 +98,7 @@
 
     # Optional Thunderbolt/USB4 authorization daemon for docks that need it.
     # This does not automatically authorize unknown devices.
-    thunderbolt = false;
+    thunderbolt = true;
 
     # Software groups are installed by default to preserve the current
     # workstation. Disable an application group here to reduce the closure.
