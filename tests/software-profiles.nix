@@ -167,6 +167,7 @@ assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
 assert !hasPackage "dropbox" home;
 assert hasPackage "dropbox" defaultHome == settings.features.office.dropbox;
+assert hasPackage "signal-desktop" defaultHome == settings.features.office.signal;
 assert !cfg.programs.gamescope.enable;
 assert cfg.programs.steam.enable;
 assert !cfg.programs.steam.remotePlay.openFirewall;

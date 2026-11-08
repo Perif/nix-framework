@@ -14,6 +14,7 @@ in
     lib.optionals settings.features.gaming.beyondAllReason [ pkgs.beyond-all-reason ]
     ++ lib.optionals office.libreOffice [ pkgs.libreoffice-qt ]
     ++ lib.optionals office.thunderbird [ pkgs.thunderbird ]
+    ++ lib.optionals office.signal [ pkgs.signal-desktop ]
     ++ lib.optionals office.kdeConnect [ pkgs.kdePackages.kdeconnect-kde ]
     ++ lib.optionals office.syncthing [ pkgs.syncthing ]
     ++ lib.optionals office.dropbox [ pkgs.dropbox ]
@@ -36,5 +37,12 @@ in
       [Desktop Entry]
       Hidden=true
     '';
+  };
+
+  # Nixpkgs' Dropbox wrapper provides a desktop entry but no matching icon.
+  # Install one in the standard icon theme location so Plasma resolves
+  # `Icon=dropbox` in that entry without depending on Dropbox's self-updater.
+  xdg.dataFile = lib.optionalAttrs office.dropbox {
+    "icons/hicolor/scalable/apps/dropbox.svg".source = ../../assets/icons/dropbox.svg;
   };
 }

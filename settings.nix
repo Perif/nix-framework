@@ -132,6 +132,7 @@
     office = {
       libreOffice = true;
       thunderbird = true;
+      signal = true;
       kdeConnect = true;
       syncthing = true;
       dropbox = true;
