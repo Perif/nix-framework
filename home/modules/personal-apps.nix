@@ -32,12 +32,19 @@ in
   # KDE Connect ships an XDG login autostart entry. Mask it for this user so
   # installing the optional client does not start its network daemon at login;
   # launching KDE Connect manually can still D-Bus-activate the daemon.
-  xdg.configFile = lib.optionalAttrs office.kdeConnect {
-    "autostart/org.kde.kdeconnect.daemon.desktop".text = ''
-      [Desktop Entry]
-      Hidden=true
-    '';
-  };
+  xdg.configFile =
+    lib.optionalAttrs office.kdeConnect {
+      "autostart/org.kde.kdeconnect.daemon.desktop".text = ''
+        [Desktop Entry]
+        Hidden=true
+      '';
+    }
+    // lib.optionalAttrs office.dropbox {
+      # Plasma honors XDG autostart entries when the user session begins. Reuse
+      # the packaged entry so its command and desktop metadata stay in sync with
+      # the Dropbox package.
+      "autostart/dropbox.desktop".source = "${pkgs.dropbox}/share/applications/dropbox.desktop";
+    };
 
   # Nixpkgs' Dropbox wrapper provides a desktop entry but no matching icon.
   # Install one in the standard icon theme location so Plasma resolves

@@ -167,6 +167,9 @@ assert !cfg.programs.kdeconnect.enable;
 assert !cfg.services.syncthing.enable;
 assert !hasPackage "dropbox" home;
 assert hasPackage "dropbox" defaultHome == settings.features.office.dropbox;
+assert (home.xdg.configFile ? "autostart/dropbox.desktop") == minimal.features.office.dropbox;
+assert
+  (defaultHome.xdg.configFile ? "autostart/dropbox.desktop") == settings.features.office.dropbox;
 assert hasPackage "signal-desktop" defaultHome == settings.features.office.signal;
 assert !cfg.programs.gamescope.enable;
 assert cfg.programs.steam.enable;
