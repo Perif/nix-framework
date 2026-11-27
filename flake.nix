@@ -6,6 +6,10 @@
     # host modules for newer Framework and USB-audio kernel support.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
+    # Follow nixpkgs master only for Ollama so `just update` can pick up its
+    # frequent releases without moving the system's stable package baseline.
+    nixpkgs-ollama.url = "github:NixOS/nixpkgs/master";
+
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -54,6 +58,7 @@
     {
       self,
       nixpkgs,
+      nixpkgs-ollama,
       home-manager,
       nixos-hardware,
       disko,
@@ -69,6 +74,7 @@
       settings = import ./settings.nix;
       # One Nixpkgs instantiation shared by every x86_64-linux package output.
       linuxPkgs = import nixpkgs { system = "x86_64-linux"; };
+      ollamaPkgs = import nixpkgs-ollama { system = "x86_64-linux"; };
     in
     {
       devShells = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
@@ -215,7 +221,7 @@
 
         # Every NixOS module receives `settings` as an argument.
         specialArgs = {
-          inherit settings;
+          inherit settings ollamaPkgs;
         };
 
         modules = [

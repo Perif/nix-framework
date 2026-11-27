@@ -1,5 +1,6 @@
 {
   lib,
+  ollamaPkgs,
   pkgs,
   settings,
   ...
@@ -42,7 +43,9 @@ in
   # use its loopback API. llama.cpp itself is installed in Home Manager.
   services.ollama = lib.mkIf aiEnabled {
     enable = true;
-    package = pkgs.ollama-vulkan;
+    # Keep the system on stable nixpkgs while tracking Ollama's faster release
+    # cadence from the dedicated rolling input.
+    package = ollamaPkgs.ollama-vulkan;
     host = "127.0.0.1";
     environmentVariables = {
       # Ollama 0.32.3 drops integrated Vulkan devices by default, even when
