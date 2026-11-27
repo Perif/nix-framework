@@ -1,4 +1,9 @@
-{ lib, settings, ... }:
+{
+  lib,
+  pkgs,
+  settings,
+  ...
+}:
 
 {
   services.desktopManager.plasma6.enable = true;
@@ -61,6 +66,23 @@
     enable = true;
     # Avoid passive Bluetooth advertising/scanning until the user requests it.
     powerOnBoot = false;
+  };
+
+  # The CalDigit TS4's primary USB 3 hub is a stable dock-level device.  Tag
+  # only its add event, not any peripherals connected through the dock, then
+  # ask systemd to power Bluetooth on after BlueZ is available.
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="2188", ATTR{idProduct}=="5500", TAG+="systemd", ENV{SYSTEMD_WANTS}+="bluetooth-on-caldigit-ts4.service"
+  '';
+
+  systemd.services.bluetooth-on-caldigit-ts4 = {
+    description = "Power on Bluetooth when the CalDigit TS4 is connected";
+    after = [ "bluetooth.service" ];
+    wants = [ "bluetooth.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.bluez}/bin/bluetoothctl power on";
+    };
   };
 
   environment.sessionVariables = {
