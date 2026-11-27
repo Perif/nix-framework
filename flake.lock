@@ -219,13 +219,13 @@
         "type": "github"
       }
     },
-    "nixpkgs-ollama": {
+    "nixpkgs-rolling": {
       "locked": {
-        "lastModified": 1795794415,
-        "narHash": "sha256-O3OdyTvsx0NpKo8UT/z8asTErWq4pu2ZnFDJ15rx0gk=",
+        "lastModified": 1795796099,
+        "narHash": "sha256-+tm0ddiqSUzXvLIebQOAvAWS4kFyeqB6/fKyLNuryYM=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "1eb11bb1e8b58b3de37332a744665ec5b9fc023e",
+        "rev": "fa40c9cba8ca77d2f8c6f130a2e60d829bb063a9",
         "type": "github"
       },
       "original": {
@@ -324,7 +324,7 @@
         "lanzaboote": "lanzaboote",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-ollama": "nixpkgs-ollama",
+        "nixpkgs-rolling": "nixpkgs-rolling",
         "nixpkgs-sublime": "nixpkgs-sublime",
         "nur": "nur",
         "plasma-manager": "plasma-manager"

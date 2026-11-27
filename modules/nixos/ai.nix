@@ -1,6 +1,6 @@
 {
   lib,
-  ollamaPkgs,
+  rollingPkgs,
   pkgs,
   settings,
   ...
@@ -45,7 +45,7 @@ in
     enable = true;
     # Keep the system on stable nixpkgs while tracking Ollama's faster release
     # cadence from the dedicated rolling input.
-    package = ollamaPkgs.ollama-vulkan;
+    package = rollingPkgs.ollama-vulkan;
     host = "127.0.0.1";
     environmentVariables = {
       # Ollama 0.32.3 drops integrated Vulkan devices by default, even when

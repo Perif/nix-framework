@@ -3,6 +3,7 @@
   settings,
   lib,
   nixpkgs-sublime,
+  rollingPkgs,
 }:
 let
   minimal = settings // {
@@ -35,7 +36,7 @@ let
       modules = [
         {
           home-manager.extraSpecialArgs = lib.mkForce {
-            inherit nixpkgs-sublime;
+            inherit nixpkgs-sublime rollingPkgs;
             settings = selection;
           };
         }
@@ -106,7 +107,9 @@ let
       minimal
       // {
         features = minimal.features // {
-          gaming = minimal.features.gaming // { inherit beyondAllReason gamescope; };
+          gaming = minimal.features.gaming // {
+            inherit beyondAllReason gamescope;
+          };
         };
       }
     );

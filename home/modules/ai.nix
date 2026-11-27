@@ -3,6 +3,7 @@
   lib,
   pkgs,
   osConfig,
+  rollingPkgs,
   settings,
   ...
 }:
@@ -34,7 +35,7 @@ in
 
       # Terminal coding agent; its package also supplies ripgrep and fd to
       # the agent's runtime PATH.
-      pkgs.pi-coding-agent
+      rollingPkgs.pi-coding-agent
     ]
     ++ lib.optional ollayaEnabled ollaya;
 

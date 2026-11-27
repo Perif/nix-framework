@@ -6,9 +6,9 @@
     # host modules for newer Framework and USB-audio kernel support.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
-    # Follow nixpkgs master only for Ollama so `just update` can pick up its
-    # frequent releases without moving the system's stable package baseline.
-    nixpkgs-ollama.url = "github:NixOS/nixpkgs/master";
+    # Follow nixpkgs master only for fast-moving AI tools, without moving the
+    # system's stable package baseline.
+    nixpkgs-rolling.url = "github:NixOS/nixpkgs/master";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
@@ -58,7 +58,7 @@
     {
       self,
       nixpkgs,
-      nixpkgs-ollama,
+      nixpkgs-rolling,
       home-manager,
       nixos-hardware,
       disko,
@@ -74,7 +74,7 @@
       settings = import ./settings.nix;
       # One Nixpkgs instantiation shared by every x86_64-linux package output.
       linuxPkgs = import nixpkgs { system = "x86_64-linux"; };
-      ollamaPkgs = import nixpkgs-ollama { system = "x86_64-linux"; };
+      rollingPkgs = import nixpkgs-rolling { system = "x86_64-linux"; };
     in
     {
       devShells = nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
@@ -203,7 +203,7 @@
           software-profiles =
             assert import ./tests/software-profiles.nix {
               configuration = self.nixosConfigurations.${settings.hostKey};
-              inherit settings nixpkgs-sublime;
+              inherit settings nixpkgs-sublime rollingPkgs;
               inherit (nixpkgs) lib;
             };
             pkgs.runCommand "software-profile-selection-tests" { } ''
@@ -221,7 +221,7 @@
 
         # Every NixOS module receives `settings` as an argument.
         specialArgs = {
-          inherit settings ollamaPkgs;
+          inherit settings rollingPkgs;
         };
 
         modules = [
@@ -248,7 +248,7 @@
 
               # Expose installation settings to Home Manager modules.
               extraSpecialArgs = {
-                inherit settings nixpkgs-sublime;
+                inherit settings nixpkgs-sublime rollingPkgs;
               };
 
               users.${settings.user.name} = {
